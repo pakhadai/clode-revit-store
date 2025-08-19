@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RevitStore - Маркетплейс архівів Revit</title>
+
+    <!-- Tailwind CSS через CDN (пізніше можна замінити на локальну версію) -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- Кастомні стилі -->
+    <style>
+        /* Анімація завантаження */
+        .loader {
+            border-top-color: #3498db;
+            animation: spinner 1.5s linear infinite;
+        }
+
+        @keyframes spinner {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Плавні переходи */
+        * {
+            transition: all 0.3s ease;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen">
+    <!-- Loader (показується при завантаженні) -->
+    <div id="loader" class="fixed inset-0 bg-white z-50 flex items-center justify-center hidden">
+        <div class="loader ease-linear rounded-full border-4 border-t-4 border-gray-200 h-12 w-12"></div>
+    </div>
+
+    <!-- Головний контейнер -->
+    <div id="app">
+        <!-- Header -->
+        <header class="bg-white shadow-md fixed top-0 w-full z-40">
+            <div class="container mx-auto px-4 py-3">
+                <div class="flex justify-between items-center">
+                    <!-- Логотип -->
+                    <div class="flex items-center space-x-3">
+                        <div class="w-10 h-10 bg-blue-500 rounded-lg flex items-center justify-center">
+                            <span class="text-white font-bold text-xl">R</span>
+                        </div>
+                        <h1 class="text-xl font-bold text-gray-800">RevitStore</h1>
+                    </div>
+
+                    <!-- Кнопки управління -->
+                    <div class="flex items-center space-x-3">
+                        <!-- Пошук -->
+                        <button class="p-2 hover:bg-gray-100 rounded-lg">
+                            🔍
+                        </button>
+
+                        <!-- Мова -->
+                        <button id="lang-btn" class="p-2 hover:bg-gray-100 rounded-lg">
+                            🌐 UA
+                        </button>
+
+                        <!-- Тема -->
+                        <button id="theme-btn" class="p-2 hover:bg-gray-100 rounded-lg">
+                            🌙
+                        </button>
+
+                        <!-- Сповіщення -->
+                        <button class="p-2 hover:bg-gray-100 rounded-lg relative">
+                            🔔
+                            <span class="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
+                        </button>
+
+                        <!-- Профіль -->
+                        <button class="p-2 hover:bg-gray-100 rounded-lg">
+                            👤
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Основний контент -->
+        <main class="pt-20 pb-20">
+            <div class="container mx-auto px-4 py-6">
+                <!-- Банер підписки -->
+                <div class="bg-gradient-to-r from-blue-500 to-purple-600 rounded-2xl p-8 text-white mb-8">
+                    <h2 class="text-3xl font-bold mb-4">🎯 Преміум підписка</h2>
+                    <ul class="mb-6 space-y-2">
+                        <li>✅ Доступ до всіх преміум архівів</li>
+                        <li>✅ Щоденний кешбек 5-10%</li>
+                        <li>✅ Ексклюзивні бонуси</li>
+                        <li>✅ Пріоритетна підтримка</li>
+                    </ul>
+                    <button class="bg-white text-blue-600 px-6 py-3 rounded-lg font-bold hover:bg-gray-100">
+                        Оформити підписку
+                    </button>
+                </div>
+
+                <!-- Щоденний бонус -->
+                <div class="bg-white rounded-2xl p-6 shadow-lg mb-8">
+                    <h3 class="text-2xl font-bold mb-4">🎁 Щоденний бонус</h3>
+                    <div class="text-center">
+                        <p class="mb-4">Ваш стрік: <span class="font-bold text-blue-600">День 1</span></p>
+                        <button class="bg-green-500 text-white px-8 py-4 rounded-lg text-xl hover:bg-green-600">
+                            🎰 Крутити колесо
+                        </button>
+                        <p class="mt-4 text-sm text-gray-600">1 безкоштовна спроба на день</p>
+                    </div>
+                </div>
+
+                <!-- Популярні товари -->
+                <div class="mb-8">
+                    <h3 class="text-2xl font-bold mb-4">🔥 Популярні товари</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                        <!-- Картка товару -->
+                        <div class="bg-white rounded-lg shadow hover:shadow-lg p-4">
+                            <div class="bg-gray-200 h-40 rounded-lg mb-3"></div>
+                            <h4 class="font-bold mb-2">Назва товару</h4>
+                            <p class="text-gray-600 text-sm mb-3">Короткий опис товару...</p>
+                            <div class="flex justify-between items-center">
+                                <span class="text-xl font-bold text-blue-600">$19.99</span>
+                                <button class="bg-blue-500 text-white px-3 py-1 rounded">
+                                    🛒
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Повторити для інших товарів -->
+                        <div class="bg-white rounded-lg shadow hover:shadow-lg p-4">
+                            <div class="bg-gray-200 h-40 rounded-lg mb-3"></div>
+                            <h4 class="font-bold mb-2">Назва товару</h4>
+                            <p class="text-gray-600 text-sm mb-3">Короткий опис товару...</p>
+                            <div class="flex justify-between items-center">
+                                <span class="text-xl font-bold text-blue-600">$29.99</span>
+                                <button class="bg-blue-500 text-white px-3 py-1 rounded">
+                                    🛒
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- Нижня навігація -->
+        <nav class="bg-white fixed bottom-0 w-full shadow-lg border-t">
+            <div class="flex justify-around py-3">
+                <button class="flex flex-col items-center p-2 text-blue-600">
+                    <span class="text-2xl">🏠</span>
+                    <span class="text-xs">Головна</span>
+                </button>
+                <button class="flex flex-col items-center p-2 text-gray-600">
+                    <span class="text-2xl">🛍️</span>
+                    <span class="text-xs">Маркет</span>
+                </button>
+                <button class="flex flex-col items-center p-2 text-gray-600">
+                    <span class="text-2xl">🎁</span>
+                    <span class="text-xs">Бонуси</span>
+                </button>
+                <button class="flex flex-col items-center p-2 text-gray-600">
+                    <span class="text-2xl">👤</span>
+                    <span class="text-xs">Профіль</span>
+                </button>
+            </div>
+        </nav>
+    </div>
+
+    <!-- Базовий JavaScript -->
+    <script>
+        // Перевірка API при завантаженні
+        window.addEventListener('DOMContentLoaded', async () => {
+            try {
+                const response = await fetch('/api/health');
+                const data = await response.json();
+                console.log('API Status:', data);
+            } catch (error) {
+                console.error('API не доступний:', error);
+            }
+        });
+
+        // Перемикач теми
+        document.getElementById('theme-btn').addEventListener('click', () => {
+            document.body.classList.toggle('dark');
+            const btn = document.getElementById('theme-btn');
+            btn.textContent = document.body.classList.contains('dark') ? '☀️' : '🌙';
+        });
+
+        // Інші базові функції будуть додані пізніше
+    </script>
+</body>
+</html>
