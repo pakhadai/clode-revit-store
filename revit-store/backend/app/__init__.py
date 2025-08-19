@@ -1,21 +1,9 @@
 """
-Утиліти для OhMyRevit
+OhMyRevit Backend Application
+Маркетплейс для продажу архівів Revit
 """
 
-from .security import (
-    create_access_token,
-    verify_access_token,
-    hash_pin_code,
-    verify_pin_code,
-    generate_referral_code,
-    generate_order_number
-)
+__version__ = "1.0.0"
+__author__ = "OhMyRevit Team"
 
-__all__ = [
-    "create_access_token",
-    "verify_access_token",
-    "hash_pin_code",
-    "verify_pin_code",
-    "generate_referral_code",
-    "generate_order_number"
-]
+# Не робимо імпорти тут, щоб уникнути циклічних залежностей
