@@ -8,8 +8,8 @@ load_dotenv()
 
 # Створюємо FastAPI додаток
 app = FastAPI(
-    title="RevitStore API",
-    description="API для маркетплейсу архівів Revit",
+    title="OhMyRevit API",
+    description="API для маркетплейсу архівів Revit - OhMyRevit",
     version="1.0.0",
     docs_url="/api/docs",
     redoc_url="/api/redoc"
@@ -31,7 +31,7 @@ app.add_middleware(
 async def root():
     """Головна сторінка API"""
     return {
-        "message": "Welcome to RevitStore API",
+        "message": "Welcome to OhMyRevit API",
         "version": "1.0.0",
         "status": "running"
     }
@@ -41,7 +41,7 @@ async def health_check():
     """Перевірка стану сервера"""
     return {
         "status": "healthy",
-        "service": "revit-store-backend"
+        "service": "ohmyrevit-backend"
     }
 
 # Тут будуть підключатися роутери (поки що закоментовано)

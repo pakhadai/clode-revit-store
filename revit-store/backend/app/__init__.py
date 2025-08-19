@@ -1,7 +1,7 @@
 """
-RevitStore Backend Application
+OhMyRevit Backend Application
 Маркетплейс для продажу архівів Revit
 """
 
 __version__ = "1.0.0"
-__author__ = "RevitStore Team"
+__author__ = "OhMyRevit Team"
