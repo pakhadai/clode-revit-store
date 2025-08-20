@@ -71,7 +71,7 @@ class Product(Base):
 
     # Метадані
     tags = Column(JSON, default=[])  # Список тегів ["modern", "classic", etc.]
-    metadata = Column(JSON, default={})  # Додаткова інформація
+    meta = Column(JSON, default={})  # Додаткова інформація
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     released_at = Column(DateTime, default=datetime.utcnow)  # Дата релізу для підписників

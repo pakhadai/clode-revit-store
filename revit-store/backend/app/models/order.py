@@ -49,7 +49,7 @@ class Order(Base):
     # Статус та дати
     status = Column(String(50), default='pending')  # pending, completed, cancelled
     notes = Column(Text, nullable=True)  # Примітки до замовлення
-    metadata = Column(JSON, default={})  # Додаткові дані
+    meta = Column(JSON, default={})  # Додаткові дані
 
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)

@@ -45,7 +45,7 @@ class Subscription(Base):
     accessible_products = Column(JSON, default=[])  # Список ID продуктів
 
     # Метадані
-    metadata = Column(JSON, default={})
+    meta = Column(JSON, default={})
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
