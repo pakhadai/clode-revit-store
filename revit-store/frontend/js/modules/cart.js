@@ -288,7 +288,7 @@ class CartModule {
                         </div>
                         ${this.promoCode ?
                             `<div class="text-green-500 text-sm mt-2">
-                                ✅ Промокод застосовано: -${this.promoCode.discount_value}${this.promoCode.discount_type === 'percent' ? '%' : '}
+                                ✅ Промокод застосовано: -${this.promoCode.discount_value}${this.promoCode.discount_type === 'percent' ? '%' : ''}
                             </div>` : ''
                         }
                     </div>

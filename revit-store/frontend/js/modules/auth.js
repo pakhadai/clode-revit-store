@@ -9,6 +9,7 @@ class AuthModule {
         this.initTelegram();
     }
 
+    /**
      * Отримати баланс користувача
      */
     getBalance() {
@@ -108,6 +109,7 @@ const auth = new AuthModule();
 window.auth = auth;
 
 export default auth;
+    /**
      * Ініціалізація Telegram Web App
      */
     initTelegram() {
