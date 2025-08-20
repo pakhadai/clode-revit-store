@@ -66,7 +66,7 @@ class User(Base):
     products = relationship("Product", back_populates="creator")  # Продукти створені користувачем
     favorites = relationship("Product", secondary="user_favorites", back_populates="favorited_by")
     cart_items = relationship("CartItem", back_populates="user", cascade="all, delete-orphan")
-    notifications = relationship("Notification", back_populates="user", cascade="all, delete-orphan")
+    #notifications = relationship("Notification", back_populates="user", cascade="all, delete-orphan")
 
     def __repr__(self):
         return f"<User {self.username or self.first_name} (TG: {self.telegram_id})>"

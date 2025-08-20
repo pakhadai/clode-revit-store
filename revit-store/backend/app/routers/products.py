@@ -211,12 +211,11 @@ async def get_products(
     }
 
 
-@router.get("/{product_id}", response_model=Dict)
+@router.get("/{product_id}")
 async def get_product(
         product_id: int,
         language: str = Query("en", description="Мова: en, ua, ru"),
-        db: Session = Depends(get_db),
-        current_user: Optional[User] = None  # Опціонально для перевірки доступу
+        db: Session = Depends(get_db)
 ):
     """
     Отримати детальну інформацію про продукт
@@ -237,24 +236,9 @@ async def get_product(
     product.views_count += 1
     db.commit()
 
-    # Перевіряємо чи може користувач завантажити
-    can_download = False
+    # Тимчасово без перевірки користувача
+    can_download = product.is_free()
     is_purchased = False
-
-    if current_user:
-        # TODO: Перевірити чи куплений продукт
-        # is_purchased = check_if_purchased(current_user.id, product.id)
-
-        # Перевірити підписку
-        if product.requires_subscription:
-            for sub in current_user.subscriptions:
-                if sub.is_valid() and product.released_at >= sub.started_at:
-                    can_download = True
-                    break
-
-        # Безкоштовні доступні всім
-        if product.is_free():
-            can_download = True
 
     # Інформація про творця
     creator_info = None

@@ -1,34 +1,21 @@
 """
 Конфігурація бази даних для OhMyRevit
+Використовуємо SQLite замість PostgreSQL
 """
 
 import os
+from sqlalchemy import text
 from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
-from sqlalchemy.pool import NullPool
-from dotenv import load_dotenv
 
-# Завантажуємо змінні оточення
-load_dotenv()
-
-# Отримуємо URL бази даних з оточення
-DATABASE_URL = os.getenv(
-    "DATABASE_URL",
-    f"postgresql://{os.getenv('DB_USER')}:{os.getenv('DB_PASSWORD')}@postgres:5432/{os.getenv('DB_NAME')}"
-)
+# Використовуємо SQLite замість PostgreSQL
+DATABASE_URL = "sqlite:///./ohmyrevit.db"
 
 # Створюємо движок бази даних
-# Для асинхронної роботи використовуємо asyncpg
-if "postgresql" in DATABASE_URL:
-    # Заміна для сумісності з asyncpg
-    DATABASE_URL = DATABASE_URL.replace("postgresql://", "postgresql+asyncpg://")
-
-# Налаштування движка
 engine = create_engine(
     DATABASE_URL,
-    poolclass=NullPool,  # Використовуємо NullPool для уникнення проблем з Docker
-    echo=os.getenv("DEBUG", "False").lower() == "true"  # Логування SQL запитів в debug режимі
+    connect_args={"check_same_thread": False}  # Потрібно для SQLite
 )
 
 # Створюємо фабрику сесій
@@ -65,7 +52,7 @@ def init_db():
     from app.models import user, product, order, subscription
 
     Base.metadata.create_all(bind=engine)
-    print("✅ База даних ініціалізована")
+    print("✅ База даних ініціалізована (SQLite)")
 
 
 # Функція для перевірки з'єднання
@@ -75,9 +62,9 @@ def check_db_connection():
     """
     try:
         db = SessionLocal()
-        db.execute("SELECT 1")
+        db.execute(text("SELECT 1"))  # Додали text()
         db.close()
-        print("✅ З'єднання з БД успішне")
+        print("✅ З'єднання з БД успішне (SQLite)")
         return True
     except Exception as e:
         print(f"❌ Помилка з'єднання з БД: {e}")
