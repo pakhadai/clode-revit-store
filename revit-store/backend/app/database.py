@@ -1,71 +1,48 @@
 """
 Конфігурація бази даних для OhMyRevit
-Використовуємо SQLite замість PostgreSQL
+Використовуємо PostgreSQL
 """
 
 import os
-from sqlalchemy import text
-from sqlalchemy import create_engine
-from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy import text, create_engine
 from sqlalchemy.orm import sessionmaker
+from sqlalchemy.ext.declarative import declarative_base
+from dotenv import load_dotenv
 
-# Використовуємо SQLite замість PostgreSQL
-DATABASE_URL = "sqlite:///./ohmyrevit.db"
+# Завантажуємо змінні оточення
+load_dotenv()
+
+# Формуємо URL для підключення до PostgreSQL з .env файлу
+# Переконайтесь, що у вас є .env файл в папці backend/ з цим рядком
+DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://user:password@localhost:5432/db")
 
 # Створюємо движок бази даних
-engine = create_engine(
-    DATABASE_URL,
-    connect_args={"check_same_thread": False}  # Потрібно для SQLite
-)
+engine = create_engine(DATABASE_URL)
 
 # Створюємо фабрику сесій
-SessionLocal = sessionmaker(
-    autocommit=False,
-    autoflush=False,
-    bind=engine
-)
+SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 # Базовий клас для моделей
 Base = declarative_base()
 
-
-# Dependency для отримання сесії БД
 def get_db():
-    """
-    Dependency для FastAPI endpoints.
-    Створює нову сесію БД для кожного запиту.
-    """
     db = SessionLocal()
     try:
         yield db
     finally:
         db.close()
 
-
-# Функція для створення всіх таблиць
-def init_db():
-    """
-    Ініціалізація бази даних.
-    Створює всі таблиці на основі моделей.
-    """
-    # Імпортуємо всі моделі щоб Base знав про них
-    from app.models import user, product, order, subscription
-
-    Base.metadata.create_all(bind=engine)
-    print("✅ База даних ініціалізована (SQLite)")
-
-
-# Функція для перевірки з'єднання
 def check_db_connection():
-    """
-    Перевірка з'єднання з базою даних
-    """
     try:
-        db = SessionLocal()
-        db.execute(text("SELECT 1"))  # Додали text()
-        db.close()
-        print("✅ З'єднання з БД успішне (SQLite)")
+        with engine.connect() as connection:
+            connection.execute(text("SELECT 1"))
+        print("✅ З'єднання з БД успішне (PostgreSQL)")
         return True
     except Exception as e:
-        print(f"❌ Помилка з'єднання з БД: {e}")
+        print(f"❌ Помилка з'єднання з БД (PostgreSQL): {e}")
         return False
+
+def init_db():
+    from app.models import user, product, order, subscription
+    Base.metadata.create_all(bind=engine)
+    print("✅ База даних ініціалізована (PostgreSQL)")
