@@ -1,0 +1,7 @@
+echo "revit-store/venv/
+revit-store/__pycache__/
+revit-store/*.pyc
+revit-store/.env
+revit-store/.env.local
+revit-store/.idea/
+revit-store/*.zip" > .gitignore
