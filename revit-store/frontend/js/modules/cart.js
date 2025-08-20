@@ -164,7 +164,7 @@ class CartModule {
 
             if (response.valid) {
                 this.promoCode = response;
-                Utils.showNotification(`Промокод застосовано: -${response.discount_value}${response.discount_type === 'percent' ? '%' : '}`, 'success');
+                Utils.showNotification(`Промокод застосовано: -${response.discount_value}${response.discount_type === 'percent' ? '%' : ''}`, 'success');
                 return true;
             } else {
                 Utils.showNotification('Невірний промокод', 'error');
@@ -230,11 +230,9 @@ class CartModule {
             <div class="cart-page max-w-4xl mx-auto">
                 <h1 class="text-3xl font-bold mb-6 dark:text-white">Кошик</h1>
 
-                <!-- Список товарів -->
                 <div class="cart-items space-y-4 mb-8">
                     ${this.items.map(item => `
                         <div class="cart-item bg-white dark:bg-gray-800 rounded-lg p-4 flex gap-4">
-                            <!-- Зображення -->
                             <div class="w-24 h-24 bg-gray-200 dark:bg-gray-700 rounded-lg overflow-hidden flex-shrink-0">
                                 ${item.preview_image ?
                                     `<img src="${item.preview_image}" alt="${item.title}" class="w-full h-full object-cover">` :
@@ -244,13 +242,11 @@ class CartModule {
                                 }
                             </div>
 
-                            <!-- Інформація -->
                             <div class="flex-1">
                                 <h3 class="font-bold text-lg dark:text-white">${item.title}</h3>
                                 <p class="text-sm text-gray-600 dark:text-gray-400">SKU: ${item.sku}</p>
                             </div>
 
-                            <!-- Ціна -->
                             <div class="text-right">
                                 ${item.discount_percent > 0 ?
                                     `<div class="text-gray-400 line-through text-sm">${Utils.formatPrice(item.price)}</div>` : ''
@@ -260,7 +256,6 @@ class CartModule {
                                 </div>
                             </div>
 
-                            <!-- Видалити -->
                             <button onclick="cart.removeFromCart(${item.id})"
                                     class="text-red-500 hover:text-red-600 p-2">
                                 <span class="text-xl">❌</span>
@@ -269,11 +264,9 @@ class CartModule {
                     `).join('')}
                 </div>
 
-                <!-- Опції оплати -->
                 <div class="payment-options bg-white dark:bg-gray-800 rounded-lg p-6 mb-6">
                     <h2 class="text-xl font-bold mb-4 dark:text-white">Опції оплати</h2>
 
-                    <!-- Промокод -->
                     <div class="promo-code mb-4">
                         <label class="block text-sm font-medium mb-2 dark:text-gray-300">Промокод</label>
                         <div class="flex gap-2">
@@ -293,7 +286,6 @@ class CartModule {
                         }
                     </div>
 
-                    <!-- Бонуси -->
                     <div class="bonuses mb-4">
                         <label class="block text-sm font-medium mb-2 dark:text-gray-300">
                             Використати бонуси (доступно: ${bonusesAvailable})
@@ -310,7 +302,6 @@ class CartModule {
                         </div>
                     </div>
 
-                    <!-- Email -->
                     <div class="email mb-4">
                         <label class="block text-sm font-medium mb-2 dark:text-gray-300">
                             Email для дублювання архівів (опціонально)
@@ -321,7 +312,6 @@ class CartModule {
                                placeholder="your@email.com">
                     </div>
 
-                    <!-- Метод оплати -->
                     <div class="payment-method">
                         <label class="block text-sm font-medium mb-2 dark:text-gray-300">Метод оплати</label>
                         <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
@@ -349,7 +339,6 @@ class CartModule {
                     </div>
                 </div>
 
-                <!-- Підсумок -->
                 <div class="checkout-summary bg-gray-100 dark:bg-gray-800 rounded-lg p-6">
                     <h3 class="text-xl font-bold mb-4 dark:text-white">Підсумок</h3>
                     <div class="space-y-2" id="checkout-summary">

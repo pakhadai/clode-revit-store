@@ -100,15 +100,7 @@ class AuthModule {
             }
         }
     }
-}
 
-// Створюємо та експортуємо єдиний екземпляр
-const auth = new AuthModule();
-
-// Експортуємо для використання в інших модулях
-window.auth = auth;
-
-export default auth;
     /**
      * Ініціалізація Telegram Web App
      */
@@ -375,5 +367,13 @@ export default auth;
             this.tg.BackButton.hide();
         }
     }
+}
 
-    /**
+
+// Створюємо та експортуємо єдиний екземпляр
+const auth = new AuthModule();
+
+// Експортуємо для використання в інших модулях
+window.auth = auth;
+
+export default auth;
