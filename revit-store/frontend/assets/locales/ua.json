@@ -1,0 +1,254 @@
+{
+  "app": {
+    "name": "OhMyRevit",
+    "tagline": "Маркетплейс архівів Revit"
+  },
+  "navigation": {
+    "home": "Головна",
+    "market": "Маркет",
+    "cart": "Кошик",
+    "profile": "Профіль",
+    "admin": "Адмін"
+  },
+  "auth": {
+    "login": "Увійти",
+    "logout": "Вийти",
+    "loginWithTelegram": "Увійти через Telegram",
+    "welcome": "Вітаємо",
+    "authRequired": "Необхідна авторизація",
+    "authRequiredDesc": "Для доступу до цієї сторінки необхідно увійти"
+  },
+  "home": {
+    "subscription": {
+      "title": "Преміум підписка",
+      "benefits": {
+        "newArchives": "Доступ до нових преміум архівів",
+        "bonusSpins": "+2 прокрутки колеса щодня",
+        "cashback": "Кешбек 5% бонусами",
+        "support": "Пріоритетна підтримка"
+      },
+      "monthly": "Місячна $5",
+      "yearly": "Річна $50 (2 місяці безкоштовно)"
+    },
+    "dailyBonus": {
+      "title": "Щоденний бонус",
+      "streak": "Ваш стрік",
+      "day": "день",
+      "days": "дні",
+      "daysMany": "днів",
+      "claimBonus": "Отримати бонус",
+      "freeSpins": "Безкоштовні спроби",
+      "spinWheel": "Крутити колесо"
+    },
+    "productOfWeek": {
+      "title": "Товар тижня",
+      "details": "Детальніше"
+    },
+    "sections": {
+      "new": "Новинки",
+      "featured": "Популярні товари"
+    }
+  },
+  "market": {
+    "title": "Маркетплейс",
+    "filters": {
+      "allCategories": "Всі категорії",
+      "free": "Безкоштовні",
+      "premium": "Преміум",
+      "fromCreators": "Від творців",
+      "allTypes": "Всі типи",
+      "furniture": "Меблі",
+      "textures": "Текстури",
+      "components": "Компоненти",
+      "search": "Пошук...",
+      "onlyFree": "Тільки безкоштовні",
+      "new": "Новинки",
+      "withDiscount": "Зі знижкою"
+    },
+    "sorting": {
+      "newest": "Найновіші",
+      "priceAsc": "Ціна: за зростанням",
+      "priceDesc": "Ціна: за спаданням",
+      "rating": "Рейтинг",
+      "popularity": "Популярність"
+    },
+    "pagination": {
+      "page": "Сторінка",
+      "of": "з",
+      "prev": "Назад",
+      "next": "Далі"
+    }
+  },
+  "product": {
+    "free": "Безкоштовно",
+    "new": "Новинка",
+    "featured": "Популярне",
+    "requiresSubscription": "Потрібна підписка",
+    "addToCart": "В кошик",
+    "inCart": "В кошику",
+    "download": "Завантажити",
+    "share": "Поділитися",
+    "favorite": "В обране",
+    "description": "Опис",
+    "tags": "Теги",
+    "creator": "Творець",
+    "verified": "Підтверджений",
+    "stats": {
+      "downloads": "завантажень",
+      "views": "переглядів",
+      "rating": "з 5",
+      "ratingCount": "оцінка",
+      "ratingsCount": "оцінки",
+      "ratingsCountMany": "оцінок"
+    },
+    "discount": {
+      "endsAt": "Знижка діє до"
+    }
+  },
+  "cart": {
+    "title": "Кошик",
+    "empty": "Кошик порожній",
+    "emptyDesc": "Додайте товари з маркетплейсу",
+    "goToMarket": "Перейти до маркету",
+    "items": "Товарів",
+    "subtotal": "Сума",
+    "discount": "Знижка",
+    "bonuses": "Бонуси",
+    "total": "До сплати",
+    "checkout": "Перейти до оплати",
+    "payment": {
+      "title": "Опції оплати",
+      "promoCode": "Промокод",
+      "enterPromo": "Введіть промокод",
+      "apply": "Застосувати",
+      "promoApplied": "Промокод застосовано",
+      "useBonuses": "Використати бонуси",
+      "available": "доступно",
+      "max": "Макс",
+      "ofTotal": "від суми",
+      "email": "Email для дублювання архівів (опціонально)",
+      "method": "Метод оплати",
+      "crypto": "Криптовалюта",
+      "bonusesOnly": "Тільки бонуси",
+      "subscription": "Підписка"
+    },
+    "summary": {
+      "title": "Підсумок"
+    }
+  },
+  "profile": {
+    "balance": "бонусів",
+    "noVip": "Без VIP",
+    "creator": "Творець",
+    "admin": "Адмін",
+    "tabs": {
+      "downloads": "Завантаження",
+      "orders": "Замовлення",
+      "favorites": "Обране",
+      "referrals": "Реферали",
+      "settings": "Налаштування"
+    },
+    "referrals": {
+      "title": "Реферальна програма",
+      "yourCode": "Ваш код",
+      "copy": "Копіювати",
+      "invited": "Запрошено",
+      "earned": "Зароблено",
+      "bonusForReg": "30 бонусів за реєстрацію",
+      "percentFromPurchases": "5% від покупок"
+    },
+    "settings": {
+      "language": "Мова інтерфейсу",
+      "theme": "Тема",
+      "light": "Світла",
+      "dark": "Темна",
+      "notifications": "Сповіщення",
+      "enabled": "Увімкнено",
+      "disabled": "Вимкнено",
+      "security": "Безпека",
+      "pinCode": "PIN-код",
+      "change": "Змінити",
+      "twoFactor": "Двофакторна автентифікація"
+    },
+    "vip": {
+      "title": "VIP система",
+      "bronze": "Бронза",
+      "silver": "Срібло",
+      "gold": "Золото",
+      "diamond": "Діамант",
+      "cashback": "кешбек",
+      "from": "від"
+    }
+  },
+  "notifications": {
+    "success": "Успішно",
+    "error": "Помилка",
+    "warning": "Попередження",
+    "info": "Інформація",
+    "copied": "Скопійовано в буфер обміну",
+    "failedToCopy": "Не вдалося скопіювати",
+    "addedToCart": "Додано в кошик",
+    "removedFromCart": "Видалено з кошика",
+    "alreadyInCart": "Товар вже в кошику",
+    "profileUpdated": "Профіль оновлено",
+    "bonusClaimed": "Отримано бонусів",
+    "alreadyClaimed": "Ви вже отримали бонус сьогодні",
+    "orderSuccess": "Замовлення успішно оформлено",
+    "orderError": "Помилка оформлення замовлення",
+    "selectPaymentMethod": "Виберіть метод оплати",
+    "authError": "Помилка автентифікації",
+    "loadError": "Помилка завантаження",
+    "invalidPromo": "Невірний промокод",
+    "noNotifications": "Немає нових сповіщень",
+    "comingSoon": "Буде доступно найближчим часом"
+  },
+  "errors": {
+    "404": "Сторінку не знайдено",
+    "404Desc": "Вибачте, але запитувана сторінка не існує",
+    "500": "Щось пішло не так",
+    "500Desc": "Невідома помилка",
+    "reload": "Перезавантажити",
+    "backHome": "На головну",
+    "telegramDataNotAvailable": "Telegram Web App дані не доступні",
+    "failedToGetToken": "Не вдалося отримати токен"
+  },
+  "buttons": {
+    "save": "Зберегти",
+    "cancel": "Скасувати",
+    "delete": "Видалити",
+    "edit": "Редагувати",
+    "close": "Закрити",
+    "confirm": "Підтвердити",
+    "back": "Назад",
+    "next": "Далі",
+    "more": "Більше",
+    "less": "Менше",
+    "all": "Всі",
+    "clear": "Очистити",
+    "reset": "Скинути",
+    "search": "Пошук",
+    "filter": "Фільтр",
+    "sort": "Сортування",
+    "share": "Поділитися",
+    "download": "Завантажити",
+    "upload": "Завантажити",
+    "add": "Додати",
+    "remove": "Видалити"
+  },
+  "time": {
+    "today": "Сьогодні",
+    "yesterday": "Вчора",
+    "week": "Тиждень",
+    "month": "Місяць",
+    "year": "Рік",
+    "days": "днів",
+    "hours": "годин",
+    "minutes": "хвилин",
+    "seconds": "секунд"
+  },
+  "currency": {
+    "usd": "$",
+    "uah": "₴",
+    "bonuses": "бонусів"
+  }
+}

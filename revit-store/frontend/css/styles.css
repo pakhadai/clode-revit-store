@@ -1,0 +1,387 @@
+/*
+ * Основні стилі для OhMyRevit
+ * Додаткові стилі до Tailwind CSS
+ */
+
+/* ========== Базові стилі ========== */
+:root {
+  --primary-color: #3B82F6;
+  --secondary-color: #8B5CF6;
+  --success-color: #10B981;
+  --warning-color: #F59E0B;
+  --danger-color: #EF4444;
+  --dark-bg: #1F2937;
+  --dark-card: #374151;
+}
+
+/* Плавні переходи для всіх елементів */
+* {
+  transition: background-color 0.3s ease,
+              color 0.3s ease,
+              border-color 0.3s ease,
+              transform 0.2s ease;
+}
+
+/* Приховування скролбару для Telegram Web App */
+::-webkit-scrollbar {
+  width: 0px;
+  background: transparent;
+}
+
+/* Фіксована висота для мобільних пристроїв */
+html, body {
+  height: 100%;
+  overflow-x: hidden;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+/* Основний контейнер */
+#app {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+main {
+  flex: 1;
+  overflow-y: auto;
+  padding-bottom: 80px;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* ========== Анімації ========== */
+
+/* Loader */
+.loader {
+  border-top-color: var(--primary-color);
+  animation: spinner 1.5s linear infinite;
+}
+
+@keyframes spinner {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Повідомлення */
+.notification-toast {
+  animation: slideIn 0.3s ease;
+}
+
+@keyframes slideIn {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+/* Fade In */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.fade-in {
+  animation: fadeIn 0.3s ease;
+}
+
+/* Pulse */
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+.pulse {
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+/* Bounce */
+@keyframes bounce {
+  0%, 100% {
+    transform: translateY(-25%);
+    animation-timing-function: cubic-bezier(0.8, 0, 1, 1);
+  }
+  50% {
+    transform: translateY(0);
+    animation-timing-function: cubic-bezier(0, 0, 0.2, 1);
+  }
+}
+
+.bounce {
+  animation: bounce 1s infinite;
+}
+
+/* ========== Колесо фортуни ========== */
+
+.wheel-container {
+  position: relative;
+  width: 300px;
+  height: 300px;
+  margin: 0 auto;
+}
+
+.wheel {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 0 20px rgba(0, 0, 0, 0.2);
+}
+
+.wheel-sector {
+  position: absolute;
+  width: 50%;
+  height: 50%;
+  transform-origin: right bottom;
+}
+
+.wheel-spinning {
+  animation: wheelSpin 3s cubic-bezier(0.17, 0.67, 0.83, 0.67);
+}
+
+@keyframes wheelSpin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(720deg); }
+}
+
+.wheel-pointer {
+  position: absolute;
+  top: -20px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 0;
+  height: 0;
+  border-left: 20px solid transparent;
+  border-right: 20px solid transparent;
+  border-top: 40px solid #EF4444;
+  z-index: 10;
+}
+
+/* ========== Компоненти ========== */
+
+/* Картки товарів */
+.product-card {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.product-card:hover {
+  transform: translateY(-4px);
+}
+
+.product-card:active {
+  transform: scale(0.98);
+}
+
+/* Обрізання тексту */
+.line-clamp-1 {
+  display: -webkit-box;
+  -webkit-line-clamp: 1;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.line-clamp-2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.line-clamp-3 {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* Бейджі */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  font-weight: 600;
+  font-size: 0.75rem;
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.25rem;
+}
+
+/* Кнопки навігації */
+.nav-btn {
+  position: relative;
+  transition: color 0.2s ease;
+}
+
+.nav-btn.active::after {
+  content: '';
+  position: absolute;
+  bottom: -4px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 4px;
+  height: 4px;
+  background-color: currentColor;
+  border-radius: 50%;
+}
+
+/* Таби */
+.tab-btn {
+  position: relative;
+  transition: all 0.2s ease;
+}
+
+.tab-btn.active {
+  border-bottom: 2px solid var(--primary-color);
+  color: var(--primary-color);
+}
+
+/* ========== Темна тема ========== */
+
+.dark {
+  background-color: var(--dark-bg);
+  color: #F3F4F6;
+}
+
+.dark .bg-white {
+  background-color: var(--dark-card);
+}
+
+.dark .text-gray-600 {
+  color: #9CA3AF;
+}
+
+.dark .text-gray-700 {
+  color: #D1D5DB;
+}
+
+.dark .text-gray-800 {
+  color: #E5E7EB;
+}
+
+.dark .border-gray-300 {
+  border-color: #4B5563;
+}
+
+.dark .hover\:bg-gray-100:hover {
+  background-color: #4B5563;
+}
+
+/* ========== Модальні вікна ========== */
+
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  z-index: 40;
+  animation: fadeIn 0.2s ease;
+}
+
+.modal-content {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background-color: white;
+  border-radius: 0.5rem;
+  padding: 1.5rem;
+  max-width: 90%;
+  max-height: 90%;
+  overflow-y: auto;
+  z-index: 50;
+  animation: modalSlideIn 0.3s ease;
+}
+
+.dark .modal-content {
+  background-color: var(--dark-card);
+}
+
+@keyframes modalSlideIn {
+  from {
+    transform: translate(-50%, -40%);
+    opacity: 0;
+  }
+  to {
+    transform: translate(-50%, -50%);
+    opacity: 1;
+  }
+}
+
+/* ========== Форми ========== */
+
+input:focus,
+textarea:focus,
+select:focus {
+  outline: none;
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.dark input,
+.dark textarea,
+.dark select {
+  background-color: #4B5563;
+  color: white;
+}
+
+/* ========== Утиліти ========== */
+
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+.safe-area-inset {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+.container {
+  max-width: 768px;
+  margin: 0 auto;
+}
+
+/* Адаптація для Telegram Web App */
+@supports (padding: max(0px)) {
+  main {
+    padding-bottom: max(80px, env(safe-area-inset-bottom));
+  }
+}
+
+/* ========== Медіа-запити ========== */
+
+/* Планшети та більше */
+@media (min-width: 768px) {
+  .container {
+    max-width: 1024px;
+  }
+
+  .product-card:hover {
+    transform: translateY(-8px);
+  }
+}
+
+/* Десктоп */
+@media (min-width: 1024px) {
+  .container {
+    max-width: 1280px;
+  }
+}
+
+/* Друк */
+@media print {
+  nav, header, .no-print {
+    display: none !important;
+  }
+
+  main {
+    padding: 0 !important;
+  }
+}
