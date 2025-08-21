@@ -107,29 +107,41 @@ const Utils = {
     /**
      * Показати лоадер
      */
-    showLoader(show = true) {
-        let loader = document.getElementById('global-loader');
+     showLoader: (() => {
+        let loaderTimeout; // Ця змінна тепер "живе" всередині і доступна лише для showLoader
 
-        if (show) {
-            if (!loader) {
-                loader = document.createElement('div');
-                loader.id = 'global-loader';
-                loader.className = 'fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center';
-                loader.innerHTML = `
-                    <div class="bg-white rounded-lg p-6 flex flex-col items-center">
-                        <div class="loader border-4 border-blue-500 border-t-transparent rounded-full w-12 h-12 animate-spin"></div>
-                        <p class="mt-4 text-gray-700">${window.app.t('notifications.loading', 'Завантаження...')}</p>
-                    </div>
-                `;
-                document.body.appendChild(loader);
+        // Повертаємо саму функцію, яка буде використовуватись у вашому коді
+        return function(show = true) {
+            let loader = document.getElementById('global-loader');
+
+            // Завжди очищуємо попередній таймер, якщо він був
+            clearTimeout(loaderTimeout);
+
+            if (show) {
+                // Встановлюємо таймер, щоб показати лоадер лише якщо завантаження триває
+                loaderTimeout = setTimeout(() => {
+                    if (!loader) {
+                        loader = document.createElement('div');
+                        loader.id = 'global-loader';
+                        loader.className = 'fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center';
+                        loader.innerHTML = `
+                            <div class="bg-white rounded-lg p-6 flex flex-col items-center">
+                                <div class="loader border-4 border-blue-500 border-t-transparent rounded-full w-12 h-12 animate-spin"></div>
+                                <p class="mt-4 text-gray-700">${window.app.t('notifications.loading', 'Завантаження...')}</p>
+                            </div>
+                        `;
+                        document.body.appendChild(loader);
+                    }
+                    loader.classList.remove('hidden');
+                }, 200); // Затримка 200 мс
+            } else {
+                // Якщо лоадер вже є, ховаємо його
+                if (loader) {
+                    loader.classList.add('hidden');
+                }
             }
-            loader.classList.remove('hidden');
-        } else {
-            if (loader) {
-                loader.classList.add('hidden');
-            }
-        }
-    },
+        };
+    })(),
 
     /**
      * Локальне сховище з підтримкою JSON

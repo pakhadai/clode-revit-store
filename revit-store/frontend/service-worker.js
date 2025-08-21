@@ -20,9 +20,10 @@ const urlsToCache = [
   '/js/components/wheel-of-fortune.js',
   '/assets/locales/en.json',
   '/assets/locales/ua.json',
-  '/assets/locales/ru.json',
-  '/assets/icons/icon-192x192.png',
-  '/assets/icons/icon-512x512.png'
+  '/assets/locales/ru.json'
+  // Рядки з іконками видалено, щоб уникнути помилки 404
+  // '/assets/icons/icon-192x192.png',
+  // '/assets/icons/icon-512x512.png'
 ];
 
 // Установка Service Worker
@@ -33,7 +34,20 @@ self.addEventListener('install', event => {
     caches.open(CACHE_NAME)
       .then(cache => {
         console.log('Opened cache');
-        return cache.addAll(urlsToCache);
+        // Використовуємо індивідуальні запити, щоб ігнорувати помилки для некритичних файлів
+        const cachePromises = urlsToCache.map(urlToCache => {
+            return fetch(new Request(urlToCache, {cache: 'reload'}))
+                .then(response => {
+                    if (response.ok) {
+                        return cache.put(urlToCache, response);
+                    }
+                    console.warn(`Failed to fetch and cache ${urlToCache}`);
+                    return Promise.resolve(); // Продовжуємо, навіть якщо один файл не знайдено
+                }).catch(err => {
+                    console.error(`Fetch error for ${urlToCache}:`, err);
+                });
+        });
+        return Promise.all(cachePromises);
       })
       .then(() => self.skipWaiting())
   );
