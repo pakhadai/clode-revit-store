@@ -1,17 +1,22 @@
 """
-Роутер для роботи з підписками
+Роутер для управління підписками
 """
 
-from fastapi import APIRouter, HTTPException, Depends, Query, Request
+from fastapi import APIRouter, HTTPException, Depends, BackgroundTasks
 from sqlalchemy.orm import Session
-from typing import Dict, List, Optional
+from typing import Dict, Optional
 from datetime import datetime, timedelta
+import os
+from dotenv import load_dotenv
 
 from app.database import get_db
 from app.models.user import User
 from app.models.subscription import Subscription, SubscriptionHistory
 from app.routers.auth import get_current_user_from_token
 from app.services.payment_service import PaymentService
+from app.utils.security import generate_order_number
+
+load_dotenv()
 
 # Створюємо роутер
 router = APIRouter(
@@ -22,411 +27,388 @@ router = APIRouter(
 # Ініціалізуємо платіжний сервіс
 payment_service = PaymentService()
 
+# Плани підписок
+SUBSCRIPTION_PLANS = {
+    "monthly": {
+        "price_usd": 5.00,
+        "price_cents": 500,
+        "days": 30,
+        "name": {"en": "Monthly", "ua": "Місячна", "ru": "Месячная"},
+        "description": {
+            "en": "Access to all premium archives for 30 days",
+            "ua": "Доступ до всіх преміум архівів на 30 днів",
+            "ru": "Доступ ко всем премиум архивам на 30 дней"
+        },
+        "benefits": {
+            "daily_spins_bonus": 2,
+            "cashback_percent": 5
+        }
+    },
+    "yearly": {
+        "price_usd": 50.00,
+        "price_cents": 5000,
+        "days": 365,
+        "name": {"en": "Yearly", "ua": "Річна", "ru": "Годовая"},
+        "description": {
+            "en": "Access to all premium archives for 365 days (2 months free!)",
+            "ua": "Доступ до всіх преміум архівів на 365 днів (2 місяці безкоштовно!)",
+            "ru": "Доступ ко всем премиум архивам на 365 дней (2 месяца бесплатно!)"
+        },
+        "benefits": {
+            "daily_spins_bonus": 2,
+            "cashback_percent": 5
+        },
+        "discount": "2_months_free"
+    }
+}
 
-# ====== ПЛАНИ ПІДПИСОК ======
 
 @router.get("/plans")
 async def get_subscription_plans(
-        language: str = Query("en", description="Мова: en, ua, ru")
+    language: str = "en",
+    current_user: Optional[User] = Depends(get_current_user_from_token)
 ) -> Dict:
     """
     Отримати доступні плани підписок
 
-    Args:
-        language: Мова для локалізації
-
     Returns:
-        Список планів з перевагами
+        Список планів з цінами та привілеями
     """
-    plans = {
-        "monthly": {
-            "id": "monthly",
-            "name": {
-                "en": "Monthly Premium",
-                "ua": "Місячна Premium",
-                "ru": "Месячная Premium"
-            },
-            "description": {
-                "en": "Get full access for 30 days",
-                "ua": "Отримайте повний доступ на 30 днів",
-                "ru": "Получите полный доступ на 30 дней"
-            },
-            "price": 500,  # В центах
-            "price_display": "$5.00",
-            "currency": "USD",
-            "duration_days": 30,
-            "benefits": {
-                "en": [
-                    "Access to new premium archives",
-                    "+2 wheel spins daily",
-                    "5% cashback in bonuses",
-                    "Priority support",
-                    "Exclusive discounts"
-                ],
-                "ua": [
-                    "Доступ до нових преміум архівів",
-                    "+2 прокрутки колеса щодня",
-                    "5% кешбек бонусами",
-                    "Пріоритетна підтримка",
-                    "Ексклюзивні знижки"
-                ],
-                "ru": [
-                    "Доступ к новым премиум архивам",
-                    "+2 прокрутки колеса в день",
-                    "5% кэшбэк бонусами",
-                    "Приоритетная поддержка",
-                    "Эксклюзивные скидки"
-                ]
-            },
-            "badge": {
-                "en": "POPULAR",
-                "ua": "ПОПУЛЯРНЕ",
-                "ru": "ПОПУЛЯРНОЕ"
-            },
-            "color": "blue"
-        },
-        "yearly": {
-            "id": "yearly",
-            "name": {
-                "en": "Yearly Premium",
-                "ua": "Річна Premium",
-                "ru": "Годовая Premium"
-            },
-            "description": {
-                "en": "Get full access for 365 days (Save 2 months!)",
-                "ua": "Отримайте повний доступ на 365 днів (Економія 2 місяці!)",
-                "ru": "Получите полный доступ на 365 дней (Экономия 2 месяца!)"
-            },
-            "price": 5000,  # В центах
-            "price_display": "$50.00",
-            "currency": "USD",
-            "duration_days": 365,
-            "benefits": {
-                "en": [
-                    "All monthly benefits",
-                    "Save $10 (2 months free)",
-                    "Annual exclusive content",
-                    "Early access to new features",
-                    "VIP status boost"
-                ],
-                "ua": [
-                    "Всі переваги місячної підписки",
-                    "Економія $10 (2 місяці безкоштовно)",
-                    "Річний ексклюзивний контент",
-                    "Ранній доступ до нових функцій",
-                    "Прискорення VIP статусу"
-                ],
-                "ru": [
-                    "Все преимущества месячной подписки",
-                    "Экономия $10 (2 месяца бесплатно)",
-                    "Годовой эксклюзивный контент",
-                    "Ранний доступ к новым функциям",
-                    "Ускорение VIP статуса"
-                ]
-            },
-            "badge": {
-                "en": "BEST VALUE",
-                "ua": "НАЙКРАЩА ЦІНА",
-                "ru": "ЛУЧШАЯ ЦЕНА"
-            },
-            "color": "purple",
-            "savings": {
-                "amount": 1000,
-                "percentage": 17,
-                "text": {
-                    "en": "Save 17%",
-                    "ua": "Економія 17%",
-                    "ru": "Экономия 17%"
-                }
-            }
-        }
-    }
-
-    # Формуємо відповідь з локалізацією
-    localized_plans = []
-    for plan_id, plan in plans.items():
-        localized_plan = {
-            "id": plan["id"],
+    plans = []
+    for plan_id, plan in SUBSCRIPTION_PLANS.items():
+        plans.append({
+            "id": plan_id,
             "name": plan["name"].get(language, plan["name"]["en"]),
             "description": plan["description"].get(language, plan["description"]["en"]),
-            "price": plan["price"],
-            "price_display": plan["price_display"],
-            "currency": plan["currency"],
-            "duration_days": plan["duration_days"],
-            "benefits": plan["benefits"].get(language, plan["benefits"]["en"]),
-            "color": plan["color"]
-        }
+            "price_usd": plan["price_usd"],
+            "price_cents": plan["price_cents"],
+            "duration_days": plan["days"],
+            "benefits": plan["benefits"],
+            "discount": plan.get("discount"),
+            "is_best_value": plan_id == "yearly"
+        })
 
-        if "badge" in plan:
-            localized_plan["badge"] = plan["badge"].get(language, plan["badge"]["en"])
-
-        if "savings" in plan:
-            localized_plan["savings"] = {
-                "amount": plan["savings"]["amount"],
-                "percentage": plan["savings"]["percentage"],
-                "text": plan["savings"]["text"].get(language, plan["savings"]["text"]["en"])
-            }
-
-        localized_plans.append(localized_plan)
+    # Перевіряємо чи є активна підписка
+    active_subscription = None
+    if current_user:
+        for sub in current_user.subscriptions:
+            if sub.is_valid():
+                active_subscription = {
+                    "plan_type": sub.plan_type,
+                    "expires_at": sub.expires_at.isoformat(),
+                    "days_remaining": sub.days_remaining(),
+                    "auto_renew": sub.auto_renew
+                }
+                break
 
     return {
-        "plans": localized_plans,
-        "features": {
-            "title": {
-                "en": "Premium Features",
-                "ua": "Premium можливості",
-                "ru": "Premium возможности"
-            }.get(language, "Premium Features"),
-            "list": {
-                "en": [
-                    "📦 Access to all new premium archives",
-                    "🎰 +2 daily wheel spins",
-                    "💰 5% cashback on all purchases",
-                    "⚡ Priority customer support",
-                    "🎁 Exclusive bonuses and promotions",
-                    "📥 Unlimited downloads",
-                    "🏆 VIP status acceleration"
-                ],
-                "ua": [
-                    "📦 Доступ до всіх нових преміум архівів",
-                    "🎰 +2 щоденні прокрутки колеса",
-                    "💰 5% кешбек з усіх покупок",
-                    "⚡ Пріоритетна підтримка",
-                    "🎁 Ексклюзивні бонуси та акції",
-                    "📥 Необмежені завантаження",
-                    "🏆 Прискорення VIP статусу"
-                ],
-                "ru": [
-                    "📦 Доступ ко всем новым премиум архивам",
-                    "🎰 +2 ежедневных прокрутки колеса",
-                    "💰 5% кэшбэк со всех покупок",
-                    "⚡ Приоритетная поддержка",
-                    "🎁 Эксклюзивные бонусы и акции",
-                    "📥 Неограниченные загрузки",
-                    "🏆 Ускорение VIP статуса"
-                ]
-            }.get(language, [])
-        }
+        "plans": plans,
+        "active_subscription": active_subscription,
+        "features": [
+            "✅ Доступ до нових архівів з дати підписки",
+            "✅ +2 прокрутки колеса щодня",
+            "✅ 5% кешбек бонусами",
+            "✅ Пріоритетна підтримка",
+            "✅ Всі куплені архіви зберігаються назавжди"
+        ]
     }
-
-
-@router.get("/status")
-async def get_subscription_status(
-        current_user: User = Depends(get_current_user_from_token),
-        db: Session = Depends(get_db)
-) -> Dict:
-    """
-    Отримати статус підписки користувача
-
-    Returns:
-        Інформація про активну підписку
-    """
-    # Шукаємо активну підписку
-    active_subscription = None
-    for subscription in current_user.subscriptions:
-        if subscription.is_valid():
-            active_subscription = subscription
-            break
-
-    if active_subscription:
-        return {
-            "has_subscription": True,
-            "subscription": {
-                "id": active_subscription.id,
-                "plan_type": active_subscription.plan_type,
-                "started_at": active_subscription.started_at.isoformat(),
-                "expires_at": active_subscription.expires_at.isoformat(),
-                "days_remaining": active_subscription.days_remaining(),
-                "auto_renew": active_subscription.auto_renew,
-                "is_cancelled": active_subscription.is_cancelled,
-                "benefits": {
-                    "daily_spins_bonus": active_subscription.daily_spins_bonus,
-                    "cashback_percent": active_subscription.cashback_percent
-                }
-            }
-        }
-    else:
-        return {
-            "has_subscription": False,
-            "subscription": None
-        }
 
 
 @router.post("/create")
 async def create_subscription(
-        plan_type: str,
-        language: str = Query("en"),
-        current_user: User = Depends(get_current_user_from_token),
-        db: Session = Depends(get_db)
+    plan_type: str,
+    payment_method: str = "crypto",
+    currency: str = "USDT",
+    background_tasks: BackgroundTasks = BackgroundTasks(),
+    current_user: User = Depends(get_current_user_from_token),
+    db: Session = Depends(get_db)
 ) -> Dict:
     """
     Створити нову підписку
 
     Args:
         plan_type: Тип плану (monthly/yearly)
-        language: Мова для платежу
+        payment_method: Метод оплати (crypto/bonuses)
+        currency: Криптовалюта для оплати (BTC/ETH/USDT)
 
     Returns:
-        Посилання на оплату
+        Інформація про підписку та платіжне посилання
     """
+    # Перевіряємо план
+    if plan_type not in SUBSCRIPTION_PLANS:
+        raise HTTPException(status_code=400, detail="Invalid plan type")
+
+    plan = SUBSCRIPTION_PLANS[plan_type]
+
     # Перевіряємо чи немає активної підписки
-    for subscription in current_user.subscriptions:
-        if subscription.is_valid():
+    for sub in current_user.subscriptions:
+        if sub.is_valid():
             raise HTTPException(
                 status_code=400,
-                detail={
-                    "en": "You already have an active subscription",
-                    "ua": "У вас вже є активна підписка",
-                    "ru": "У вас уже есть активная подписка"
-                }.get(language, "You already have an active subscription")
+                detail="У вас вже є активна підписка"
             )
 
-    # Створюємо нову підписку
-    new_subscription = Subscription.create_subscription(
-        user_id=current_user.id,
-        plan_type=plan_type
-    )
-
-    db.add(new_subscription)
+    # Створюємо підписку
+    subscription = Subscription.create_subscription(current_user.id, plan_type)
+    db.add(subscription)
     db.commit()
-    db.refresh(new_subscription)
+    db.refresh(subscription)
 
-    # Створюємо платіж через Cryptomus
-    try:
-        payment_data = payment_service.create_subscription_payment(
-            user_id=current_user.id,
-            plan_type=plan_type,
-            language=language
-        )
+    # Обробка оплати
+    if payment_method == "bonuses":
+        # Оплата бонусами
+        if current_user.balance < plan["price_cents"]:
+            raise HTTPException(
+                status_code=400,
+                detail="Недостатньо бонусів"
+            )
 
-        # Зберігаємо payment_id в підписці
-        new_subscription.payment_id = payment_data['payment_id']
-        db.commit()
+        # Списуємо бонуси
+        current_user.balance -= plan["price_cents"]
 
-        # Записуємо в історію
+        # Активуємо підписку
+        subscription.payment_status = "completed"
+        subscription.payment_method = "bonuses"
+        subscription.is_active = True
+
+        # Додаємо в історію
         history = SubscriptionHistory(
             user_id=current_user.id,
-            subscription_id=new_subscription.id,
-            action='created',
-            details={
-                'plan_type': plan_type,
-                'payment_id': payment_data['payment_id']
-            }
+            subscription_id=subscription.id,
+            action="created",
+            details={"method": "bonuses", "amount": plan["price_cents"]}
         )
         db.add(history)
         db.commit()
 
         return {
             "success": True,
-            "subscription_id": new_subscription.id,
-            "payment_url": payment_data['payment_url'],
-            "payment_id": payment_data['payment_id'],
-            "amount": payment_data['amount'],
-            "currency": payment_data['currency'],
-            "expires_at": payment_data.get('expires_at'),
-            "message": {
-                "en": "Redirecting to payment...",
-                "ua": "Перенаправлення на оплату...",
-                "ru": "Перенаправление на оплату..."
-            }.get(language, "Redirecting to payment...")
+            "subscription_id": subscription.id,
+            "message": "Підписка успішно активована",
+            "expires_at": subscription.expires_at.isoformat()
         }
 
-    except Exception as e:
-        # Видаляємо підписку якщо не вдалося створити платіж
-        db.delete(new_subscription)
-        db.commit()
+    elif payment_method == "crypto":
+        # Створюємо платіж через Cryptomus
+        order_id = generate_order_number()
 
-        raise HTTPException(
-            status_code=500,
-            detail={
-                "en": f"Failed to create payment: {str(e)}",
-                "ua": f"Не вдалося створити платіж: {str(e)}",
-                "ru": f"Не удалось создать платеж: {str(e)}"
-            }.get(language, f"Failed to create payment: {str(e)}")
+        payment_data = payment_service.create_payment(
+            amount=plan["price_usd"],
+            currency=currency,
+            order_id=order_id,
+            description=f"OhMyRevit {plan_type} subscription",
+            user_id=current_user.id,
+            subscription_id=subscription.id
         )
 
+        if payment_data["success"]:
+            # Зберігаємо payment_id
+            subscription.payment_id = payment_data["payment_id"]
+            subscription.payment_method = f"crypto_{currency}"
+            db.commit()
 
-@router.post("/cancel")
+            # Плануємо перевірку статусу через 5 хвилин
+            background_tasks.add_task(
+                check_payment_status,
+                subscription.id,
+                payment_data["payment_id"],
+                db
+            )
+
+            return {
+                "success": True,
+                "subscription_id": subscription.id,
+                "payment_url": payment_data["payment_url"],
+                "payment_id": payment_data["payment_id"],
+                "amount": plan["price_usd"],
+                "currency": currency,
+                "message": "Перейдіть за посиланням для оплати"
+            }
+        else:
+            raise HTTPException(
+                status_code=500,
+                detail="Помилка створення платежу"
+            )
+
+    else:
+        raise HTTPException(status_code=400, detail="Invalid payment method")
+
+
+@router.post("/cancel/{subscription_id}")
 async def cancel_subscription(
-        current_user: User = Depends(get_current_user_from_token),
-        db: Session = Depends(get_db)
+    subscription_id: int,
+    current_user: User = Depends(get_current_user_from_token),
+    db: Session = Depends(get_db)
 ) -> Dict:
     """
-    Скасувати автопродовження підписки
-
-    Returns:
-        Статус скасування
+    Скасувати підписку (вимкнути автопродовження)
     """
-    # Шукаємо активну підписку
-    active_subscription = None
-    for subscription in current_user.subscriptions:
-        if subscription.is_valid():
-            active_subscription = subscription
-            break
+    subscription = db.query(Subscription).filter(
+        Subscription.id == subscription_id,
+        Subscription.user_id == current_user.id
+    ).first()
 
-    if not active_subscription:
-        raise HTTPException(
-            status_code=404,
-            detail="No active subscription found"
-        )
+    if not subscription:
+        raise HTTPException(status_code=404, detail="Підписка не знайдена")
 
-    # Скасовуємо автопродовження
-    active_subscription.auto_renew = False
-    active_subscription.is_cancelled = True
-    active_subscription.cancelled_at = datetime.utcnow()
+    if not subscription.is_active:
+        raise HTTPException(status_code=400, detail="Підписка вже неактивна")
 
-    # Записуємо в історію
+    # Вимикаємо автопродовження
+    subscription.auto_renew = False
+    subscription.is_cancelled = True
+    subscription.cancelled_at = datetime.utcnow()
+
+    # Додаємо в історію
     history = SubscriptionHistory(
         user_id=current_user.id,
-        subscription_id=active_subscription.id,
-        action='cancelled',
-        details={'cancelled_by': 'user'}
+        subscription_id=subscription.id,
+        action="cancelled",
+        details={"reason": "user_request"}
     )
     db.add(history)
     db.commit()
 
     return {
         "success": True,
-        "message": "Subscription auto-renewal cancelled",
-        "expires_at": active_subscription.expires_at.isoformat(),
-        "days_remaining": active_subscription.days_remaining()
+        "message": "Автопродовження вимкнено. Підписка буде активна до " + subscription.expires_at.isoformat()
     }
 
 
-@router.post("/renew")
-async def renew_subscription(
-        current_user: User = Depends(get_current_user_from_token),
-        db: Session = Depends(get_db)
+@router.get("/history")
+async def get_subscription_history(
+    current_user: User = Depends(get_current_user_from_token),
+    db: Session = Depends(get_db)
 ) -> Dict:
     """
-    Відновити автопродовження підписки
-
-    Returns:
-        Статус відновлення
+    Отримати історію підписок користувача
     """
-    # Шукаємо активну підписку
+    subscriptions = db.query(Subscription).filter(
+        Subscription.user_id == current_user.id
+    ).order_by(Subscription.created_at.desc()).all()
+
+    history = []
+    for sub in subscriptions:
+        history.append({
+            "id": sub.id,
+            "plan_type": sub.plan_type,
+            "started_at": sub.started_at.isoformat(),
+            "expires_at": sub.expires_at.isoformat(),
+            "is_active": sub.is_active,
+            "is_valid": sub.is_valid(),
+            "payment_status": sub.payment_status,
+            "payment_method": sub.payment_method,
+            "price": sub.plan_price,
+            "auto_renew": sub.auto_renew,
+            "days_remaining": sub.days_remaining() if sub.is_valid() else 0
+        })
+
+    return {
+        "subscriptions": history,
+        "has_active": any(s.is_valid() for s in subscriptions)
+    }
+
+
+@router.post("/webhook/cryptomus")
+async def cryptomus_webhook(
+    request_data: Dict,
+    db: Session = Depends(get_db)
+) -> Dict:
+    """
+    Webhook для обробки callback від Cryptomus
+    """
+    # Перевіряємо підпис
+    if not payment_service.verify_webhook_signature(request_data):
+        raise HTTPException(status_code=401, detail="Invalid signature")
+
+    payment_id = request_data.get("order_id")
+    status = request_data.get("status")
+
+    # Знаходимо підписку
+    subscription = db.query(Subscription).filter(
+        Subscription.payment_id == payment_id
+    ).first()
+
+    if not subscription:
+        return {"success": False, "error": "Subscription not found"}
+
+    # Оновлюємо статус
+    if status == "paid" or status == "confirmed":
+        subscription.payment_status = "completed"
+        subscription.is_active = True
+
+        # Додаємо в історію
+        history = SubscriptionHistory(
+            user_id=subscription.user_id,
+            subscription_id=subscription.id,
+            action="activated",
+            details={"payment_id": payment_id, "status": status}
+        )
+        db.add(history)
+
+    elif status == "cancel" or status == "fail":
+        subscription.payment_status = "failed"
+        subscription.is_active = False
+
+        history = SubscriptionHistory(
+            user_id=subscription.user_id,
+            subscription_id=subscription.id,
+            action="payment_failed",
+            details={"payment_id": payment_id, "status": status}
+        )
+        db.add(history)
+
+    db.commit()
+
+    return {"success": True}
+
+
+async def check_payment_status(subscription_id: int, payment_id: str, db: Session):
+    """
+    Фонова задача для перевірки статусу платежу
+    """
+    subscription = db.query(Subscription).filter(
+        Subscription.id == subscription_id
+    ).first()
+
+    if subscription and subscription.payment_status == "pending":
+        # Перевіряємо статус через API Cryptomus
+        status = payment_service.check_payment_status(payment_id)
+
+        if status == "paid":
+            subscription.payment_status = "completed"
+            subscription.is_active = True
+            db.commit()
+
+
+@router.get("/benefits")
+async def get_subscription_benefits(
+    current_user: User = Depends(get_current_user_from_token),
+    db: Session = Depends(get_db)
+) -> Dict:
+    """
+    Отримати поточні привілеї підписки
+    """
     active_subscription = None
-    for subscription in current_user.subscriptions:
-        if subscription.is_valid() and subscription.is_cancelled:
-            active_subscription = subscription
+    for sub in current_user.subscriptions:
+        if sub.is_valid():
+            active_subscription = sub
             break
 
     if not active_subscription:
-        raise HTTPException(
-            status_code=404,
-            detail="No cancelled subscription found"
-        )
+        return {
+            "has_subscription": False,
+            "benefits": None
+        }
 
-    # Відновлюємо автопродовження
-    active_subscription.auto_renew = True
-    active_subscription.is_cancelled = False
-    active_subscription.cancelled_at = None
-
-    # Записуємо в історію
-    history = SubscriptionHistory(
-        user_id=current_user.id,
-        subscription_id=active_subscription.id,
-        action='renewed',
-        details={'renewed_by': 'user'}
-    )
-    db.add(history)
+    return {
+        "has_subscription": True,
+        "plan_type": active_subscription.plan_type,
+        "expires_at": active_subscription.expires_at.isoformat(),
+        "days_remaining": active_subscription.days_remaining(),
+        "benefits": {
+            "daily_spins_bonus": active_subscription.daily_spins_bonus,
+            "cashback_percent": active_subscription.cashback_percent,
+            "accessible_products": len(active_subscription.accessible_products or [])
+        }
+    }

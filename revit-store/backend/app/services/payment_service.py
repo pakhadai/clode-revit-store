@@ -5,162 +5,126 @@
 import hashlib
 import hmac
 import json
+import os
 import uuid
-from datetime import datetime
 from typing import Dict, Optional
 import httpx
-from decimal import Decimal
-import os
 from dotenv import load_dotenv
 
 load_dotenv()
 
-# Конфігурація Cryptomus
-CRYPTOMUS_API_KEY = os.getenv("CRYPTOMUS_API_KEY", "")
-CRYPTOMUS_MERCHANT_ID = os.getenv("CRYPTOMUS_MERCHANT_ID", "")
-CRYPTOMUS_API_URL = "https://api.cryptomus.com/v1"
-
 
 class PaymentService:
     """
-    Сервіс для роботи з Cryptomus API
+    Сервіс для інтеграції з Cryptomus API
+
     Документація: https://doc.cryptomus.com/
     """
 
     def __init__(self):
-        self.api_key = CRYPTOMUS_API_KEY
-        self.merchant_id = CRYPTOMUS_MERCHANT_ID
+        self.api_key = os.getenv("CRYPTOMUS_API_KEY")
+        self.merchant_id = os.getenv("CRYPTOMUS_MERCHANT_ID")
+        self.secret_key = os.getenv("CRYPTOMUS_SECRET_KEY")
+        self.base_url = "https://api.cryptomus.com/v1"
+        self.webhook_url = os.getenv("WEBHOOK_URL", "https://your-domain.com/api/subscriptions/webhook/cryptomus")
 
-        if not self.api_key or not self.merchant_id:
-            raise ValueError("Cryptomus API credentials not configured in .env")
-
-    def _generate_signature(self, data: Dict) -> str:
-        """
-        Генерація підпису для запиту
-
-        Args:
-            data: Дані для підпису
-
-        Returns:
-            MD5 хеш підпису
-        """
-        # Сортуємо ключі та формуємо рядок
-        sorted_data = dict(sorted(data.items()))
-        sign_string = json.dumps(sorted_data, separators=(',', ':'))
-
-        # Створюємо підпис
-        sign = hashlib.md5(
-            f"{sign_string}{self.api_key}".encode()
-        ).hexdigest()
-
-        return sign
-
-    def _make_request(self, endpoint: str, data: Dict) -> Dict:
-        """
-        Виконати запит до Cryptomus API
-
-        Args:
-            endpoint: Ендпоінт API
-            data: Дані запиту
-
-        Returns:
-            Відповідь від API
-        """
-        # Додаємо merchant_id
-        data['merchant'] = self.merchant_id
-
-        # Генеруємо підпис
-        sign = self._generate_signature(data)
-
-        # Заголовки
-        headers = {
-            'merchant': self.merchant_id,
-            'sign': sign,
-            'Content-Type': 'application/json'
-        }
-
-        try:
-            # Робимо запит
-            with httpx.Client() as client:
-                response = client.post(
-                    f"{CRYPTOMUS_API_URL}{endpoint}",
-                    json=data,
-                    headers=headers,
-                    timeout=30
-                )
-
-                response.raise_for_status()
-                return response.json()
-
-        except httpx.HTTPError as e:
-            print(f"Cryptomus API error: {e}")
-            raise Exception(f"Payment service error: {str(e)}")
+        if not all([self.api_key, self.merchant_id, self.secret_key]):
+            print("⚠️ Cryptomus credentials not configured!")
 
     def create_payment(
-            self,
-            amount: float,
-            currency: str,
-            order_id: str,
-            user_id: int,
-            description: str,
-            plan_type: Optional[str] = None,
-            success_url: Optional[str] = None,
-            fail_url: Optional[str] = None,
-            callback_url: Optional[str] = None
+        self,
+        amount: float,
+        currency: str = "USDT",
+        order_id: str = None,
+        description: str = "OhMyRevit Purchase",
+        user_id: int = None,
+        subscription_id: int = None
     ) -> Dict:
         """
-        Створити платіж
+        Створити платіж в Cryptomus
 
         Args:
-            amount: Сума платежу
-            currency: Валюта (USD, EUR, RUB)
-            order_id: ID замовлення
-            user_id: ID користувача
+            amount: Сума в USD
+            currency: Криптовалюта (BTC, ETH, USDT, etc.)
+            order_id: Унікальний ID замовлення
             description: Опис платежу
-            plan_type: Тип підписки (monthly/yearly)
-            success_url: URL для редіректу після успішної оплати
-            fail_url: URL для редіректу після невдалої оплати
-            callback_url: URL для webhook
+            user_id: ID користувача
+            subscription_id: ID підписки (якщо є)
 
         Returns:
-            Дані платежу з посиланням для оплати
+            Дані платежу з payment_url
         """
-        # Формуємо дані платежу
-        payment_data = {
-            'amount': str(amount),
-            'currency': currency,
-            'order_id': order_id,
-            'url_return': success_url or f"https://t.me/{os.getenv('TELEGRAM_BOT_USERNAME', 'ohmyrevit_bot')}",
-            'url_callback': callback_url or f"{os.getenv('BACKEND_URL', 'https://api.ohmyrevit.com')}/api/payments/webhook",
-            'is_payment_multiple': False,
-            'lifetime': 3600,  # 1 година на оплату
-            'additional_data': json.dumps({
-                'user_id': user_id,
-                'plan_type': plan_type,
-                'description': description
+        if not order_id:
+            order_id = str(uuid.uuid4())
+
+        # Підготовка даних
+        payload = {
+            "amount": str(amount),
+            "currency": "USD",
+            "network": self._get_network(currency),
+            "order_id": order_id,
+            "url_return": f"{self.webhook_url}/success",
+            "url_callback": self.webhook_url,
+            "is_payment_multiple": False,
+            "lifetime": 3600,  # 1 година
+            "to_currency": currency,
+            "additional_data": json.dumps({
+                "user_id": user_id,
+                "subscription_id": subscription_id,
+                "description": description
             })
         }
 
-        # Додаємо URL для невдалої оплати якщо є
-        if fail_url:
-            payment_data['url_fail'] = fail_url
+        # Генеруємо підпис
+        sign = self._generate_signature(payload)
 
-        # Робимо запит
-        response = self._make_request('/payment', payment_data)
+        headers = {
+            "merchant": self.merchant_id,
+            "sign": sign,
+            "Content-Type": "application/json"
+        }
 
-        if response.get('state') == 0:
+        try:
+            # Робимо запит до API
+            with httpx.Client() as client:
+                response = client.post(
+                    f"{self.base_url}/payment",
+                    json=payload,
+                    headers=headers
+                )
+
+            if response.status_code == 200:
+                data = response.json()
+
+                if data.get("state") == 0:  # Успішно
+                    return {
+                        "success": True,
+                        "payment_id": data["result"]["uuid"],
+                        "payment_url": data["result"]["url"],
+                        "address": data["result"]["address"],
+                        "amount_crypto": data["result"]["amount"],
+                        "network": data["result"]["network"],
+                        "expires_at": data["result"]["expired_at"]
+                    }
+                else:
+                    return {
+                        "success": False,
+                        "error": data.get("message", "Payment creation failed")
+                    }
+            else:
+                return {
+                    "success": False,
+                    "error": f"HTTP {response.status_code}"
+                }
+
+        except Exception as e:
+            print(f"Cryptomus payment error: {e}")
             return {
-                'success': True,
-                'payment_id': response['result']['uuid'],
-                'payment_url': response['result']['url'],
-                'amount': amount,
-                'currency': currency,
-                'expires_at': response['result'].get('expired_at')
+                "success": False,
+                "error": str(e)
             }
-        else:
-            raise Exception(f"Failed to create payment: {response.get('message', 'Unknown error')}")
 
-    def check_payment_status(self, payment_id: str) -> Dict:
+    def check_payment_status(self, payment_id: str) -> str:
         """
         Перевірити статус платежу
 
@@ -168,238 +132,261 @@ class PaymentService:
             payment_id: ID платежу в Cryptomus
 
         Returns:
-            Статус платежу
+            Статус: pending, paid, failed, etc.
         """
-        data = {
-            'uuid': payment_id
+        payload = {
+            "uuid": payment_id
         }
 
-        response = self._make_request('/payment/info', data)
+        sign = self._generate_signature(payload)
 
-        if response.get('state') == 0:
-            result = response['result']
+        headers = {
+            "merchant": self.merchant_id,
+            "sign": sign,
+            "Content-Type": "application/json"
+        }
 
-            # Мапимо статуси Cryptomus на наші
-            status_map = {
-                'paid': 'completed',
-                'paid_over': 'completed',
-                'confirm_check': 'processing',
-                'wrong_amount': 'failed',
-                'fail': 'failed',
-                'cancel': 'cancelled',
-                'system_fail': 'failed',
-                'refund_process': 'refunding',
-                'refund_fail': 'failed',
-                'refund_paid': 'refunded'
-            }
+        try:
+            with httpx.Client() as client:
+                response = client.post(
+                    f"{self.base_url}/payment/info",
+                    json=payload,
+                    headers=headers
+                )
 
-            return {
-                'payment_id': result['uuid'],
-                'status': status_map.get(result['status'], 'pending'),
-                'cryptomus_status': result['status'],
-                'amount': float(result['amount']),
-                'currency': result['currency'],
-                'crypto_amount': result.get('payer_amount'),
-                'crypto_currency': result.get('payer_currency'),
-                'txid': result.get('txid'),
-                'is_final': result.get('is_final', False)
-            }
-        else:
-            raise Exception(f"Failed to check payment: {response.get('message', 'Unknown error')}")
+            if response.status_code == 200:
+                data = response.json()
+                if data.get("state") == 0:
+                    return data["result"]["payment_status"]
 
-    def verify_webhook(self, data: Dict, sign: str) -> bool:
+            return "unknown"
+
+        except Exception as e:
+            print(f"Check payment status error: {e}")
+            return "error"
+
+    def verify_webhook_signature(self, request_data: Dict) -> bool:
         """
         Перевірити підпис webhook від Cryptomus
 
         Args:
-            data: Дані webhook
-            sign: Підпис від Cryptomus
+            request_data: Дані з webhook
 
         Returns:
             True якщо підпис валідний
         """
-        # Генеруємо наш підпис
-        expected_sign = self._generate_signature(data)
+        received_sign = request_data.get("sign")
+        if not received_sign:
+            return False
 
-        # Порівнюємо
-        return hmac.compare_digest(sign, expected_sign)
+        # Видаляємо sign з даних для перевірки
+        data_to_verify = {k: v for k, v in request_data.items() if k != "sign"}
 
-    def process_webhook(self, data: Dict) -> Dict:
+        # Генеруємо очікуваний підпис
+        expected_sign = self._generate_signature(data_to_verify)
+
+        return hmac.compare_digest(received_sign, expected_sign)
+
+    def _generate_signature(self, data: Dict) -> str:
         """
-        Обробити webhook від Cryptomus
+        Генерувати підпис для запиту
 
         Args:
-            data: Дані webhook
+            data: Дані для підпису
 
         Returns:
-            Оброблені дані платежу
+            MD5 хеш підпису
         """
-        # Витягуємо основні дані
-        payment_id = data.get('uuid')
-        status = data.get('status')
-        order_id = data.get('order_id')
+        # Сортуємо ключі та створюємо JSON
+        sorted_data = json.dumps(data, sort_keys=True, separators=(',', ':'))
 
-        # Додаткові дані
-        additional_data = {}
-        if data.get('additional_data'):
-            try:
-                additional_data = json.loads(data['additional_data'])
-            except:
-                pass
+        # Кодуємо в base64
+        import base64
+        encoded = base64.b64encode(sorted_data.encode()).decode()
 
-        # Мапимо статуси
-        status_map = {
-            'paid': 'completed',
-            'paid_over': 'completed',
-            'confirm_check': 'processing',
-            'wrong_amount': 'failed',
-            'fail': 'failed',
-            'cancel': 'cancelled',
-            'system_fail': 'failed'
+        # Генеруємо MD5 хеш
+        sign_string = encoded + self.secret_key
+        return hashlib.md5(sign_string.encode()).hexdigest()
+
+    def _get_network(self, currency: str) -> str:
+        """
+        Отримати мережу для криптовалюти
+
+        Args:
+            currency: Код валюти
+
+        Returns:
+            Назва мережі
+        """
+        networks = {
+            "BTC": "bitcoin",
+            "ETH": "ethereum",
+            "USDT": "tron",  # або ethereum - залежить від вибору
+            "TRX": "tron",
+            "LTC": "litecoin",
+            "BNB": "bsc",
+            "USDC": "ethereum"
         }
+        return networks.get(currency.upper(), "ethereum")
 
-        return {
-            'payment_id': payment_id,
-            'order_id': order_id,
-            'status': status_map.get(status, 'pending'),
-            'cryptomus_status': status,
-            'amount': float(data.get('amount', 0)),
-            'currency': data.get('currency'),
-            'crypto_amount': data.get('payer_amount'),
-            'crypto_currency': data.get('payer_currency'),
-            'txid': data.get('txid'),
-            'user_id': additional_data.get('user_id'),
-            'plan_type': additional_data.get('plan_type'),
-            'is_final': data.get('is_final', False)
-        }
-
-    def create_subscription_payment(
-            self,
-            user_id: int,
-            plan_type: str,
-            language: str = 'en'
+    def create_withdrawal(
+        self,
+        amount: float,
+        address: str,
+        currency: str = "USDT",
+        network: str = None
     ) -> Dict:
         """
-        Створити платіж для підписки
+        Створити запит на виведення коштів (для творців)
 
         Args:
-            user_id: ID користувача
-            plan_type: Тип підписки (monthly/yearly)
-            language: Мова для опису
+            amount: Сума для виведення
+            address: Адреса гаманця
+            currency: Криптовалюта
+            network: Мережа (якщо не вказано - автоматично)
 
         Returns:
-            Дані платежу
+            Результат запиту
         """
-        # Плани підписок
-        plans = {
-            'monthly': {
-                'price_usd': 5.00,
-                'days': 30,
-                'description': {
-                    'en': 'OhMyRevit Premium - Monthly Subscription',
-                    'ua': 'OhMyRevit Premium - Місячна підписка',
-                    'ru': 'OhMyRevit Premium - Месячная подписка'
+        if not network:
+            network = self._get_network(currency)
+
+        payload = {
+            "amount": str(amount),
+            "currency": currency,
+            "network": network,
+            "address": address,
+            "order_id": str(uuid.uuid4()),
+            "is_subtract": True  # Комісія з суми
+        }
+
+        sign = self._generate_signature(payload)
+
+        headers = {
+            "merchant": self.merchant_id,
+            "sign": sign,
+            "Content-Type": "application/json"
+        }
+
+        try:
+            with httpx.Client() as client:
+                response = client.post(
+                    f"{self.base_url}/payout",
+                    json=payload,
+                    headers=headers
+                )
+
+            if response.status_code == 200:
+                data = response.json()
+
+                if data.get("state") == 0:
+                    return {
+                        "success": True,
+                        "withdrawal_id": data["result"]["uuid"],
+                        "amount": data["result"]["amount"],
+                        "commission": data["result"]["commission"],
+                        "status": data["result"]["status"]
+                    }
+                else:
+                    return {
+                        "success": False,
+                        "error": data.get("message", "Withdrawal failed")
+                    }
+            else:
+                return {
+                    "success": False,
+                    "error": f"HTTP {response.status_code}"
                 }
-            },
-            'yearly': {
-                'price_usd': 50.00,
-                'days': 365,
-                'description': {
-                    'en': 'OhMyRevit Premium - Yearly Subscription (Save 2 months!)',
-                    'ua': 'OhMyRevit Premium - Річна підписка (Економія 2 місяці!)',
-                    'ru': 'OhMyRevit Premium - Годовая подписка (Экономия 2 месяца!)'
-                }
+
+        except Exception as e:
+            print(f"Withdrawal error: {e}")
+            return {
+                "success": False,
+                "error": str(e)
             }
-        }
 
-        if plan_type not in plans:
-            raise ValueError(f"Invalid plan type: {plan_type}")
-
-        plan = plans[plan_type]
-
-        # Генеруємо унікальний order_id
-        order_id = f"SUB_{user_id}_{plan_type}_{uuid.uuid4().hex[:8]}"
-
-        # Створюємо платіж
-        return self.create_payment(
-            amount=plan['price_usd'],
-            currency='USD',
-            order_id=order_id,
-            user_id=user_id,
-            description=plan['description'].get(language, plan['description']['en']),
-            plan_type=plan_type
-        )
-
-    def create_order_payment(
-            self,
-            order_id: str,
-            user_id: int,
-            amount: float,
-            currency: str = 'USD',
-            description: str = None,
-            language: str = 'en'
-    ) -> Dict:
+    def get_exchange_rates(self) -> Dict:
         """
-        Створити платіж для замовлення
-
-        Args:
-            order_id: ID замовлення
-            user_id: ID користувача
-            amount: Сума платежу
-            currency: Валюта
-            description: Опис
-            language: Мова
+        Отримати поточні курси криптовалют
 
         Returns:
-            Дані платежу
+            Курси валют відносно USD
         """
-        # Описи за замовчуванням
-        default_descriptions = {
-            'en': f'OhMyRevit Order #{order_id}',
-            'ua': f'OhMyRevit Замовлення #{order_id}',
-            'ru': f'OhMyRevit Заказ #{order_id}'
-        }
+        try:
+            with httpx.Client() as client:
+                response = client.get(f"{self.base_url}/exchange-rate/list")
 
-        if not description:
-            description = default_descriptions.get(language, default_descriptions['en'])
+            if response.status_code == 200:
+                data = response.json()
+                if data.get("state") == 0:
+                    rates = {}
+                    for item in data["result"]:
+                        if item["to"] == "USD":
+                            rates[item["from"]] = float(item["rate"])
+                    return rates
 
-        return self.create_payment(
-            amount=amount,
-            currency=currency,
-            order_id=order_id,
-            user_id=user_id,
-            description=description
-        )
+            return {}
+
+        except Exception as e:
+            print(f"Get exchange rates error: {e}")
+            return {}
+
+
+class PromoCodeService:
+    """
+    Сервіс для роботи з промокодами
+    """
 
     @staticmethod
-    def calculate_crypto_amount(usd_amount: float, crypto_currency: str) -> Dict:
+    def validate_promo_code(code: str, db) -> Optional[Dict]:
         """
-        Розрахувати приблизну суму в криптовалюті
+        Перевірити промокод
 
         Args:
-            usd_amount: Сума в USD
-            crypto_currency: Криптовалюта (BTC, ETH, USDT, etc)
+            code: Промокод
+            db: Сесія БД
 
         Returns:
-            Приблизна сума в крипті
+            Інформація про промокод або None
         """
-        # Приблизні курси (в реальності потрібно отримувати з API)
-        approximate_rates = {
-            'BTC': 115000,
-            'ETH': 4000,
-            'USDT': 1,
-            'USDC': 1,
-            'TRX': 0.250,
-            'LTC': 100,
-            'BNB': 800
-        }
+        from app.models.order import PromoCode
 
-        rate = approximate_rates.get(crypto_currency, 1)
-        crypto_amount = usd_amount / rate
+        promo = db.query(PromoCode).filter(
+            PromoCode.code == code.upper()
+        ).first()
+
+        if not promo or not promo.is_valid():
+            return None
 
         return {
-            'amount': round(crypto_amount, 8),
-            'currency': crypto_currency,
-            'rate': rate,
-            'usd_amount': usd_amount
+            "id": promo.id,
+            "code": promo.code,
+            "discount_type": promo.discount_type,
+            "discount_value": promo.discount_value,
+            "min_order_amount": promo.min_order_amount
         }
+
+    @staticmethod
+    def apply_promo_code(promo_id: int, db) -> bool:
+        """
+        Застосувати промокод (збільшити лічильник використань)
+
+        Args:
+            promo_id: ID промокода
+            db: Сесія БД
+
+        Returns:
+            True якщо успішно
+        """
+        from app.models.order import PromoCode
+
+        promo = db.query(PromoCode).filter(
+            PromoCode.id == promo_id
+        ).first()
+        
+        if promo:
+            promo.uses_count += 1
+            db.commit()
+            return True
+
+        return False
