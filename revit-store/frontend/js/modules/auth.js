@@ -204,7 +204,7 @@ class AuthModule {
 
             // Отримуємо initData від Telegram
             if (!this.tg || !this.tg.initData) {
-                throw new Error('Telegram Web App дані не доступні');
+                throw new Error(window.app.t('errors.telegramDataNotAvailable'));
             }
 
             // Відправляємо на backend для верифікації
@@ -227,16 +227,16 @@ class AuthModule {
                 // Викликаємо подію успішної автентифікації
                 window.dispatchEvent(new CustomEvent('auth:success', { detail: this.user }));
 
-                Utils.showNotification(`Вітаємо, ${this.user.first_name}!`, 'success');
+                Utils.showNotification(`${window.app.t('auth.welcome')}, ${this.user.first_name}!`, 'success');
 
                 return true;
             }
 
-            throw new Error('Не вдалося отримати токен');
+            throw new Error(window.app.t('errors.failedToGetToken'));
 
         } catch (error) {
             console.error('Authentication error:', error);
-            Utils.showNotification('Помилка автентифікації: ' + error.message, 'error');
+            Utils.showNotification(`${window.app.t('notifications.authError')}: ` + error.message, 'error');
 
             // Викликаємо подію помилки
             window.dispatchEvent(new CustomEvent('auth:error', { detail: error }));
@@ -327,12 +327,12 @@ class AuthModule {
                 Utils.setLanguage(data.language);
             }
 
-            Utils.showNotification('Профіль оновлено', 'success');
+            Utils.showNotification(window.app.t('notifications.profileUpdated'), 'success');
             return this.user;
 
         } catch (error) {
             console.error('Update profile error:', error);
-            Utils.showNotification('Помилка оновлення профілю', 'error');
+            Utils.showNotification(window.app.t('notifications.profileUpdateError'), 'error');
             throw error;
         }
     }

@@ -7,7 +7,7 @@ class ApiClient {
     constructor() {
         // Базовий URL для API - змініть на ваш backend URL
         this.baseURL = window.location.hostname === 'localhost'
-            ? 'http://localhost:8001/api'
+            ? 'http://localhost:8000/api'
             : '/api'; // Для production через nginx
 
         // Токен зберігається в localStorage

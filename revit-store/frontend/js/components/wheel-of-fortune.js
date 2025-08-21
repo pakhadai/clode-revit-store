@@ -27,7 +27,7 @@ class WheelOfFortune {
 
         } catch (error) {
             console.error('Wheel init error:', error);
-            Utils.showNotification('Помилка ініціалізації колеса', 'error');
+            Utils.showNotification(window.app.t('wheel.initError'), 'error');
         }
     }
 
@@ -39,32 +39,28 @@ class WheelOfFortune {
 
         this.container.innerHTML = `
             <div class="wheel-of-fortune-container">
-                <h2 class="text-3xl font-bold text-center mb-6 dark:text-white">🎰 Колесо Фортуни</h2>
+                <h2 class="text-3xl font-bold text-center mb-6 dark:text-white">🎰 ${window.app.t('wheel.title')}</h2>
 
-                <!-- Інформація -->
                 <div class="wheel-info grid grid-cols-2 gap-4 mb-6">
                     <div class="bg-white dark:bg-gray-800 p-4 rounded-lg text-center">
                         <div class="text-2xl font-bold text-blue-600 dark:text-blue-400">
                             ${this.status.free_spins_available}
                         </div>
-                        <div class="text-sm text-gray-600 dark:text-gray-400">Безкоштовні спроби</div>
+                        <div class="text-sm text-gray-600 dark:text-gray-400">${window.app.t('home.dailyBonus.freeSpins')}</div>
                     </div>
                     <div class="bg-white dark:bg-gray-800 p-4 rounded-lg text-center">
                         <div class="text-2xl font-bold text-green-600 dark:text-green-400">
                             ${this.status.user_balance}
                         </div>
-                        <div class="text-sm text-gray-600 dark:text-gray-400">Ваш баланс</div>
+                        <div class="text-sm text-gray-600 dark:text-gray-400">${window.app.t('wheel.yourBalance')}</div>
                     </div>
                 </div>
 
-                <!-- Колесо -->
                 <div class="wheel-container relative mb-6">
                     <div class="wheel-wrapper relative inline-block">
-                        <!-- Canvas для колеса -->
                         <canvas id="wheel-canvas" width="400" height="400"
                                 class="wheel-canvas rounded-full shadow-2xl"></canvas>
 
-                        <!-- Стрілка-покажчик -->
                         <div class="wheel-pointer absolute top-0 left-1/2 transform -translate-x-1/2 -translate-y-2 z-10">
                             <div class="w-0 h-0
                                         border-l-[30px] border-l-transparent
@@ -73,7 +69,6 @@ class WheelOfFortune {
                                         drop-shadow-lg"></div>
                         </div>
 
-                        <!-- Центральна кнопка -->
                         <button id="wheel-spin-btn"
                                 onclick="wheelOfFortune.spin()"
                                 class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2
@@ -83,45 +78,42 @@ class WheelOfFortune {
                                        hover:scale-105 active:scale-95
                                        ${this.isSpinning ? 'opacity-50 cursor-not-allowed' : ''}"
                                 ${this.isSpinning ? 'disabled' : ''}>
-                            SPIN
+                            ${window.app.t('wheel.spinButton')}
                         </button>
                     </div>
                 </div>
 
-                <!-- Кнопки дій -->
                 <div class="wheel-actions flex gap-4 justify-center mb-6">
                     <button onclick="wheelOfFortune.spin(true)"
                             class="bg-green-500 hover:bg-green-600 text-white px-6 py-3 rounded-lg font-bold
                                    ${this.status.free_spins_available <= 0 || this.isSpinning ? 'opacity-50 cursor-not-allowed' : ''}"
                             ${this.status.free_spins_available <= 0 || this.isSpinning ? 'disabled' : ''}>
-                        🎁 Безкоштовний спін (${this.status.free_spins_available})
+                        🎁 ${window.app.t('wheel.freeSpin')} (${this.status.free_spins_available})
                     </button>
 
                     <button onclick="wheelOfFortune.spin(false)"
                             class="bg-blue-500 hover:bg-blue-600 text-white px-6 py-3 rounded-lg font-bold
                                    ${this.status.user_balance < this.config.spin_cost || this.isSpinning ? 'opacity-50 cursor-not-allowed' : ''}"
                             ${this.status.user_balance < this.config.spin_cost || this.isSpinning ? 'disabled' : ''}>
-                        💰 Платний спін (${this.config.spin_cost} бонусів)
+                        💰 ${window.app.t('wheel.paidSpin')} (${this.config.spin_cost} ${window.app.t('currency.bonuses')})
                     </button>
                 </div>
 
-                <!-- Історія -->
                 <div class="wheel-history bg-white dark:bg-gray-800 rounded-lg p-4">
-                    <h3 class="font-bold mb-3 dark:text-white">📜 Остання історія</h3>
+                    <h3 class="font-bold mb-3 dark:text-white">📜 ${window.app.t('wheel.recentHistory')}</h3>
                     <div id="wheel-history" class="space-y-2">
                         ${this.renderHistory()}
                     </div>
                 </div>
 
-                <!-- Легенда -->
                 <div class="wheel-legend mt-6 bg-gray-100 dark:bg-gray-800 rounded-lg p-4">
-                    <h3 class="font-bold mb-3 dark:text-white">🎯 Призи колеса</h3>
+                    <h3 class="font-bold mb-3 dark:text-white">🎯 ${window.app.t('wheel.prizes')}</h3>
                     <div class="grid grid-cols-2 md:grid-cols-5 gap-2">
                         ${this.config.sectors.map(sector => `
                             <div class="flex items-center gap-2">
                                 <div class="w-4 h-4 rounded" style="background-color: ${sector.color}"></div>
                                 <span class="text-sm dark:text-gray-300">
-                                    ${sector.value > 0 ? `${sector.value} 🎁` : 'Пусто'}
+                                    ${sector.value > 0 ? `${sector.value} 🎁` : window.app.t('wheel.emptyPrize')}
                                     ${sector.type === 'mega' ? '🏆' : ''}
                                 </span>
                             </div>
@@ -308,19 +300,19 @@ class WheelOfFortune {
         let title, message, icon;
 
         if (result.is_jackpot) {
-            title = '🎉 ДЖЕКПОТ!';
-            message = `Неймовірно! Ви виграли ${result.prize} бонусів!`;
+            title = window.app.t('wheel.jackpotTitle');
+            message = window.app.t('wheel.jackpotMessage').replace('{amount}', result.prize);
             icon = '🏆';
 
             // Конфеті для джекпота
             this.showConfetti();
         } else if (result.prize > 0) {
-            title = 'Вітаємо!';
-            message = `Ви виграли ${result.prize} бонусів!`;
+            title = window.app.t('wheel.winTitle');
+            message = window.app.t('wheel.winMessage').replace('{amount}', result.prize);
             icon = '🎁';
         } else {
-            title = 'Спробуйте ще!';
-            message = 'На жаль, цього разу нічого. Не здавайтеся!';
+            title = window.app.t('wheel.loseTitle');
+            message = window.app.t('wheel.loseMessage');
             icon = '😔';
         }
 
@@ -342,7 +334,7 @@ class WheelOfFortune {
                     <p class="text-gray-600 dark:text-gray-300 mb-6">${message}</p>
                     <button onclick="this.closest('.fixed').remove()"
                             class="bg-blue-500 hover:bg-blue-600 text-white px-6 py-3 rounded-lg font-bold">
-                        Продовжити
+                        ${window.app.t('buttons.continue')}
                     </button>
                 </div>
             </div>
@@ -427,7 +419,7 @@ class WheelOfFortune {
                 ${new Date().toLocaleTimeString()}
             </span>
             <span class="font-bold ${result.prize > 0 ? 'text-green-500' : 'text-gray-400'}">
-                ${result.prize > 0 ? `+${result.prize} 🎁` : 'Пусто'}
+                ${result.prize > 0 ? `+${result.prize} 🎁` : window.app.t('wheel.emptyPrize')}
                 ${result.is_jackpot ? '🏆' : ''}
             </span>
         `;
@@ -446,7 +438,7 @@ class WheelOfFortune {
      */
     renderHistory() {
         if (!this.status.statistics || !this.status.statistics.recent_spins) {
-            return '<div class="text-sm text-gray-500 dark:text-gray-400">Історія порожня</div>';
+            return `<div class="text-sm text-gray-500 dark:text-gray-400">${window.app.t('wheel.historyEmpty')}</div>`;
         }
 
         return this.status.statistics.recent_spins.slice(0, 5).map(spin => `
@@ -455,7 +447,7 @@ class WheelOfFortune {
                     ${new Date(spin.date).toLocaleTimeString()}
                 </span>
                 <span class="font-bold ${spin.prize > 0 ? 'text-green-500' : 'text-gray-400'}">
-                    ${spin.prize > 0 ? `+${spin.prize} 🎁` : 'Пусто'}
+                    ${spin.prize > 0 ? `+${spin.prize} 🎁` : window.app.t('wheel.emptyPrize')}
                     ${spin.is_jackpot ? '🏆' : ''}
                 </span>
             </div>
@@ -480,9 +472,9 @@ class WheelOfFortune {
         const buttons = this.container.querySelectorAll('button');
         buttons.forEach(btn => {
             // Перевіряємо чи можна увімкнути кнопку
-            if (btn.textContent.includes('Безкоштовний')) {
+            if (btn.textContent.includes(window.app.t('wheel.freeSpin'))) {
                 btn.disabled = this.status.free_spins_available <= 0;
-            } else if (btn.textContent.includes('Платний')) {
+            } else if (btn.textContent.includes(window.app.t('wheel.paidSpin'))) {
                 btn.disabled = this.status.user_balance < this.config.spin_cost;
             } else {
                 btn.disabled = false;
@@ -506,7 +498,7 @@ class WheelOfFortune {
             modal.innerHTML = `
                 <div class="bg-white dark:bg-gray-800 rounded-2xl p-6 max-w-md w-full max-h-[80vh] overflow-y-auto">
                     <div class="flex justify-between items-center mb-4">
-                        <h3 class="text-2xl font-bold dark:text-white">🏆 Таблиця лідерів</h3>
+                        <h3 class="text-2xl font-bold dark:text-white">${window.app.t('wheel.leaderboard.title')}</h3>
                         <button onclick="this.closest('.fixed').remove()"
                                 class="text-gray-500 hover:text-gray-700 dark:text-gray-400">
                             ✕
@@ -524,21 +516,21 @@ class WheelOfFortune {
                                         ${user.first_name || user.username}
                                     </div>
                                     <div class="text-sm text-gray-600 dark:text-gray-400">
-                                        Спінів: ${user.total_spins}
+                                        ${window.app.t('wheel.leaderboard.spins')}: ${user.total_spins}
                                     </div>
                                 </div>
                                 <div class="text-right">
                                     <div class="font-bold text-green-500">
                                         +${user.total_won}
                                     </div>
-                                    <div class="text-xs text-gray-500">бонусів</div>
+                                    <div class="text-xs text-gray-500">${window.app.t('currency.bonuses')}</div>
                                 </div>
                             </div>
                         `).join('')}
                     </div>
 
                     <div class="mt-4 text-center text-sm text-gray-500 dark:text-gray-400">
-                        Оновлено: ${new Date(data.updated_at).toLocaleString()}
+                        ${window.app.t('wheel.leaderboard.updated')}: ${new Date(data.updated_at).toLocaleString()}
                     </div>
                 </div>
             `;
@@ -547,7 +539,7 @@ class WheelOfFortune {
 
         } catch (error) {
             console.error('Load leaderboard error:', error);
-            Utils.showNotification('Помилка завантаження таблиці лідерів', 'error');
+            Utils.showNotification(window.app.t('notifications.leaderboardLoadError'), 'error');
         }
     }
 }

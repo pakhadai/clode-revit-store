@@ -34,7 +34,7 @@ class CartModule {
         try {
             // Перевіряємо чи вже є в кошику
             if (this.items.find(item => item.id === productId)) {
-                Utils.showNotification('Товар вже в кошику', 'warning');
+                Utils.showNotification(window.app.t('notifications.alreadyInCart'), 'warning');
                 return;
             }
 
@@ -58,7 +58,7 @@ class CartModule {
             this.updateTotal();
             this.updateCartBadge();
 
-            Utils.showNotification('Додано в кошик', 'success');
+            Utils.showNotification(window.app.t('notifications.addedToCart'), 'success');
             auth.hapticFeedback('impact', 'light');
 
             // Оновлюємо кнопку якщо є на сторінці
@@ -66,7 +66,7 @@ class CartModule {
 
         } catch (error) {
             console.error('Add to cart error:', error);
-            Utils.showNotification('Помилка додавання в кошик', 'error');
+            Utils.showNotification(window.app.t('notifications.addToCartError'), 'error');
         }
     }
 
@@ -79,7 +79,7 @@ class CartModule {
         this.updateTotal();
         this.updateCartBadge();
 
-        Utils.showNotification('Видалено з кошика', 'info');
+        Utils.showNotification(window.app.t('notifications.removedFromCart'), 'info');
         auth.hapticFeedback('impact', 'light');
 
         // Оновлюємо кнопку якщо є на сторінці
@@ -128,12 +128,12 @@ class CartModule {
         const buttons = document.querySelectorAll(`.add-to-cart-btn[data-product-id="${productId}"]`);
         buttons.forEach(btn => {
             if (inCart) {
-                btn.innerHTML = '<span>✓</span> В кошику';
+                btn.innerHTML = `<span>✓</span> ${window.app.t('product.inCart')}`;
                 btn.classList.remove('bg-blue-500', 'hover:bg-blue-600');
                 btn.classList.add('bg-green-500', 'hover:bg-green-600');
                 btn.disabled = true;
             } else {
-                btn.innerHTML = '<span>🛒</span> В кошик';
+                btn.innerHTML = `<span>🛒</span> ${window.app.t('product.addToCart')}`;
                 btn.classList.remove('bg-green-500', 'hover:bg-green-600');
                 btn.classList.add('bg-blue-500', 'hover:bg-blue-600');
                 btn.disabled = false;
@@ -164,15 +164,15 @@ class CartModule {
 
             if (response.valid) {
                 this.promoCode = response;
-                Utils.showNotification(`Промокод застосовано: -${response.discount_value}${response.discount_type === 'percent' ? '%' : ''}`, 'success');
+                Utils.showNotification(`${window.app.t('cart.payment.promoApplied')}: -${response.discount_value}${response.discount_type === 'percent' ? '%' : ''}`, 'success');
                 return true;
             } else {
-                Utils.showNotification('Невірний промокод', 'error');
+                Utils.showNotification(window.app.t('notifications.invalidPromo'), 'error');
                 return false;
             }
         } catch (error) {
             console.error('Promo code error:', error);
-            Utils.showNotification('Помилка перевірки промокоду', 'error');
+            Utils.showNotification(window.app.t('notifications.promoError'), 'error');
             return false;
         }
     }
@@ -205,6 +205,7 @@ class CartModule {
         };
     }
 
+
     /**
      * Створити HTML сторінки кошика
      */
@@ -213,11 +214,11 @@ class CartModule {
             return `
                 <div class="empty-cart text-center py-16">
                     <div class="text-6xl mb-4">🛒</div>
-                    <h2 class="text-2xl font-bold mb-4 dark:text-white">Кошик порожній</h2>
-                    <p class="text-gray-600 dark:text-gray-400 mb-8">Додайте товари з маркетплейсу</p>
+                    <h2 class="text-2xl font-bold mb-4 dark:text-white">${window.app.t('cart.empty')}</h2>
+                    <p class="text-gray-600 dark:text-gray-400 mb-8">${window.app.t('cart.emptyDesc')}</p>
                     <button onclick="window.dispatchEvent(new CustomEvent('navigate', { detail: { page: 'market' } }))"
                             class="bg-blue-500 hover:bg-blue-600 text-white px-6 py-3 rounded-lg font-bold">
-                        Перейти до маркету
+                        ${window.app.t('cart.goToMarket')}
                     </button>
                 </div>
             `;
@@ -228,7 +229,7 @@ class CartModule {
 
         return `
             <div class="cart-page max-w-4xl mx-auto">
-                <h1 class="text-3xl font-bold mb-6 dark:text-white">Кошик</h1>
+                <h1 class="text-3xl font-bold mb-6 dark:text-white">${window.app.t('cart.title')}</h1>
 
                 <div class="cart-items space-y-4 mb-8">
                     ${this.items.map(item => `
@@ -265,30 +266,30 @@ class CartModule {
                 </div>
 
                 <div class="payment-options bg-white dark:bg-gray-800 rounded-lg p-6 mb-6">
-                    <h2 class="text-xl font-bold mb-4 dark:text-white">Опції оплати</h2>
+                    <h2 class="text-xl font-bold mb-4 dark:text-white">${window.app.t('cart.payment.title')}</h2>
 
                     <div class="promo-code mb-4">
-                        <label class="block text-sm font-medium mb-2 dark:text-gray-300">Промокод</label>
+                        <label class="block text-sm font-medium mb-2 dark:text-gray-300">${window.app.t('cart.payment.promoCode')}</label>
                         <div class="flex gap-2">
                             <input type="text" id="promo-input"
                                    class="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg
                                           dark:bg-gray-700 dark:text-white"
-                                   placeholder="Введіть промокод">
+                                   placeholder="${window.app.t('cart.payment.enterPromo')}">
                             <button onclick="cart.applyPromoCodeFromInput()"
                                     class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg">
-                                Застосувати
+                                ${window.app.t('cart.payment.apply')}
                             </button>
                         </div>
                         ${this.promoCode ?
                             `<div class="text-green-500 text-sm mt-2">
-                                ✅ Промокод застосовано: -${this.promoCode.discount_value}${this.promoCode.discount_type === 'percent' ? '%' : ''}
+                                ✅ ${window.app.t('cart.payment.promoApplied')}: -${this.promoCode.discount_value}${this.promoCode.discount_type === 'percent' ? '%' : ''}
                             </div>` : ''
                         }
                     </div>
 
                     <div class="bonuses mb-4">
                         <label class="block text-sm font-medium mb-2 dark:text-gray-300">
-                            Використати бонуси (доступно: ${bonusesAvailable})
+                            ${window.app.t('cart.payment.useBonuses')} (${window.app.t('cart.payment.available')}: ${bonusesAvailable})
                         </label>
                         <div class="flex gap-2">
                             <input type="number" id="bonuses-input"
@@ -297,14 +298,14 @@ class CartModule {
                                    placeholder="0" min="0" max="${Math.min(bonusesAvailable, Math.floor(this.total * 0.7))}"
                                    onchange="cart.updateCheckoutSummary()">
                             <span class="px-4 py-2 bg-gray-100 dark:bg-gray-700 rounded-lg dark:text-gray-300">
-                                Макс: ${Math.min(bonusesAvailable, Math.floor(this.total * 0.7))} (70% від суми)
+                                ${window.app.t('cart.payment.max')}: ${Math.min(bonusesAvailable, Math.floor(this.total * 0.7))} (70% ${window.app.t('cart.payment.ofTotal')})
                             </span>
                         </div>
                     </div>
 
                     <div class="email mb-4">
                         <label class="block text-sm font-medium mb-2 dark:text-gray-300">
-                            Email для дублювання архівів (опціонально)
+                            ${window.app.t('cart.payment.email')}
                         </label>
                         <input type="email" id="email-input"
                                class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg
@@ -313,54 +314,54 @@ class CartModule {
                     </div>
 
                     <div class="payment-method">
-                        <label class="block text-sm font-medium mb-2 dark:text-gray-300">Метод оплати</label>
+                        <label class="block text-sm font-medium mb-2 dark:text-gray-300">${window.app.t('cart.payment.method')}</label>
                         <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
                             <button onclick="cart.selectPaymentMethod('crypto')"
                                     class="payment-method-btn p-3 border-2 border-gray-300 dark:border-gray-600 rounded-lg
                                            hover:border-blue-500 dark:hover:border-blue-400 transition-colors
                                            dark:text-white" data-method="crypto">
-                                💳 Криптовалюта
+                                💳 ${window.app.t('cart.payment.crypto')}
                             </button>
                             <button onclick="cart.selectPaymentMethod('bonuses')"
                                     class="payment-method-btn p-3 border-2 border-gray-300 dark:border-gray-600 rounded-lg
                                            hover:border-blue-500 dark:hover:border-blue-400 transition-colors
                                            dark:text-white" data-method="bonuses"
                                     ${this.total > bonusesAvailable ? 'disabled' : ''}>
-                                🎁 Тільки бонуси
+                                🎁 ${window.app.t('cart.payment.bonusesOnly')}
                             </button>
                             <button onclick="cart.selectPaymentMethod('subscription')"
                                     class="payment-method-btn p-3 border-2 border-gray-300 dark:border-gray-600 rounded-lg
                                            hover:border-blue-500 dark:hover:border-blue-400 transition-colors
                                            dark:text-white" data-method="subscription"
                                     ${!user?.subscription ? 'disabled' : ''}>
-                                ⭐ Підписка
+                                ⭐ ${window.app.t('cart.payment.subscription')}
                             </button>
                         </div>
                     </div>
                 </div>
 
                 <div class="checkout-summary bg-gray-100 dark:bg-gray-800 rounded-lg p-6">
-                    <h3 class="text-xl font-bold mb-4 dark:text-white">Підсумок</h3>
+                    <h3 class="text-xl font-bold mb-4 dark:text-white">${window.app.t('cart.summary.title')}</h3>
                     <div class="space-y-2" id="checkout-summary">
                         <div class="flex justify-between">
-                            <span class="dark:text-gray-300">Товарів:</span>
+                            <span class="dark:text-gray-300">${window.app.t('cart.items')}:</span>
                             <span class="font-bold dark:text-white">${this.items.length}</span>
                         </div>
                         <div class="flex justify-between">
-                            <span class="dark:text-gray-300">Сума:</span>
+                            <span class="dark:text-gray-300">${window.app.t('cart.subtotal')}:</span>
                             <span class="font-bold dark:text-white">${Utils.formatPrice(this.total)}</span>
                         </div>
                         <div class="flex justify-between text-green-500" id="discount-row" style="display: none;">
-                            <span>Знижка:</span>
+                            <span>${window.app.t('cart.discount')}:</span>
                             <span class="font-bold" id="discount-amount">-$0.00</span>
                         </div>
                         <div class="flex justify-between text-blue-500" id="bonuses-row" style="display: none;">
-                            <span>Бонуси:</span>
+                            <span>${window.app.t('cart.bonuses')}:</span>
                             <span class="font-bold" id="bonuses-amount">-$0.00</span>
                         </div>
                         <div class="border-t pt-2 mt-2">
                             <div class="flex justify-between text-xl">
-                                <span class="font-bold dark:text-white">До сплати:</span>
+                                <span class="font-bold dark:text-white">${window.app.t('cart.total')}:</span>
                                 <span class="font-bold text-blue-600 dark:text-blue-400" id="final-amount">
                                     ${Utils.formatPrice(this.total)}
                                 </span>
@@ -371,7 +372,7 @@ class CartModule {
                     <button onclick="cart.checkout()"
                             class="w-full mt-6 bg-blue-500 hover:bg-blue-600 text-white px-6 py-3 rounded-lg
                                    font-bold text-lg transition-colors">
-                        Перейти до оплати
+                        ${window.app.t('cart.checkout')}
                     </button>
                 </div>
             </div>
@@ -446,12 +447,12 @@ class CartModule {
      */
     async checkout() {
         if (!this.selectedPaymentMethod) {
-            Utils.showNotification('Виберіть метод оплати', 'warning');
+            Utils.showNotification(window.app.t('notifications.selectPaymentMethod'), 'warning');
             return;
         }
 
         if (!auth.isAuthenticated()) {
-            Utils.showNotification('Необхідна авторизація', 'warning');
+            Utils.showNotification(window.app.t('auth.authRequired'), 'warning');
             await auth.authenticate();
             return;
         }
@@ -477,14 +478,14 @@ class CartModule {
                 window.location.href = response.payment_url;
             } else if (response.success) {
                 // Оплата бонусами або підпискою
-                Utils.showNotification('Замовлення успішно оформлено!', 'success');
+                Utils.showNotification(window.app.t('notifications.orderSuccess'), 'success');
                 this.clearCart();
                 window.dispatchEvent(new CustomEvent('navigate', { detail: { page: 'profile', tab: 'orders' } }));
             }
 
         } catch (error) {
             console.error('Checkout error:', error);
-            Utils.showNotification('Помилка оформлення замовлення', 'error');
+            Utils.showNotification(window.app.t('notifications.orderError'), 'error');
         } finally {
             Utils.showLoader(false);
         }

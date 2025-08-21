@@ -88,7 +88,7 @@ class BonusesModule {
 
         } catch (error) {
             console.error('Claim daily bonus error:', error);
-            Utils.showNotification(error.message || 'Помилка отримання бонуса', 'error');
+            Utils.showNotification(error.message || window.app.t('notifications.bonusClaimError'), 'error');
             throw error;
         } finally {
             Utils.showLoader(false);
@@ -102,12 +102,12 @@ class BonusesModule {
         try {
             // Перевіряємо можливість крутити
             if (isFree && this.wheelStatus.free_spins_available <= 0) {
-                Utils.showNotification('Немає безкоштовних спробок', 'warning');
+                Utils.showNotification(window.app.t('wheel.noFreeSpins'), 'warning');
                 return null;
             }
 
             if (!isFree && auth.user.balance < this.wheelConfig.spin_cost) {
-                Utils.showNotification('Недостатньо бонусів', 'warning');
+                Utils.showNotification(window.app.t('wheel.notEnoughBonuses'), 'warning');
                 return null;
             }
 
@@ -138,7 +138,7 @@ class BonusesModule {
 
         } catch (error) {
             console.error('Spin wheel error:', error);
-            Utils.showNotification(error.message || 'Помилка прокрутки колеса', 'error');
+            Utils.showNotification(error.message || window.app.t('wheel.spinError'), 'error');
             throw error;
         }
     }
@@ -194,7 +194,7 @@ class BonusesModule {
      */
     createDailyBonusHTML() {
         if (!this.dailyStatus) {
-            return '<div class="text-center">Завантаження...</div>';
+            return `<div class="text-center">${window.app.t('notifications.loading')}</div>`;
         }
 
         const streakDays = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
@@ -203,13 +203,12 @@ class BonusesModule {
 
         return `
             <div class="daily-bonus-container">
-                <h3 class="text-2xl font-bold mb-4 dark:text-white">🎁 Щоденний бонус</h3>
+                <h3 class="text-2xl font-bold mb-4 dark:text-white">🎁 ${window.app.t('home.dailyBonus.title')}</h3>
 
-                <!-- Стрік прогрес -->
                 <div class="streak-progress mb-6">
                     <div class="flex justify-between mb-2">
-                        <span class="text-sm text-gray-600 dark:text-gray-400">День ${currentStreak}</span>
-                        <span class="text-sm text-gray-600 dark:text-gray-400">Стрік</span>
+                        <span class="text-sm text-gray-600 dark:text-gray-400">${window.app.t('home.dailyBonus.dayLabel')} ${currentStreak}</span>
+                        <span class="text-sm text-gray-600 dark:text-gray-400">${window.app.t('home.dailyBonus.streakLabel')}</span>
                     </div>
 
                     <div class="flex gap-1">
@@ -219,7 +218,7 @@ class BonusesModule {
                                      bg-gray-200 dark:bg-gray-700 rounded p-2 mb-1
                                      ${day <= currentStreak ? 'bg-green-500 text-white' : ''}
                                      ${day === currentStreak + 1 && canClaim ? 'bg-blue-500 text-white animate-pulse' : ''}">
-                                    <div class="text-xs">День</div>
+                                    <div class="text-xs">${window.app.t('home.dailyBonus.dayLabel')}</div>
                                     <div class="font-bold">${day}</div>
                                 </div>
                                 <div class="text-xs dark:text-gray-400">
@@ -230,29 +229,26 @@ class BonusesModule {
                     </div>
                 </div>
 
-                <!-- Кнопка отримання -->
                 <div class="text-center">
                     ${canClaim ? `
                         <button onclick="bonuses.claimDailyBonus()"
                                 class="bg-green-500 hover:bg-green-600 text-white px-8 py-4 rounded-xl font-bold text-lg
                                        transform hover:scale-105 transition-all shadow-lg">
                             <span class="text-2xl">🎁</span>
-                            Отримати ${this.dailyStatus.next_bonus_amount} бонусів
+                            ${window.app.t('home.dailyBonus.claimButton').replace('{amount}', this.dailyStatus.next_bonus_amount)}
                         </button>
                     ` : `
                         <div class="text-gray-500 dark:text-gray-400">
                             <div class="text-2xl mb-2">⏰</div>
-                            <p>Наступний бонус буде доступний завтра</p>
-                            <p class="text-sm mt-2">Останній отриманий: ${Utils.formatDate(this.dailyStatus.last_claimed)}</p>
+                            <p>${window.app.t('home.dailyBonus.nextBonusTomorrow')}</p>
+                            <p class="text-sm mt-2">${window.app.t('home.dailyBonus.lastClaimed')}: ${Utils.formatDate(this.dailyStatus.last_claimed)}</p>
                         </div>
                     `}
                 </div>
 
-                <!-- Інформація про стрік -->
                 <div class="mt-6 p-4 bg-blue-50 dark:bg-blue-900 rounded-lg">
                     <p class="text-sm text-blue-800 dark:text-blue-200">
-                        💡 Підказка: Не пропускайте дні, щоб отримувати більше бонусів!
-                        Максимальний бонус на 10-й день - 10 бонусів щодня!
+                        ${window.app.t('home.dailyBonus.streakTip')}
                     </p>
                 </div>
             </div>
@@ -264,102 +260,97 @@ class BonusesModule {
      */
     createStatisticsHTML() {
         if (!this.statistics) {
-            return '<div class="text-center">Завантаження...</div>';
+            return `<div class="text-center">${window.app.t('notifications.loading')}</div>`;
         }
 
         const stats = this.statistics;
 
         return `
             <div class="bonus-statistics">
-                <h3 class="text-2xl font-bold mb-6 dark:text-white">📊 Статистика бонусів</h3>
+                <h3 class="text-2xl font-bold mb-6 dark:text-white">📊 ${window.app.t('profile.statistics.title')}</h3>
 
-                <!-- Основні показники -->
                 <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
                     <div class="stat-card bg-white dark:bg-gray-800 p-4 rounded-lg text-center">
                         <div class="text-3xl font-bold text-blue-600 dark:text-blue-400">
                             ${stats.current_balance}
                         </div>
-                        <div class="text-sm text-gray-600 dark:text-gray-400">Поточний баланс</div>
+                        <div class="text-sm text-gray-600 dark:text-gray-400">${window.app.t('profile.statistics.currentBalance')}</div>
                     </div>
 
                     <div class="stat-card bg-white dark:bg-gray-800 p-4 rounded-lg text-center">
                         <div class="text-3xl font-bold text-green-600 dark:text-green-400">
                             ${stats.total_earned}
                         </div>
-                        <div class="text-sm text-gray-600 dark:text-gray-400">Всього зароблено</div>
+                        <div class="text-sm text-gray-600 dark:text-gray-400">${window.app.t('profile.statistics.totalEarned')}</div>
                     </div>
 
                     <div class="stat-card bg-white dark:bg-gray-800 p-4 rounded-lg text-center">
                         <div class="text-3xl font-bold text-purple-600 dark:text-purple-400">
                             ${stats.daily_bonuses.current_streak}
                         </div>
-                        <div class="text-sm text-gray-600 dark:text-gray-400">Поточний стрік</div>
+                        <div class="text-sm text-gray-600 dark:text-gray-400">${window.app.t('profile.statistics.currentStreak')}</div>
                     </div>
 
                     <div class="stat-card bg-white dark:bg-gray-800 p-4 rounded-lg text-center">
                         <div class="text-3xl font-bold text-yellow-600 dark:text-yellow-400">
                             ${stats.wheel.jackpots}
                         </div>
-                        <div class="text-sm text-gray-600 dark:text-gray-400">Джекпоти</div>
+                        <div class="text-sm text-gray-600 dark:text-gray-400">${window.app.t('profile.statistics.jackpots')}</div>
                     </div>
                 </div>
 
-                <!-- Детальна статистика -->
                 <div class="grid md:grid-cols-3 gap-6">
-                    <!-- Щоденні бонуси -->
                     <div class="bg-white dark:bg-gray-800 p-4 rounded-lg">
-                        <h4 class="font-bold mb-3 dark:text-white">🎁 Щоденні бонуси</h4>
+                        <h4 class="font-bold mb-3 dark:text-white">🎁 ${window.app.t('home.dailyBonus.title')}</h4>
                         <div class="space-y-2 text-sm">
                             <div class="flex justify-between">
-                                <span class="text-gray-600 dark:text-gray-400">Отримано разів:</span>
+                                <span class="text-gray-600 dark:text-gray-400">${window.app.t('profile.statistics.claimedTimes')}:</span>
                                 <span class="font-medium dark:text-white">${stats.daily_bonuses.total_claimed}</span>
                             </div>
                             <div class="flex justify-between">
-                                <span class="text-gray-600 dark:text-gray-400">Всього бонусів:</span>
+                                <span class="text-gray-600 dark:text-gray-400">${window.app.t('profile.statistics.totalBonuses')}:</span>
                                 <span class="font-medium dark:text-white">${stats.daily_bonuses.total_received}</span>
                             </div>
                             <div class="flex justify-between">
-                                <span class="text-gray-600 dark:text-gray-400">Макс. стрік:</span>
-                                <span class="font-medium dark:text-white">${stats.daily_bonuses.max_streak} днів</span>
+                                <span class="text-gray-600 dark:text-gray-400">${window.app.t('profile.statistics.maxStreak')}:</span>
+                                <span class="font-medium dark:text-white">${stats.daily_bonuses.max_streak} ${window.app.t('time.days')}</span>
                             </div>
                         </div>
                     </div>
 
-                    <!-- Колесо фортуни -->
                     <div class="bg-white dark:bg-gray-800 p-4 rounded-lg">
-                        <h4 class="font-bold mb-3 dark:text-white">🎰 Колесо фортуни</h4>
+                        <h4 class="font-bold mb-3 dark:text-white">🎰 ${window.app.t('wheel.title')}</h4>
                         <div class="space-y-2 text-sm">
                             <div class="flex justify-between">
-                                <span class="text-gray-600 dark:text-gray-400">Прокручено:</span>
+                                <span class="text-gray-600 dark:text-gray-400">${window.app.t('profile.statistics.spinsMade')}:</span>
                                 <span class="font-medium dark:text-white">${stats.wheel.total_spins}</span>
                             </div>
                             <div class="flex justify-between">
-                                <span class="text-gray-600 dark:text-gray-400">Виграно:</span>
+                                <span class="text-gray-600 dark:text-gray-400">${window.app.t('profile.statistics.totalWon')}:</span>
                                 <span class="font-medium dark:text-white">${stats.wheel.total_won}</span>
                             </div>
                             <div class="flex justify-between">
-                                <span class="text-gray-600 dark:text-gray-400">% виграшів:</span>
+                                <span class="text-gray-600 dark:text-gray-400">${window.app.t('profile.statistics.winRate')}:</span>
                                 <span class="font-medium dark:text-white">${stats.wheel.win_rate.toFixed(1)}%</span>
                             </div>
                             <div class="flex justify-between">
-                                <span class="text-gray-600 dark:text-gray-400">Витрачено:</span>
+                                <span class="text-gray-600 dark:text-gray-400">${window.app.t('profile.statistics.spent')}:</span>
                                 <span class="font-medium dark:text-white">${stats.wheel.bonuses_spent}</span>
                             </div>
                         </div>
                     </div>
 
-                    <!-- Реферали -->
                     <div class="bg-white dark:bg-gray-800 p-4 rounded-lg">
-                        <h4 class="font-bold mb-3 dark:text-white">🤝 Реферали</h4>
+                        <h4 class="font-bold mb-3 dark:text-white">🤝 ${window.app.t('profile.tabs.referrals')}</h4>
                         <div class="space-y-2 text-sm">
                             <div class="flex justify-between">
-                                <span class="text-gray-600 dark:text-gray-400">Зароблено:</span>
+                                <span class="text-gray-600 dark:text-gray-400">${window.app.t('profile.referrals.earned')}:</span>
                                 <span class="font-medium dark:text-white">${stats.referrals.total_earned}</span>
                             </div>
                             <div class="mb-3"></div>
                             <button onclick="app.showReferralCode('${stats.referrals.referral_code}')"
                                     class="w-full bg-blue-500 hover:bg-blue-600 text-white px-3 py-2 rounded text-sm">
-                                Показати реф. код
+                                ${window.app.t('profile.referrals.showCode')}
                             </button>
                         </div>
                     </div>

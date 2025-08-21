@@ -63,7 +63,7 @@ class ProductsModule {
 
         } catch (error) {
             console.error('Load products error:', error);
-            Utils.showNotification('Помилка завантаження товарів', 'error');
+            Utils.showNotification(window.app.t('notifications.productsLoadError'), 'error');
             throw error;
         } finally {
             Utils.showLoader(false);
@@ -84,7 +84,7 @@ class ProductsModule {
 
         } catch (error) {
             console.error('Load product error:', error);
-            Utils.showNotification('Помилка завантаження товару', 'error');
+            Utils.showNotification(window.app.t('notifications.productLoadError'), 'error');
             throw error;
         } finally {
             Utils.showLoader(false);
@@ -156,7 +156,6 @@ class ProductsModule {
             <div class="product-card bg-white dark:bg-gray-800 rounded-lg shadow-lg hover:shadow-xl transition-shadow cursor-pointer"
                  data-product-id="${product.id}">
 
-                <!-- Зображення -->
                 <div class="relative h-48 bg-gray-200 dark:bg-gray-700 rounded-t-lg overflow-hidden">
                     ${product.preview_images && product.preview_images[0] ?
                         `<img src="${product.preview_images[0]}" alt="${product.title}"
@@ -166,15 +165,13 @@ class ProductsModule {
                          </div>`
                     }
 
-                    <!-- Бейджі -->
                     <div class="absolute top-2 left-2 flex flex-col gap-1">
-                        ${isFree ? '<span class="badge bg-green-500 text-white px-2 py-1 rounded text-xs">Безкоштовно</span>' : ''}
-                        ${product.is_new ? '<span class="badge bg-blue-500 text-white px-2 py-1 rounded text-xs">Новинка</span>' : ''}
+                        ${isFree ? `<span class="badge bg-green-500 text-white px-2 py-1 rounded text-xs">${window.app.t('product.free')}</span>` : ''}
+                        ${product.is_new ? `<span class="badge bg-blue-500 text-white px-2 py-1 rounded text-xs">${window.app.t('product.new')}</span>` : ''}
                         ${hasDiscount ? `<span class="badge bg-red-500 text-white px-2 py-1 rounded text-xs">-${product.discount_percent}%</span>` : ''}
-                        ${product.is_featured ? '<span class="badge bg-purple-500 text-white px-2 py-1 rounded text-xs">Популярне</span>' : ''}
+                        ${product.is_featured ? `<span class="badge bg-purple-500 text-white px-2 py-1 rounded text-xs">${window.app.t('product.featured')}</span>` : ''}
                     </div>
 
-                    <!-- Кнопка обраного -->
                     <button class="absolute top-2 right-2 p-2 bg-white dark:bg-gray-800 rounded-full shadow-md
                                    hover:bg-gray-100 dark:hover:bg-gray-700 favorite-btn"
                             data-product-id="${product.id}"
@@ -183,7 +180,6 @@ class ProductsModule {
                     </button>
                 </div>
 
-                <!-- Інформація -->
                 <div class="p-4">
                     <h3 class="font-bold text-lg mb-2 dark:text-white line-clamp-2">
                         ${product.title}
@@ -195,7 +191,6 @@ class ProductsModule {
                         </p>` : ''
                     }
 
-                    <!-- Рейтинг -->
                     ${product.rating > 0 ? `
                         <div class="flex items-center mb-3">
                             <div class="flex text-yellow-400">
@@ -207,11 +202,10 @@ class ProductsModule {
                         </div>
                     ` : ''}
 
-                    <!-- Ціна та кнопка -->
                     <div class="flex items-center justify-between">
                         <div class="price">
                             ${isFree ?
-                                '<span class="text-green-500 font-bold text-xl">Безкоштовно</span>' :
+                                `<span class="text-green-500 font-bold text-xl">${window.app.t('product.free')}</span>` :
                                 `<div>
                                     ${hasDiscount ?
                                         `<span class="text-gray-400 line-through text-sm">
@@ -230,13 +224,14 @@ class ProductsModule {
                                 data-product-id="${product.id}"
                                 onclick="event.stopPropagation()">
                             <span>🛒</span>
-                            <span class="hidden sm:inline">В кошик</span>
+                            <span class="hidden sm:inline">${window.app.t('product.addToCart')}</span>
                         </button>
                     </div>
                 </div>
             </div>
         `;
     }
+
 
     /**
      * Створити зірочки рейтингу
@@ -266,7 +261,6 @@ class ProductsModule {
         return `
             <div class="product-page max-w-6xl mx-auto">
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-                    <!-- Галерея зображень -->
                     <div class="gallery">
                         <div class="main-image bg-gray-200 dark:bg-gray-700 rounded-lg h-96 mb-4">
                             ${product.preview_images && product.preview_images[0] ?
@@ -288,41 +282,36 @@ class ProductsModule {
                         ` : ''}
                     </div>
 
-                    <!-- Інформація про продукт -->
                     <div class="product-info">
                         <h1 class="text-3xl font-bold mb-4 dark:text-white">${product.title}</h1>
 
-                        <!-- Бейджі -->
                         <div class="flex gap-2 mb-4">
-                            ${isFree ? '<span class="badge bg-green-500 text-white px-3 py-1 rounded">Безкоштовно</span>' : ''}
-                            ${product.is_new ? '<span class="badge bg-blue-500 text-white px-3 py-1 rounded">Новинка</span>' : ''}
-                            ${product.is_featured ? '<span class="badge bg-purple-500 text-white px-3 py-1 rounded">Популярне</span>' : ''}
-                            ${product.requires_subscription ? '<span class="badge bg-yellow-500 text-white px-3 py-1 rounded">Потрібна підписка</span>' : ''}
+                            ${isFree ? `<span class="badge bg-green-500 text-white px-3 py-1 rounded">${window.app.t('product.free')}</span>` : ''}
+                            ${product.is_new ? `<span class="badge bg-blue-500 text-white px-3 py-1 rounded">${window.app.t('product.new')}</span>` : ''}
+                            ${product.is_featured ? `<span class="badge bg-purple-500 text-white px-3 py-1 rounded">${window.app.t('product.featured')}</span>` : ''}
+                            ${product.requires_subscription ? `<span class="badge bg-yellow-500 text-white px-3 py-1 rounded">${window.app.t('product.requiresSubscription')}</span>` : ''}
                         </div>
 
-                        <!-- Рейтинг -->
                         ${product.rating > 0 ? `
                             <div class="flex items-center mb-4">
                                 <div class="flex text-yellow-400 text-xl">
                                     ${this.createRatingStars(product.rating)}
                                 </div>
                                 <span class="ml-3 text-gray-600 dark:text-gray-400">
-                                    ${product.rating.toFixed(1)} з 5 (${product.ratings_count} ${Utils.pluralize(product.ratings_count, ['оцінка', 'оцінки', 'оцінок'])})
+                                    ${product.rating.toFixed(1)} ${window.app.t('product.stats.rating')} (${product.ratings_count} ${Utils.pluralize(product.ratings_count, [window.app.t('product.stats.ratingCount'), window.app.t('product.stats.ratingsCount'), window.app.t('product.stats.ratingsCountMany')])})
                                 </span>
                             </div>
                         ` : ''}
 
-                        <!-- Статистика -->
                         <div class="stats flex gap-4 mb-6 text-sm text-gray-600 dark:text-gray-400">
-                            <span>📥 ${product.downloads_count} завантажень</span>
-                            <span>👁 ${product.views_count} переглядів</span>
+                            <span>📥 ${product.downloads_count} ${window.app.t('product.stats.downloads')}</span>
+                            <span>👁 ${product.views_count} ${window.app.t('product.stats.views')}</span>
                             ${product.file_size ? `<span>📁 ${Utils.formatFileSize(product.file_size)}</span>` : ''}
                         </div>
 
-                        <!-- Ціна -->
                         <div class="price-block bg-gray-100 dark:bg-gray-800 p-4 rounded-lg mb-6">
                             ${isFree ?
-                                '<div class="text-green-500 font-bold text-3xl">Безкоштовно</div>' :
+                                `<div class="text-green-500 font-bold text-3xl">${window.app.t('product.free')}</div>` :
                                 `<div>
                                     ${hasDiscount ?
                                         `<div class="text-gray-400 line-through text-lg">
@@ -334,25 +323,24 @@ class ProductsModule {
                                     </div>
                                     ${hasDiscount && product.discount_ends_at ?
                                         `<div class="text-sm text-red-500 mt-2">
-                                            Знижка діє до: ${Utils.formatDate(product.discount_ends_at)}
+                                            ${window.app.t('product.discount.endsAt')}: ${Utils.formatDate(product.discount_ends_at)}
                                         </div>` : ''
                                     }
                                 </div>`
                             }
                         </div>
 
-                        <!-- Кнопки дій -->
                         <div class="actions flex gap-4 mb-6">
                             ${product.can_download ?
                                 `<button class="flex-1 bg-green-500 hover:bg-green-600 text-white px-6 py-3 rounded-lg
                                                font-bold transition-colors flex items-center justify-center gap-2"
                                         onclick="products.downloadProduct(${product.id})">
-                                    <span>📥</span> Завантажити
+                                    <span>📥</span> ${window.app.t('buttons.download')}
                                 </button>` :
                                 `<button class="flex-1 bg-blue-500 hover:bg-blue-600 text-white px-6 py-3 rounded-lg
                                                font-bold transition-colors flex items-center justify-center gap-2"
                                         onclick="cart.addToCart(${product.id})">
-                                    <span>🛒</span> Додати в кошик
+                                    <span>🛒</span> ${window.app.t('product.addToCart')}
                                 </button>`
                             }
 
@@ -369,18 +357,16 @@ class ProductsModule {
                             </button>
                         </div>
 
-                        <!-- Опис -->
                         <div class="description mb-6">
-                            <h3 class="text-xl font-bold mb-3 dark:text-white">Опис</h3>
+                            <h3 class="text-xl font-bold mb-3 dark:text-white">${window.app.t('product.description')}</h3>
                             <div class="text-gray-700 dark:text-gray-300 whitespace-pre-wrap">
-                                ${product.description || 'Опис відсутній'}
+                                ${product.description || window.app.t('product.noDescription')}
                             </div>
                         </div>
 
-                        <!-- Теги -->
                         ${product.tags && product.tags.length > 0 ? `
                             <div class="tags mb-6">
-                                <h3 class="text-xl font-bold mb-3 dark:text-white">Теги</h3>
+                                <h3 class="text-xl font-bold mb-3 dark:text-white">${window.app.t('product.tags')}</h3>
                                 <div class="flex flex-wrap gap-2">
                                     ${product.tags.map(tag => `
                                         <span class="tag bg-gray-200 dark:bg-gray-700 px-3 py-1 rounded-full text-sm
@@ -393,7 +379,6 @@ class ProductsModule {
                             </div>
                         ` : ''}
 
-                        <!-- Інформація про творця -->
                         ${product.creator ? `
                             <div class="creator-info bg-gray-100 dark:bg-gray-800 p-4 rounded-lg">
                                 <div class="flex items-center gap-3">
@@ -401,9 +386,9 @@ class ProductsModule {
                                     <div>
                                         <div class="font-bold dark:text-white">
                                             ${product.creator.first_name || product.creator.username}
-                                            ${product.creator.verified ? '<span class="text-blue-500">✓</span>' : ''}
+                                            ${product.creator.verified ? `<span class="text-blue-500">✓</span>` : ''}
                                         </div>
-                                        <div class="text-sm text-gray-600 dark:text-gray-400">Творець</div>
+                                        <div class="text-sm text-gray-600 dark:text-gray-400">${window.app.t('product.creator')}</div>
                                     </div>
                                 </div>
                             </div>
@@ -434,7 +419,7 @@ class ProductsModule {
             return response;
         } catch (error) {
             console.error('Toggle favorite error:', error);
-            Utils.showNotification('Помилка', 'error');
+            Utils.showNotification(window.app.t('notifications.favoriteError'), 'error');
         }
     }
 
@@ -477,12 +462,12 @@ class ProductsModule {
 
             if (response.download_url) {
                 await api.downloadFile(response.download_url, response.filename);
-                Utils.showNotification('Завантаження розпочато', 'success');
+                Utils.showNotification(window.app.t('notifications.downloadStarted'), 'success');
             }
 
         } catch (error) {
             console.error('Download error:', error);
-            Utils.showNotification('Помилка завантаження', 'error');
+            Utils.showNotification(window.app.t('notifications.downloadError'), 'error');
         } finally {
             Utils.showLoader(false);
         }

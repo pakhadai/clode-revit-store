@@ -1,0 +1,254 @@
+{
+  "app": {
+    "name": "OhMyRevit",
+    "tagline": "Маркетплейс архивов Revit"
+  },
+  "navigation": {
+    "home": "Главная",
+    "market": "Маркет",
+    "cart": "Корзина",
+    "profile": "Профиль",
+    "admin": "Админ"
+  },
+  "auth": {
+    "login": "Войти",
+    "logout": "Выйти",
+    "loginWithTelegram": "Войти через Telegram",
+    "welcome": "Добро пожаловать",
+    "authRequired": "Требуется авторизация",
+    "authRequiredDesc": "Для доступа к этой странице необходимо войти"
+  },
+  "home": {
+    "subscription": {
+      "title": "Премиум подписка",
+      "benefits": {
+        "newArchives": "Доступ к новым премиум архивам",
+        "bonusSpins": "+2 прокрутки колеса ежедневно",
+        "cashback": "Кешбэк 5% бонусами",
+        "support": "Приоритетная поддержка"
+      },
+      "monthly": "Месячная $5",
+      "yearly": "Годовая $50 (2 месяца бесплатно)"
+    },
+    "dailyBonus": {
+      "title": "Ежедневный бонус",
+      "streak": "Ваш стрик",
+      "day": "день",
+      "days": "дня",
+      "daysMany": "дней",
+      "claimBonus": "Получить бонус",
+      "freeSpins": "Бесплатные попытки",
+      "spinWheel": "Крутить колесо"
+    },
+    "productOfWeek": {
+      "title": "Товар недели",
+      "details": "Подробнее"
+    },
+    "sections": {
+      "new": "Новинки",
+      "featured": "Популярные товары"
+    }
+  },
+  "market": {
+    "title": "Маркетплейс",
+    "filters": {
+      "allCategories": "Все категории",
+      "free": "Бесплатные",
+      "premium": "Премиум",
+      "fromCreators": "От создателей",
+      "allTypes": "Все типы",
+      "furniture": "Мебель",
+      "textures": "Текстуры",
+      "components": "Компоненты",
+      "search": "Поиск...",
+      "onlyFree": "Только бесплатные",
+      "new": "Новинки",
+      "withDiscount": "Со скидкой"
+    },
+    "sorting": {
+      "newest": "Самые новые",
+      "priceAsc": "Цена: по возрастанию",
+      "priceDesc": "Цена: по убыванию",
+      "rating": "Рейтинг",
+      "popularity": "Популярность"
+    },
+    "pagination": {
+      "page": "Страница",
+      "of": "из",
+      "prev": "Назад",
+      "next": "Далее"
+    }
+  },
+  "product": {
+    "free": "Бесплатно",
+    "new": "Новинка",
+    "featured": "Популярное",
+    "requiresSubscription": "Требуется подписка",
+    "addToCart": "В корзину",
+    "inCart": "В корзине",
+    "download": "Скачать",
+    "share": "Поделиться",
+    "favorite": "В избранное",
+    "description": "Описание",
+    "tags": "Теги",
+    "creator": "Создатель",
+    "verified": "Подтвержденный",
+    "stats": {
+      "downloads": "загрузок",
+      "views": "просмотров",
+      "rating": "из 5",
+      "ratingCount": "оценка",
+      "ratingsCount": "оценки",
+      "ratingsCountMany": "оценок"
+    },
+    "discount": {
+      "endsAt": "Скидка действует до"
+    }
+  },
+  "cart": {
+    "title": "Корзина",
+    "empty": "Корзина пуста",
+    "emptyDesc": "Добавьте товары с маркетплейса",
+    "goToMarket": "Перейти на маркет",
+    "items": "Товаров",
+    "subtotal": "Сумма",
+    "discount": "Скидка",
+    "bonuses": "Бонусы",
+    "total": "К оплате",
+    "checkout": "Перейти к оплате",
+    "payment": {
+      "title": "Опции оплаты",
+      "promoCode": "Промокод",
+      "enterPromo": "Введите промокод",
+      "apply": "Применить",
+      "promoApplied": "Промокод применен",
+      "useBonuses": "Использовать бонусы",
+      "available": "доступно",
+      "max": "Макс",
+      "ofTotal": "от суммы",
+      "email": "Email для дублирования архивов (опционально)",
+      "method": "Метод оплаты",
+      "crypto": "Криптовалюта",
+      "bonusesOnly": "Только бонусы",
+      "subscription": "Подписка"
+    },
+    "summary": {
+      "title": "Итог"
+    }
+  },
+  "profile": {
+    "balance": "бонусов",
+    "noVip": "Без VIP",
+    "creator": "Создатель",
+    "admin": "Админ",
+    "tabs": {
+      "downloads": "Загрузки",
+      "orders": "Заказы",
+      "favorites": "Избранное",
+      "referrals": "Рефералы",
+      "settings": "Настройки"
+    },
+    "referrals": {
+      "title": "Реферальная программа",
+      "yourCode": "Ваш код",
+      "copy": "Копировать",
+      "invited": "Приглашено",
+      "earned": "Заработано",
+      "bonusForReg": "30 бонусов за регистрацию",
+      "percentFromPurchases": "5% от покупок"
+    },
+    "settings": {
+      "language": "Язык интерфейса",
+      "theme": "Тема",
+      "light": "Светлая",
+      "dark": "Темная",
+      "notifications": "Уведомления",
+      "enabled": "Включено",
+      "disabled": "Выключено",
+      "security": "Безопасность",
+      "pinCode": "PIN-код",
+      "change": "Изменить",
+      "twoFactor": "Двухфакторная аутентификация"
+    },
+    "vip": {
+      "title": "VIP система",
+      "bronze": "Бронза",
+      "silver": "Серебро",
+      "gold": "Золото",
+      "diamond": "Бриллиант",
+      "cashback": "кешбэк",
+      "from": "от"
+    }
+  },
+  "notifications": {
+    "success": "Успешно",
+    "error": "Ошибка",
+    "warning": "Предупреждение",
+    "info": "Информация",
+    "copied": "Скопировано в буфер обмена",
+    "failedToCopy": "Не удалось скопировать",
+    "addedToCart": "Добавлено в корзину",
+    "removedFromCart": "Удалено из корзины",
+    "alreadyInCart": "Товар уже в корзине",
+    "profileUpdated": "Профиль обновлен",
+    "bonusClaimed": "Получено бонусов",
+    "alreadyClaimed": "Вы уже получили бонус сегодня",
+    "orderSuccess": "Заказ успешно оформлен",
+    "orderError": "Ошибка оформления заказа",
+    "selectPaymentMethod": "Выберите метод оплаты",
+    "authError": "Ошибка аутентификации",
+    "loadError": "Ошибка загрузки",
+    "invalidPromo": "Неверный промокод",
+    "noNotifications": "Нет новых уведомлений",
+    "comingSoon": "Будет доступно в ближайшее время"
+  },
+  "errors": {
+    "404": "Страница не найдена",
+    "404Desc": "Извините, но запрашиваемая страница не существует",
+    "500": "Что-то пошло не так",
+    "500Desc": "Неизвестная ошибка",
+    "reload": "Перезагрузить",
+    "backHome": "На главную",
+    "telegramDataNotAvailable": "Данные Telegram Web App недоступны",
+    "failedToGetToken": "Не удалось получить токен"
+  },
+  "buttons": {
+    "save": "Сохранить",
+    "cancel": "Отменить",
+    "delete": "Удалить",
+    "edit": "Редактировать",
+    "close": "Закрыть",
+    "confirm": "Подтвердить",
+    "back": "Назад",
+    "next": "Далее",
+    "more": "Больше",
+    "less": "Меньше",
+    "all": "Все",
+    "clear": "Очистить",
+    "reset": "Сбросить",
+    "search": "Поиск",
+    "filter": "Фильтр",
+    "sort": "Сортировка",
+    "share": "Поделиться",
+    "download": "Скачать",
+    "upload": "Загрузить",
+    "add": "Добавить",
+    "remove": "Удалить"
+  },
+  "time": {
+    "today": "Сегодня",
+    "yesterday": "Вчера",
+    "week": "Неделя",
+    "month": "Месяц",
+    "year": "Год",
+    "days": "дней",
+    "hours": "часов",
+    "minutes": "минут",
+    "seconds": "секунд"
+  },
+  "currency": {
+    "usd": "$",
+    "uah": "₴",
+    "bonuses": "бонусов"
+  }
+}

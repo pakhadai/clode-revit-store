@@ -69,7 +69,16 @@ class App {
      * Отримати переклад
      */
     t(key, defaultValue = '') {
-        return this.translations[key] || defaultValue || key;
+        // Simple key retrieval, can be expanded for nested keys
+        const keys = key.split('.');
+        let result = this.translations;
+        for (const k of keys) {
+            result = result?.[k];
+            if (result === undefined) {
+                return defaultValue || key;
+            }
+        }
+        return result || defaultValue || key;
     }
 
     /**
@@ -141,7 +150,7 @@ class App {
         // Кастомні події
         window.addEventListener('auth:success', (e) => {
             this.updateUI();
-            Utils.showNotification(`Вітаємо, ${e.detail.first_name}!`, 'success');
+            Utils.showNotification(`${this.t('auth.welcome')}, ${e.detail.first_name}!`, 'success');
         });
 
         window.addEventListener('auth:logout', () => {
@@ -156,6 +165,7 @@ class App {
         window.addEventListener('language:change', async () => {
             await this.loadTranslations();
             this.render();
+            this.updateNavigationText(); // Оновлюємо текст навігації
         });
     }
 
@@ -192,6 +202,7 @@ class App {
         // Скролимо вгору
         window.scrollTo(0, 0);
     }
+
 
     /**
      * Рендер сторінки
@@ -261,63 +272,58 @@ class App {
 
         return `
             <div class="home-page">
-                <!-- Банер підписки -->
                 <div class="subscription-banner bg-gradient-to-r from-blue-500 to-purple-600 rounded-2xl p-8 text-white mb-8">
-                    <h2 class="text-3xl font-bold mb-4">🎯 Преміум підписка</h2>
+                    <h2 class="text-3xl font-bold mb-4">🎯 ${this.t('home.subscription.title')}</h2>
                     <div class="grid md:grid-cols-2 gap-6 mb-6">
                         <ul class="space-y-2">
-                            <li>✅ Доступ до нових преміум архівів</li>
-                            <li>✅ +2 прокрутки колеса щодня</li>
+                            <li>✅ ${this.t('home.subscription.benefits.newArchives')}</li>
+                            <li>✅ ${this.t('home.subscription.benefits.bonusSpins')}</li>
                         </ul>
                         <ul class="space-y-2">
-                            <li>✅ Кешбек 5% бонусами</li>
-                            <li>✅ Пріоритетна підтримка</li>
+                            <li>✅ ${this.t('home.subscription.benefits.cashback')}</li>
+                            <li>✅ ${this.t('home.subscription.benefits.support')}</li>
                         </ul>
                     </div>
                     <div class="flex gap-4">
                         <button onclick="app.showSubscriptionPlans()"
                                 class="bg-white text-blue-600 px-6 py-3 rounded-lg font-bold hover:bg-gray-100">
-                            Місячна $5
+                            ${this.t('home.subscription.monthly')}
                         </button>
                         <button onclick="app.showSubscriptionPlans()"
                                 class="bg-white text-purple-600 px-6 py-3 rounded-lg font-bold hover:bg-gray-100">
-                            Річна $50 (2 місяці безкоштовно)
+                            ${this.t('home.subscription.yearly')}
                         </button>
                     </div>
                 </div>
 
-                <!-- Щоденний бонус -->
                 <div class="daily-bonus bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-lg mb-8">
-                    <h3 class="text-2xl font-bold mb-4 dark:text-white">🎁 Щоденний бонус</h3>
+                    <h3 class="text-2xl font-bold mb-4 dark:text-white">🎁 ${this.t('home.dailyBonus.title')}</h3>
                     <div class="grid md:grid-cols-2 gap-6">
-                        <!-- Стрік система -->
                         <div class="text-center">
                             <p class="mb-4 dark:text-gray-300">
-                                Ваш стрік: <span class="font-bold text-blue-600">${user?.daily_streak || 0} ${Utils.pluralize(user?.daily_streak || 0, ['день', 'дні', 'днів'])}</span>
+                                ${this.t('home.dailyBonus.streak')}: <span class="font-bold text-blue-600">${user?.daily_streak || 0} ${Utils.pluralize(user?.daily_streak || 0, [this.t('home.dailyBonus.day'), this.t('home.dailyBonus.days'), this.t('home.dailyBonus.daysMany')])}</span>
                             </p>
                             <button onclick="app.claimDailyBonus()"
                                     class="bg-green-500 hover:bg-green-600 text-white px-6 py-3 rounded-lg font-bold">
-                                🎁 Отримати бонус
+                                🎁 ${this.t('home.dailyBonus.claimBonus')}
                             </button>
                         </div>
 
-                        <!-- Колесо фортуни -->
                         <div class="text-center">
                             <p class="mb-4 dark:text-gray-300">
-                                Безкоштовні спроби: <span class="font-bold text-purple-600">${user?.free_spins_today || 1}</span>
+                                ${this.t('home.dailyBonus.freeSpins')}: <span class="font-bold text-purple-600">${user?.free_spins_today || 1}</span>
                             </p>
                             <button onclick="app.showWheelOfFortune()"
                                     class="bg-purple-500 hover:bg-purple-600 text-white px-6 py-3 rounded-lg font-bold">
-                                🎰 Крутити колесо
+                                🎰 ${this.t('home.dailyBonus.spinWheel')}
                             </button>
                         </div>
                     </div>
                 </div>
 
-                <!-- Товар тижня -->
                 ${featured.product_of_week ? `
                     <div class="product-of-week bg-gradient-to-r from-yellow-400 to-orange-500 rounded-2xl p-6 mb-8 text-white">
-                        <h3 class="text-2xl font-bold mb-4">🏆 Товар тижня</h3>
+                        <h3 class="text-2xl font-bold mb-4">🏆 ${this.t('home.productOfWeek.title')}</h3>
                         <div class="grid md:grid-cols-2 gap-6">
                             <div>
                                 <h4 class="text-xl font-bold mb-2">${featured.product_of_week.title}</h4>
@@ -329,7 +335,7 @@ class App {
                                 </div>
                                 <button onclick="app.navigateTo('product', true, {id: ${featured.product_of_week.id}})"
                                         class="bg-white text-orange-600 px-6 py-2 rounded-lg font-bold hover:bg-gray-100">
-                                    Детальніше
+                                    ${this.t('home.productOfWeek.details')}
                                 </button>
                             </div>
                             ${featured.product_of_week.preview_image ?
@@ -340,20 +346,18 @@ class App {
                     </div>
                 ` : ''}
 
-                <!-- Новинки -->
                 ${featured.new_products?.length > 0 ? `
                     <div class="new-products mb-8">
-                        <h3 class="text-2xl font-bold mb-4 dark:text-white">✨ Новинки</h3>
+                        <h3 class="text-2xl font-bold mb-4 dark:text-white">✨ ${this.t('home.sections.new')}</h3>
                         <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
                             ${featured.new_products.map(product => products.createProductCard(product)).join('')}
                         </div>
                     </div>
                 ` : ''}
 
-                <!-- Популярні товари -->
                 ${featured.featured_products?.length > 0 ? `
                     <div class="featured-products">
-                        <h3 class="text-2xl font-bold mb-4 dark:text-white">🔥 Популярні товари</h3>
+                        <h3 class="text-2xl font-bold mb-4 dark:text-white">🔥 ${this.t('home.sections.featured')}</h3>
                         <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
                             ${featured.featured_products.map(product => products.createProductCard(product)).join('')}
                         </div>
@@ -371,48 +375,43 @@ class App {
 
         return `
             <div class="market-page">
-                <h1 class="text-3xl font-bold mb-6 dark:text-white">🛍️ Маркетплейс</h1>
+                <h1 class="text-3xl font-bold mb-6 dark:text-white">🛍️ ${this.t('market.title')}</h1>
 
-                <!-- Фільтри -->
                 <div class="filters bg-white dark:bg-gray-800 rounded-lg p-4 mb-6">
                     <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-                        <!-- Категорія -->
                         <select id="filter-category" class="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg
                                                               dark:bg-gray-700 dark:text-white"
                                 onchange="products.setFilter('category', this.value); app.applyFilters()">
-                            <option value="">Всі категорії</option>
-                            <option value="free">🆓 Безкоштовні</option>
-                            <option value="premium">⭐ Преміум</option>
-                            <option value="creator">🎨 Від творців</option>
+                            <option value="">${this.t('market.filters.allCategories')}</option>
+                            <option value="free">🆓 ${this.t('market.filters.free')}</option>
+                            <option value="premium">⭐ ${this.t('market.filters.premium')}</option>
+                            <option value="creator">🎨 ${this.t('market.filters.fromCreators')}</option>
                         </select>
 
-                        <!-- Тип -->
                         <select id="filter-type" class="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg
                                                         dark:bg-gray-700 dark:text-white"
                                 onchange="products.setFilter('product_type', this.value); app.applyFilters()">
-                            <option value="">Всі типи</option>
-                            <option value="furniture">🪑 Меблі</option>
-                            <option value="textures">🎨 Текстури</option>
-                            <option value="components">🔧 Компоненти</option>
+                            <option value="">${this.t('market.filters.allTypes')}</option>
+                            <option value="furniture">🪑 ${this.t('market.filters.furniture')}</option>
+                            <option value="textures">🎨 ${this.t('market.filters.textures')}</option>
+                            <option value="components">🔧 ${this.t('market.filters.components')}</option>
                         </select>
 
-                        <!-- Сортування -->
                         <select id="filter-sort" class="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg
                                                         dark:bg-gray-700 dark:text-white"
                                 onchange="app.applySorting(this.value)">
-                            <option value="created_at-desc">Найновіші</option>
-                            <option value="price-asc">Ціна: за зростанням</option>
-                            <option value="price-desc">Ціна: за спаданням</option>
-                            <option value="rating-desc">Рейтинг</option>
-                            <option value="downloads-desc">Популярність</option>
+                            <option value="created_at-desc">${this.t('market.sorting.newest')}</option>
+                            <option value="price-asc">${this.t('market.sorting.priceAsc')}</option>
+                            <option value="price-desc">${this.t('market.sorting.priceDesc')}</option>
+                            <option value="rating-desc">${this.t('market.sorting.rating')}</option>
+                            <option value="downloads-desc">${this.t('market.sorting.popularity')}</option>
                         </select>
 
-                        <!-- Пошук -->
                         <div class="relative">
                             <input type="text" id="search-input"
                                    class="w-full px-4 py-2 pr-10 border border-gray-300 dark:border-gray-600 rounded-lg
                                           dark:bg-gray-700 dark:text-white"
-                                   placeholder="Пошук..."
+                                   placeholder="${this.t('market.filters.search')}"
                                    onkeyup="app.handleSearch(event)">
                             <button onclick="app.doSearch()"
                                     class="absolute right-2 top-2 text-gray-500 hover:text-gray-700 dark:text-gray-400">
@@ -421,49 +420,46 @@ class App {
                         </div>
                     </div>
 
-                    <!-- Додаткові фільтри -->
                     <div class="mt-4 flex flex-wrap gap-2">
                         <label class="inline-flex items-center">
                             <input type="checkbox" onchange="products.setFilter('is_free', this.checked); app.applyFilters()"
                                    class="mr-2">
-                            <span class="dark:text-gray-300">Тільки безкоштовні</span>
+                            <span class="dark:text-gray-300">${this.t('market.filters.onlyFree')}</span>
                         </label>
                         <label class="inline-flex items-center">
                             <input type="checkbox" onchange="products.setFilter('is_new', this.checked); app.applyFilters()"
                                    class="mr-2">
-                            <span class="dark:text-gray-300">Новинки</span>
+                            <span class="dark:text-gray-300">${this.t('market.filters.new')}</span>
                         </label>
                         <label class="inline-flex items-center">
                             <input type="checkbox" onchange="products.setFilter('has_discount', this.checked); app.applyFilters()"
                                    class="mr-2">
-                            <span class="dark:text-gray-300">Зі знижкою</span>
+                            <span class="dark:text-gray-300">${this.t('market.filters.withDiscount')}</span>
                         </label>
                     </div>
                 </div>
 
-                <!-- Список товарів -->
                 <div id="products-grid" class="grid grid-cols-2 md:grid-cols-4 gap-4">
                     ${products.products.map(product => products.createProductCard(product)).join('')}
                 </div>
 
-                <!-- Пагінація -->
                 ${products.totalPages > 1 ? `
                     <div class="pagination flex justify-center gap-2 mt-8">
                         ${products.currentPage > 1 ?
                             `<button onclick="app.loadPage(${products.currentPage - 1})"
                                      class="px-4 py-2 bg-gray-200 dark:bg-gray-700 rounded hover:bg-gray-300 dark:hover:bg-gray-600">
-                                ← Назад
+                                ← ${this.t('market.pagination.prev')}
                             </button>` : ''
                         }
 
                         <span class="px-4 py-2 dark:text-white">
-                            Сторінка ${products.currentPage} з ${products.totalPages}
+                            ${this.t('market.pagination.page')} ${products.currentPage} ${this.t('market.pagination.of')} ${products.totalPages}
                         </span>
 
                         ${products.currentPage < products.totalPages ?
                             `<button onclick="app.loadPage(${products.currentPage + 1})"
                                      class="px-4 py-2 bg-gray-200 dark:bg-gray-700 rounded hover:bg-gray-300 dark:hover:bg-gray-600">
-                                Далі →
+                                ${this.t('market.pagination.next')} →
                             </button>` : ''
                         }
                     </div>
@@ -491,7 +487,6 @@ class App {
 
         return `
             <div class="profile-page max-w-4xl mx-auto">
-                <!-- Заголовок профілю -->
                 <div class="profile-header bg-white dark:bg-gray-800 rounded-lg p-6 mb-6">
                     <div class="flex items-center gap-4">
                         <div class="avatar w-20 h-20 bg-blue-500 rounded-full flex items-center justify-center text-white text-3xl">
@@ -504,52 +499,50 @@ class App {
                             <p class="text-gray-600 dark:text-gray-400">@${user.username || `user_${user.telegram_id}`}</p>
                             <div class="flex gap-4 mt-2">
                                 <span class="text-sm ${user.vip_level > 0 ? 'text-yellow-500' : 'text-gray-500'}">
-                                    ${user.vip_level_name || 'No VIP'}
+                                    ${user.vip_level_name || this.t('profile.noVip')}
                                 </span>
-                                ${user.is_creator ? '<span class="text-sm text-purple-500">🎨 Творець</span>' : ''}
-                                ${user.is_admin ? '<span class="text-sm text-red-500">👑 Адмін</span>' : ''}
+                                ${user.is_creator ? `<span class="text-sm text-purple-500">🎨 ${this.t('profile.creator')}</span>` : ''}
+                                ${user.is_admin ? `<span class="text-sm text-red-500">👑 ${this.t('profile.admin')}</span>` : ''}
                             </div>
                         </div>
                         <div class="text-right">
                             <div class="text-3xl font-bold text-blue-600 dark:text-blue-400">${user.balance}</div>
-                            <div class="text-sm text-gray-600 dark:text-gray-400">бонусів</div>
+                            <div class="text-sm text-gray-600 dark:text-gray-400">${this.t('profile.balance')}</div>
                         </div>
                     </div>
                 </div>
 
-                <!-- Вкладки -->
                 <div class="tabs bg-white dark:bg-gray-800 rounded-lg mb-6">
                     <div class="flex border-b dark:border-gray-700">
                         <button onclick="app.showProfileTab('downloads')"
                                 class="tab-btn px-6 py-3 font-medium hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-white"
                                 data-tab="downloads">
-                            📥 Завантаження
+                            📥 ${this.t('profile.tabs.downloads')}
                         </button>
                         <button onclick="app.showProfileTab('orders')"
                                 class="tab-btn px-6 py-3 font-medium hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-white"
                                 data-tab="orders">
-                            📋 Замовлення
+                            📋 ${this.t('profile.tabs.orders')}
                         </button>
                         <button onclick="app.showProfileTab('favorites')"
                                 class="tab-btn px-6 py-3 font-medium hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-white"
                                 data-tab="favorites">
-                            ❤️ Обране
+                            ❤️ ${this.t('profile.tabs.favorites')}
                         </button>
                         <button onclick="app.showProfileTab('referrals')"
                                 class="tab-btn px-6 py-3 font-medium hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-white"
                                 data-tab="referrals">
-                            🤝 Реферали
+                            🤝 ${this.t('profile.tabs.referrals')}
                         </button>
                         <button onclick="app.showProfileTab('settings')"
                                 class="tab-btn px-6 py-3 font-medium hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-white"
                                 data-tab="settings">
-                            ⚙️ Налаштування
+                            ⚙️ ${this.t('profile.tabs.settings')}
                         </button>
                     </div>
 
                     <div class="tab-content p-6" id="profile-tab-content">
-                        <!-- Контент вкладок буде тут -->
-                    </div>
+                        </div>
                 </div>
             </div>
         `;
@@ -579,11 +572,11 @@ class App {
         return `
             <div class="error-page text-center py-16">
                 <div class="text-6xl mb-4">😕</div>
-                <h1 class="text-3xl font-bold mb-4 dark:text-white">Сторінку не знайдено</h1>
-                <p class="text-gray-600 dark:text-gray-400 mb-8">Вибачте, але запитувана сторінка не існує</p>
+                <h1 class="text-3xl font-bold mb-4 dark:text-white">${this.t('errors.404')}</h1>
+                <p class="text-gray-600 dark:text-gray-400 mb-8">${this.t('errors.404Desc')}</p>
                 <button onclick="app.navigateTo('home')"
                         class="bg-blue-500 hover:bg-blue-600 text-white px-6 py-3 rounded-lg font-bold">
-                    На головну
+                    ${this.t('errors.backHome')}
                 </button>
             </div>
         `;
@@ -596,11 +589,11 @@ class App {
         return `
             <div class="error-page text-center py-16">
                 <div class="text-6xl mb-4">❌</div>
-                <h1 class="text-3xl font-bold mb-4 dark:text-white">Щось пішло не так</h1>
-                <p class="text-gray-600 dark:text-gray-400 mb-8">${error.message || 'Невідома помилка'}</p>
+                <h1 class="text-3xl font-bold mb-4 dark:text-white">${this.t('errors.500')}</h1>
+                <p class="text-gray-600 dark:text-gray-400 mb-8">${error.message || this.t('errors.500Desc')}</p>
                 <button onclick="location.reload()"
                         class="bg-blue-500 hover:bg-blue-600 text-white px-6 py-3 rounded-lg font-bold">
-                    Перезавантажити
+                    ${this.t('errors.reload')}
                 </button>
             </div>
         `;
@@ -613,11 +606,11 @@ class App {
         return `
             <div class="auth-required text-center py-16">
                 <div class="text-6xl mb-4">🔒</div>
-                <h1 class="text-3xl font-bold mb-4 dark:text-white">Необхідна авторизація</h1>
-                <p class="text-gray-600 dark:text-gray-400 mb-8">Для доступу до цієї сторінки необхідно увійти</p>
+                <h1 class="text-3xl font-bold mb-4 dark:text-white">${this.t('auth.authRequired')}</h1>
+                <p class="text-gray-600 dark:text-gray-400 mb-8">${this.t('auth.authRequiredDesc')}</p>
                 <button onclick="auth.authenticate()"
                         class="bg-blue-500 hover:bg-blue-600 text-white px-6 py-3 rounded-lg font-bold">
-                    Увійти через Telegram
+                    ${this.t('auth.loginWithTelegram')}
                 </button>
             </div>
         `;
@@ -663,7 +656,18 @@ class App {
         this.updateThemeButton();
         this.updateLanguageButton();
         this.updateProfileButton();
+        this.updateNavigationText();
         cart.updateCartBadge();
+    }
+
+    /**
+     * Оновити текст у навігації
+     */
+    updateNavigationText() {
+        document.querySelector('button[data-page="home"] .text-xs').textContent = this.t('navigation.home');
+        document.querySelector('button[data-page="market"] .text-xs').textContent = this.t('navigation.market');
+        document.querySelector('button[data-page="cart"] .text-xs').textContent = this.t('navigation.cart');
+        document.querySelector('button[data-page="profile"] .text-xs').textContent = this.t('navigation.profile');
     }
 
     /**
@@ -775,7 +779,7 @@ class App {
      */
     renderProfileTabContent(tab) {
         // TODO: Реалізувати рендер для кожної вкладки
-        return `<p class="text-gray-600 dark:text-gray-400">Контент вкладки "${tab}" буде тут</p>`;
+        return `<p class="text-gray-600 dark:text-gray-400">${this.t('profile.tabs.contentPlaceholder').replace('{tab}', this.t(`profile.tabs.${tab}`))}</p>`;
     }
 
     /**
@@ -783,7 +787,7 @@ class App {
      */
     showSubscriptionPlans() {
         // TODO: Реалізувати модальне вікно з планами підписок
-        Utils.showNotification('Плани підписок будуть доступні найближчим часом', 'info');
+        Utils.showNotification(this.t('notifications.comingSoon'), 'info');
     }
 
     /**
@@ -792,12 +796,12 @@ class App {
     async claimDailyBonus() {
         try {
             const response = await api.claimDailyBonus();
-            Utils.showNotification(`Отримано ${response.amount} бонусів!`, 'success');
+            Utils.showNotification(this.t('notifications.bonusClaimed').replace('{amount}', response.amount), 'success');
             auth.user.balance = response.new_balance;
             auth.user.daily_streak = response.streak;
             this.render();
         } catch (error) {
-            Utils.showNotification('Ви вже отримали бонус сьогодні', 'warning');
+            Utils.showNotification(this.t('notifications.alreadyClaimed'), 'warning');
         }
     }
 
@@ -806,7 +810,7 @@ class App {
      */
     showWheelOfFortune() {
         // TODO: Реалізувати колесо фортуни
-        Utils.showNotification('Колесо фортуни буде доступне найближчим часом', 'info');
+        Utils.showNotification(this.t('notifications.comingSoon'), 'info');
     }
 
     /**
@@ -826,7 +830,7 @@ class App {
      */
     showNotifications() {
         // TODO: Реалізувати сторінку сповіщень
-        Utils.showNotification('Немає нових сповіщень', 'info');
+        Utils.showNotification(this.t('notifications.noNotifications'), 'info');
     }
 
     /**

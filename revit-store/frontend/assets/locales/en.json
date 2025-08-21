@@ -1,0 +1,254 @@
+{
+  "app": {
+    "name": "OhMyRevit",
+    "tagline": "Revit Archives Marketplace"
+  },
+  "navigation": {
+    "home": "Home",
+    "market": "Market",
+    "cart": "Cart",
+    "profile": "Profile",
+    "admin": "Admin"
+  },
+  "auth": {
+    "login": "Login",
+    "logout": "Logout",
+    "loginWithTelegram": "Login with Telegram",
+    "welcome": "Welcome",
+    "authRequired": "Authorization Required",
+    "authRequiredDesc": "You need to log in to access this page"
+  },
+  "home": {
+    "subscription": {
+      "title": "Premium Subscription",
+      "benefits": {
+        "newArchives": "Access to new premium archives",
+        "bonusSpins": "+2 wheel spins daily",
+        "cashback": "5% cashback in bonuses",
+        "support": "Priority support"
+      },
+      "monthly": "Monthly $5",
+      "yearly": "Yearly $50 (2 months free)"
+    },
+    "dailyBonus": {
+      "title": "Daily Bonus",
+      "streak": "Your streak",
+      "day": "day",
+      "days": "days",
+      "daysMany": "days",
+      "claimBonus": "Claim Bonus",
+      "freeSpins": "Free Spins",
+      "spinWheel": "Spin the Wheel"
+    },
+    "productOfWeek": {
+      "title": "Product of the Week",
+      "details": "Details"
+    },
+    "sections": {
+      "new": "New Arrivals",
+      "featured": "Featured Products"
+    }
+  },
+  "market": {
+    "title": "Marketplace",
+    "filters": {
+      "allCategories": "All Categories",
+      "free": "Free",
+      "premium": "Premium",
+      "fromCreators": "From Creators",
+      "allTypes": "All Types",
+      "furniture": "Furniture",
+      "textures": "Textures",
+      "components": "Components",
+      "search": "Search...",
+      "onlyFree": "Only Free",
+      "new": "New",
+      "withDiscount": "With Discount"
+    },
+    "sorting": {
+      "newest": "Newest",
+      "priceAsc": "Price: low to high",
+      "priceDesc": "Price: high to low",
+      "rating": "Rating",
+      "popularity": "Popularity"
+    },
+    "pagination": {
+      "page": "Page",
+      "of": "of",
+      "prev": "Prev",
+      "next": "Next"
+    }
+  },
+  "product": {
+    "free": "Free",
+    "new": "New",
+    "featured": "Featured",
+    "requiresSubscription": "Subscription required",
+    "addToCart": "Add to Cart",
+    "inCart": "In Cart",
+    "download": "Download",
+    "share": "Share",
+    "favorite": "Favorite",
+    "description": "Description",
+    "tags": "Tags",
+    "creator": "Creator",
+    "verified": "Verified",
+    "stats": {
+      "downloads": "downloads",
+      "views": "views",
+      "rating": "of 5",
+      "ratingCount": "rating",
+      "ratingsCount": "ratings",
+      "ratingsCountMany": "ratings"
+    },
+    "discount": {
+      "endsAt": "Discount ends at"
+    }
+  },
+  "cart": {
+    "title": "Cart",
+    "empty": "Your cart is empty",
+    "emptyDesc": "Add items from the marketplace",
+    "goToMarket": "Go to Market",
+    "items": "Items",
+    "subtotal": "Subtotal",
+    "discount": "Discount",
+    "bonuses": "Bonuses",
+    "total": "Total",
+    "checkout": "Checkout",
+    "payment": {
+      "title": "Payment Options",
+      "promoCode": "Promo Code",
+      "enterPromo": "Enter promo code",
+      "apply": "Apply",
+      "promoApplied": "Promo code applied",
+      "useBonuses": "Use bonuses",
+      "available": "available",
+      "max": "Max",
+      "ofTotal": "of total",
+      "email": "Email for duplicating archives (optional)",
+      "method": "Payment Method",
+      "crypto": "Cryptocurrency",
+      "bonusesOnly": "Bonuses Only",
+      "subscription": "Subscription"
+    },
+    "summary": {
+      "title": "Summary"
+    }
+  },
+  "profile": {
+    "balance": "bonuses",
+    "noVip": "No VIP",
+    "creator": "Creator",
+    "admin": "Admin",
+    "tabs": {
+      "downloads": "Downloads",
+      "orders": "Orders",
+      "favorites": "Favorites",
+      "referrals": "Referrals",
+      "settings": "Settings"
+    },
+    "referrals": {
+      "title": "Referral Program",
+      "yourCode": "Your Code",
+      "copy": "Copy",
+      "invited": "Invited",
+      "earned": "Earned",
+      "bonusForReg": "30 bonuses for registration",
+      "percentFromPurchases": "5% from purchases"
+    },
+    "settings": {
+      "language": "Interface Language",
+      "theme": "Theme",
+      "light": "Light",
+      "dark": "Dark",
+      "notifications": "Notifications",
+      "enabled": "Enabled",
+      "disabled": "Disabled",
+      "security": "Security",
+      "pinCode": "PIN Code",
+      "change": "Change",
+      "twoFactor": "Two-Factor Authentication"
+    },
+    "vip": {
+      "title": "VIP System",
+      "bronze": "Bronze",
+      "silver": "Silver",
+      "gold": "Gold",
+      "diamond": "Diamond",
+      "cashback": "cashback",
+      "from": "from"
+    }
+  },
+  "notifications": {
+    "success": "Success",
+    "error": "Error",
+    "warning": "Warning",
+    "info": "Info",
+    "copied": "Copied to clipboard",
+    "failedToCopy": "Failed to copy",
+    "addedToCart": "Added to cart",
+    "removedFromCart": "Removed from cart",
+    "alreadyInCart": "Item is already in the cart",
+    "profileUpdated": "Profile updated",
+    "bonusClaimed": "Bonuses claimed",
+    "alreadyClaimed": "You have already claimed your bonus today",
+    "orderSuccess": "Order placed successfully",
+    "orderError": "Error placing order",
+    "selectPaymentMethod": "Select a payment method",
+    "authError": "Authentication error",
+    "loadError": "Loading error",
+    "invalidPromo": "Invalid promo code",
+    "noNotifications": "No new notifications",
+    "comingSoon": "Coming soon"
+  },
+  "errors": {
+    "404": "Page not found",
+    "404Desc": "Sorry, but the page you requested does not exist",
+    "500": "Something went wrong",
+    "500Desc": "Unknown error",
+    "reload": "Reload",
+    "backHome": "Back to Home",
+    "telegramDataNotAvailable": "Telegram Web App data not available",
+    "failedToGetToken": "Failed to get token"
+  },
+  "buttons": {
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "close": "Close",
+    "confirm": "Confirm",
+    "back": "Back",
+    "next": "Next",
+    "more": "More",
+    "less": "Less",
+    "all": "All",
+    "clear": "Clear",
+    "reset": "Reset",
+    "search": "Search",
+    "filter": "Filter",
+    "sort": "Sort",
+    "share": "Share",
+    "download": "Download",
+    "upload": "Upload",
+    "add": "Add",
+    "remove": "Remove"
+  },
+  "time": {
+    "today": "Today",
+    "yesterday": "Yesterday",
+    "week": "Week",
+    "month": "Month",
+    "year": "Year",
+    "days": "days",
+    "hours": "hours",
+    "minutes": "minutes",
+    "seconds": "seconds"
+  },
+  "currency": {
+    "usd": "$",
+    "uah": "₴",
+    "bonuses": "bonuses"
+  }
+}

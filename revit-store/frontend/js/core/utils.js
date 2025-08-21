@@ -118,7 +118,7 @@ const Utils = {
                 loader.innerHTML = `
                     <div class="bg-white rounded-lg p-6 flex flex-col items-center">
                         <div class="loader border-4 border-blue-500 border-t-transparent rounded-full w-12 h-12 animate-spin"></div>
-                        <p class="mt-4 text-gray-700">Завантаження...</p>
+                        <p class="mt-4 text-gray-700">${window.app.t('notifications.loading', 'Завантаження...')}</p>
                     </div>
                 `;
                 document.body.appendChild(loader);
@@ -249,11 +249,11 @@ const Utils = {
                 document.execCommand('copy');
                 document.body.removeChild(textarea);
             }
-            this.showNotification('Скопійовано в буфер обміну', 'success');
+            this.showNotification(window.app.t('notifications.copied'), 'success');
             return true;
         } catch (err) {
             console.error('Failed to copy:', err);
-            this.showNotification('Не вдалося скопіювати', 'error');
+            this.showNotification(window.app.t('notifications.failedToCopy'), 'error');
             return false;
         }
     },
