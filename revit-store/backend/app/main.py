@@ -12,7 +12,7 @@ import os
 load_dotenv()
 
 # Імпортуємо роутери
-from app.routers import auth, products  # Додамо більше пізніше: orders, subscriptions, bonuses
+from app.routers import auth, products, bonuses  # Додамо більше пізніше: orders, subscriptions, bonuses
 
 
 @asynccontextmanager
@@ -104,11 +104,11 @@ app.include_router(
     tags=["Products"]
 )
 
+app.include_router(bonuses.router, tags=["Bonuses"])
 
 # TODO: Додати інші роутери коли вони будуть готові
 # app.include_router(orders.router, tags=["Orders"])
 # app.include_router(subscriptions.router, tags=["Subscriptions"])
-# app.include_router(bonuses.router, tags=["Bonuses"])
 # app.include_router(users.router, tags=["Users"])
 # app.include_router(admin.router, tags=["Admin"])
 
