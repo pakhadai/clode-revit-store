@@ -1,8 +1,125 @@
 {
-  "name": "OhMyRevit",
+  "name": "OhMyRevit - Revit Archives Marketplace",
   "short_name": "OhMyRevit",
+  "description": "Marketplace for buying and selling Revit archives with bonuses and subscriptions",
   "start_url": "/",
   "display": "standalone",
+  "orientation": "portrait",
   "theme_color": "#3B82F6",
-  "background_color": "#ffffff"
+  "background_color": "#ffffff",
+  "scope": "/",
+  "lang": "en",
+  "dir": "ltr",
+  "categories": ["business", "productivity", "shopping"],
+  "icons": [
+    {
+      "src": "/assets/icons/icon-72x72.png",
+      "sizes": "72x72",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/assets/icons/icon-96x96.png",
+      "sizes": "96x96",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/assets/icons/icon-128x128.png",
+      "sizes": "128x128",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/assets/icons/icon-144x144.png",
+      "sizes": "144x144",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/assets/icons/icon-152x152.png",
+      "sizes": "152x152",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/assets/icons/icon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/assets/icons/icon-384x384.png",
+      "sizes": "384x384",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/assets/icons/icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "/assets/screenshots/home.png",
+      "sizes": "1280x720",
+      "type": "image/png",
+      "label": "Home Screen"
+    },
+    {
+      "src": "/assets/screenshots/market.png",
+      "sizes": "1280x720",
+      "type": "image/png",
+      "label": "Marketplace"
+    },
+    {
+      "src": "/assets/screenshots/wheel.png",
+      "sizes": "1280x720",
+      "type": "image/png",
+      "label": "Wheel of Fortune"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Market",
+      "short_name": "Market",
+      "description": "Browse Revit archives",
+      "url": "/?page=market",
+      "icons": [{ "src": "/assets/icons/market-96x96.png", "sizes": "96x96" }]
+    },
+    {
+      "name": "Daily Bonus",
+      "short_name": "Bonus",
+      "description": "Claim your daily bonus",
+      "url": "/?page=home#bonus",
+      "icons": [{ "src": "/assets/icons/bonus-96x96.png", "sizes": "96x96" }]
+    },
+    {
+      "name": "Profile",
+      "short_name": "Profile",
+      "description": "Your profile and settings",
+      "url": "/?page=profile",
+      "icons": [{ "src": "/assets/icons/profile-96x96.png", "sizes": "96x96" }]
+    }
+  ],
+  "prefer_related_applications": false,
+  "related_applications": [],
+  "share_target": {
+    "action": "/share",
+    "method": "POST",
+    "enctype": "multipart/form-data",
+    "params": {
+      "title": "title",
+      "text": "text",
+      "url": "url"
+    }
+  },
+  "protocol_handlers": [
+    {
+      "protocol": "web+ohmyrevit",
+      "url": "/?product=%s"
+    }
+  ]
 }
