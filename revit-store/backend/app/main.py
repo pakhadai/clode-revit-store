@@ -12,8 +12,7 @@ import os
 load_dotenv()
 
 # Імпортуємо роутери
-from app.routers import auth, products, bonuses, orders, subscriptions, referrals
-
+from app.routers import auth, products, bonuses, orders, subscriptions, referrals, creators, admin
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -107,10 +106,12 @@ app.include_router(
 app.include_router(bonuses.router, tags=["Bonuses"])
 app.include_router(orders.router, tags=["Orders"])
 app.include_router(subscriptions.router, tags=["Subscriptions"])
+app.include_router(creators.router, tags=["Creators"])
+app.include_router(admin.router, tags=["Admin"])
 
 # TODO: Додати інші роутери коли вони будуть готові
 # app.include_router(users.router, tags=["Users"])
-# app.include_router(admin.router, tags=["Admin"])
+
 
 
 # ====== ОБРОБКА ПОМИЛОК ======

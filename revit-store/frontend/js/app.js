@@ -238,9 +238,17 @@ class App {
                     html = await this.renderProductPage(productId);
                     break;
 
+                case 'creator':
+                    if (auth.isCreator()) {
+                        html = creator.createCreatorPage();
+                    } else {
+                        html = this.render404Page();
+                    }
+                    break;
+
                 case 'admin':
                     if (auth.isAdmin()) {
-                        html = await this.renderAdminPage();
+                        html = admin.createAdminPage();
                     } else {
                         html = this.render404Page();
                     }
