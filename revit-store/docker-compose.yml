@@ -44,6 +44,8 @@ services:
       context: ./backend
       dockerfile: Dockerfile
     container_name: revit_backend
+    env_file:
+      - ./.env
     environment:
       DATABASE_URL: postgresql://${DB_USER}:${DB_PASSWORD}@postgres:5432/${DB_NAME}
       REDIS_URL: redis://redis:6379
