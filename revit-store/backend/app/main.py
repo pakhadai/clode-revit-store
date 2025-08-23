@@ -91,19 +91,6 @@ async def health_check():
 
 
 # ====== ПІДКЛЮЧЕННЯ РОУТЕРІВ ======
-
-# Автентифікація
-app.include_router(
-    auth.router,
-    tags=["Authentication"]
-)
-
-# Продукти
-app.include_router(
-    products.router,
-    tags=["Products"]
-)
-
 app.include_router(auth.router, tags=["Auth"])
 app.include_router(bonuses.router, tags=["Bonuses"])
 app.include_router(products.router, tags=["Products"])

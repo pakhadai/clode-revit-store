@@ -1,0 +1,173 @@
+/* Стилі для колеса фортуни */
+.wheel-container {
+    position: relative;
+    width: 320px;
+    height: 320px;
+    margin: 0 auto;
+}
+
+.wheel-wrapper {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+    background: radial-gradient(circle at center, #2563eb, #1e40af);
+    padding: 10px;
+}
+
+.wheel {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    position: relative;
+    overflow: hidden;
+    transform: rotate(0deg);
+    transition: transform 4s cubic-bezier(0.17, 0.67, 0.12, 0.99);
+}
+
+.wheel-sector {
+    position: absolute;
+    width: 50%;
+    height: 50%;
+    transform-origin: right bottom;
+    border: 2px solid #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 14px;
+    color: white;
+    text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+}
+
+.wheel-sector:nth-child(1) { transform: rotate(0deg) skewY(-54deg); background: #FFD700; }
+.wheel-sector:nth-child(2) { transform: rotate(36deg) skewY(-54deg); background: #9CA3AF; }
+.wheel-sector:nth-child(3) { transform: rotate(72deg) skewY(-54deg); background: #3B82F6; }
+.wheel-sector:nth-child(4) { transform: rotate(108deg) skewY(-54deg); background: #9CA3AF; }
+.wheel-sector:nth-child(5) { transform: rotate(144deg) skewY(-54deg); background: #10B981; }
+.wheel-sector:nth-child(6) { transform: rotate(180deg) skewY(-54deg); background: #9CA3AF; }
+.wheel-sector:nth-child(7) { transform: rotate(216deg) skewY(-54deg); background: #8B5CF6; }
+.wheel-sector:nth-child(8) { transform: rotate(252deg) skewY(-54deg); background: #F59E0B; }
+.wheel-sector:nth-child(9) { transform: rotate(288deg) skewY(-54deg); background: #EF4444; }
+.wheel-sector:nth-child(10) { transform: rotate(324deg) skewY(-54deg); background: #EC4899; }
+
+.wheel-sector-content {
+    transform: skewY(54deg) rotate(-18deg);
+    position: absolute;
+    right: 20px;
+    top: 50%;
+    transform: translateY(-50%) skewY(54deg) rotate(-18deg);
+}
+
+.wheel-pointer {
+    position: absolute;
+    top: -20px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 0;
+    height: 0;
+    border-left: 20px solid transparent;
+    border-right: 20px solid transparent;
+    border-top: 40px solid #ef4444;
+    filter: drop-shadow(0 3px 5px rgba(0,0,0,0.3));
+    z-index: 10;
+}
+
+.wheel-center {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 80px;
+    height: 80px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 50%;
+    border: 4px solid white;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    cursor: pointer;
+    z-index: 5;
+    transition: transform 0.2s;
+}
+
+.wheel-center:hover {
+    transform: translate(-50%, -50%) scale(1.1);
+}
+
+.wheel-center:active {
+    transform: translate(-50%, -50%) scale(0.95);
+}
+
+.wheel-spinning {
+    animation: spin 4s cubic-bezier(0.17, 0.67, 0.12, 0.99);
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(calc(360deg * 5)); }
+}
+
+.wheel-result {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) scale(0);
+    background: white;
+    padding: 30px;
+    border-radius: 20px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+    z-index: 1000;
+    text-align: center;
+    animation: resultPopup 0.5s forwards;
+}
+
+@keyframes resultPopup {
+    0% {
+        transform: translate(-50%, -50%) scale(0) rotate(180deg);
+        opacity: 0;
+    }
+    50% {
+        transform: translate(-50%, -50%) scale(1.1) rotate(0deg);
+    }
+    100% {
+        transform: translate(-50%, -50%) scale(1) rotate(0deg);
+        opacity: 1;
+    }
+}
+
+.wheel-result-mega {
+    background: linear-gradient(135deg, #FFD700, #FFA500);
+    color: white;
+}
+
+.confetti {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 999;
+}
+
+.confetti-piece {
+    position: absolute;
+    width: 10px;
+    height: 10px;
+    animation: confetti-fall 3s linear;
+}
+
+@keyframes confetti-fall {
+    0% {
+        transform: translateY(-100vh) rotate(0deg);
+        opacity: 1;
+    }
+    100% {
+        transform: translateY(100vh) rotate(720deg);
+        opacity: 0;
+    }
+}

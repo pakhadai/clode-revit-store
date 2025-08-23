@@ -349,8 +349,8 @@ class App {
                             <p class="mb-4 dark:text-gray-300">
                                 ${this.t('home.dailyBonus.freeSpins')}: <span class="font-bold text-purple-600">${user?.free_spins_today || 1}</span>
                             </p>
-                            <button onclick="app.showWheelOfFortune()"
-                                    class="bg-purple-500 hover:bg-purple-600 text-white px-6 py-3 rounded-lg font-bold">
+                            <button onclick="wheelGame.init().then(() => wheelGame.open())"
+                                    class="bg-purple-500 hover:bg-purple-600 text-white px-4 py-2 rounded-lg font-bold">
                                 🎰 ${this.t('home.dailyBonus.spinWheel')}
                             </button>
                         </div>
@@ -530,7 +530,7 @@ class App {
         `;
 
         return `
-             <div class="profile-page max-w-4xl mx-auto">
+            <div class="profile-page max-w-4xl mx-auto">
                 <div class="profile-header bg-white dark:bg-gray-800 rounded-lg p-6 mb-4">
                     <div class="flex items-center gap-4">
                         <div class="avatar w-20 h-20 bg-blue-500 rounded-full flex items-center justify-center text-white text-3xl flex-shrink-0">
@@ -570,14 +570,14 @@ class App {
                     ${createTile('faq', '❓', 'profile.tabs.faq')}
 
                     ${user.is_creator ?
-                        `<button onclick="app.navigateTo('creator')" class="bg-purple-100 dark:bg-purple-900 rounded-xl p-4 shadow hover:shadow-lg transition-shadow text-center">
-                            <div class="text-4xl mb-2">🎨</div>
-                            <div class="font-semibold text-purple-700 dark:text-purple-300">Кабінет творця</div>
+                        `<button onclick="app.navigateTo('creator')" class="bg-purple-100 dark:bg-purple-900 rounded-xl p-4 shadow hover:shadow-lg transition-shadow">
+                            <div class="text-3xl mb-1">🎨</div>
+                            <div class="text-sm font-semibold text-purple-700 dark:text-purple-300">Кабінет творця</div>
                         </button>`
                     :
-                        `<button onclick="admin.showCreatorApplicationModal()" class="bg-green-100 dark:bg-green-900 rounded-xl p-4 shadow hover:shadow-lg transition-shadow text-center">
-                            <div class="text-4xl mb-2">🚀</div>
-                            <div class="font-semibold text-green-700 dark:text-green-300">Стати творцем</div>
+                        `<button onclick="admin.showCreatorApplicationModal()" class="bg-green-100 dark:bg-green-900 rounded-xl p-4 shadow hover:shadow-lg transition-shadow">
+                            <div class="text-3xl mb-1">🚀</div>
+                            <div class="text-sm font-semibold text-green-700 dark:text-green-300">Стати творцем</div>
                         </button>`
                     }
                 </div>

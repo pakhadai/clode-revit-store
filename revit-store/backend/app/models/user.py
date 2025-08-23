@@ -41,6 +41,9 @@ class User(Base):
     referral_earnings = Column(Integer, default=0)  # Заробіток з рефералів
 
     # Щоденні бонуси
+    #daily_bonuses = relationship("DailyBonus", back_populates="user")
+    #wheel_spins = relationship("WheelSpin", back_populates="user")
+    #bonus_history = relationship("BonusHistory", back_populates="user")
     daily_streak = Column(Integer, default=0)  # Поточний стрік
     last_daily_bonus = Column(DateTime, nullable=True)  # Остання дата отримання
     free_spins_today = Column(Integer, default=1)  # Безкоштовні прокрутки колеса

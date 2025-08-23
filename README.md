@@ -168,3 +168,7 @@ docker-compose up --build -d
 - `GET /api/products/{id}`: Отримання детальної інформації про конкретний продукт.
 - `POST /api/orders`: Створення нового замовлення.
 - `GET /api/users/me`: Отримання даних профілю поточного авторизованого користувача.
+
+
+## Repository
+GitHub: [https://github.com/pakhadai/clode-revit-store.git]

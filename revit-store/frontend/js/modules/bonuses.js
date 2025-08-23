@@ -96,6 +96,14 @@ class BonusesModule {
     }
 
     /**
+     * Відкрити колесо фортуни
+     */
+    async openWheel() {
+        await wheelGame.init();
+        wheelGame.open();
+    }
+
+    /**
      * Крутити колесо фортуни
      */
     async spinWheel(isFree = true) {
