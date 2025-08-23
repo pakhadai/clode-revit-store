@@ -101,6 +101,61 @@ class TelegramBotService:
         response = await self._make_request("sendDocument", payload)
         return response and response.get("ok", False)
 
+    async def send_archive_message(
+            self,
+            telegram_id: int,
+            product: "Product",  # Використовуємо модель продукту
+            file_path: str,  # Абсолютний шлях до файлу на диску
+            language: str = "uk"
+    ) -> bool:
+        """
+        Відправляє повідомлення з архівом, фото та описом.
+        """
+        if not self.bot_token:
+            print(
+                f"📦 TELEGRAM BOT (DRY RUN): Відправка архіву '{product.get_title(language)}' користувачу {telegram_id}")
+            return True
+
+        # Формуємо підпис до повідомлення
+        caption = (
+            f"<b>{product.get_title(language)}</b>\n\n"
+            f"<i>{product.get_description(language)}</i>\n\n"
+            f"<b>Тип:</b> {product.product_type}\n"
+            f"<b>Категорія:</b> {product.category}"
+        )
+
+        # Відкриваємо файл для відправки
+        try:
+            with open(file_path, "rb") as archive_file:
+                files = {"document": (os.path.basename(file_path), archive_file)}
+
+                params = {
+                    "chat_id": telegram_id,
+                    "caption": caption,
+                    "parse_mode": "HTML"
+                }
+
+                # Якщо є прев'ю, додаємо його
+                if product.preview_images:
+                    params["photo"] = product.preview_images[0]
+                    # Якщо є фото, відправляємо його окремо, а потім документ
+                    await self.send_photo(telegram_id, product.preview_images[0], caption=caption)
+                    await self.send_document(telegram_id, document_url=None,
+                                             files={"document": (os.path.basename(file_path), archive_file)})
+                    return True
+
+                # Якщо фото немає, відправляємо тільки документ з підписом
+                async with httpx.AsyncClient() as client:
+                    response = await client.post(f"{self.api_url}/sendDocument", params=params, files=files,
+                                                 timeout=60.0)
+
+                response_data = response.json()
+                return response_data.get("ok", False)
+        except Exception as e:
+            print(f"❌ Помилка відправки архіву через бота: {e}")
+            return False
+
+
     async def send_invoice(
             self,
             telegram_id: int,

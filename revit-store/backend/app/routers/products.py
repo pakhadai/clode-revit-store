@@ -3,7 +3,7 @@
 """
 import os
 from fastapi.responses import FileResponse
-from fastapi import APIRouter, HTTPException, Depends, Query
+from fastapi import APIRouter, HTTPException, Depends, Query, Response
 from sqlalchemy.orm import Session
 from sqlalchemy import or_, and_, desc, asc
 from typing import List, Optional, Dict
@@ -13,6 +13,7 @@ from app.database import get_db
 from app.models.product import Product
 from app.models.user import User
 from app.routers.auth import get_current_user_from_token
+from app.services.telegram_bot import bot_service
 
 # Створюємо роутер
 router = APIRouter(
@@ -385,34 +386,82 @@ async def get_user_favorites(
 
     return favorites
 
+
+@router.get("/user/downloads")
+async def get_user_downloads(
+        language: str = Query("uk"),
+        current_user: User = Depends(get_current_user_from_token),
+        db: Session = Depends(get_db)
+):
+    """
+    Отримати всі товари, доступні користувачу для завантаження.
+    """
+    downloads = {
+        "free": [],
+        "purchased": [],
+        "subscription": []
+    }
+
+    # 1. Знаходимо всі безкоштовні товари
+    free_products = db.query(Product).filter(Product.is_active == True, Product.price == 0).all()
+    for p in free_products:
+        downloads["free"].append({
+            "id": p.id,
+            "title": p.get_title(language),
+            "description": p.get_description(language),
+            "preview_image": p.preview_images[0] if p.preview_images else None
+        })
+
+    # 2. TODO: Знаходимо всі куплені товари
+    # Тут буде логіка пошуку товарів в успішних замовленнях користувача
+    # purchased_items = db.query(OrderItem).join(Order).filter(Order.user_id == current_user.id, Order.status == 'completed').all()
+    # for item in purchased_items: ...
+
+    # 3. TODO: Знаходимо товари, доступні по підписці
+    # active_subscription = current_user.get_active_subscription(db)
+    # if active_subscription:
+    #     subscription_products = db.query(Product).filter(Product.requires_subscription == True, Product.released_at >= active_subscription.started_at).all()
+    #     for p in subscription_products: ...
+
+    return downloads
+
+
 @router.get("/{product_id}/download")
 async def download_product_archive(
     product_id: int,
+    language: str = Query("uk"),
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user_from_token) # Перевіряємо, чи користувач авторизований
+    current_user: User = Depends(get_current_user_from_token)
 ):
     """
-    Надає посилання для завантаження архіву товару.
+    Відправляє архів користувачу в особисті повідомлення через бота.
     """
     product = db.query(Product).filter(Product.id == product_id).first()
 
     if not product:
         raise HTTPException(status_code=404, detail="Товар не знайдено")
 
-    # TODO: Додайте перевірку, чи користувач купив цей товар, якщо він не безкоштовний
-    # if not product.is_free() and not user_has_purchased(user, product_id):
-    #     raise HTTPException(status_code=403, detail="Ви не придбали цей товар")
+    # TODO: Додайте логіку перевірки, чи користувач купив цей товар
 
-    # Формуємо абсолютний шлях до файлу всередині контейнера
-    # product.file_url містить відносний шлях, напр. '/media/archives/file.zip'
     file_path = os.path.join("/app", product.file_url.lstrip('/'))
 
     if not os.path.exists(file_path):
         raise HTTPException(status_code=404, detail="Файл архіву не знайдено на сервері")
 
-    # Збільшуємо лічильник завантажень
-    product.downloads_count += 1
-    db.commit()
+    # Відправляємо архів через бота
+    success = await bot_service.send_archive_message(
+        telegram_id=current_user.telegram_id,
+        product=product,
+        file_path=file_path,
+        language=language
+    )
 
-    # Повертаємо файл для завантаження
-    return FileResponse(path=file_path, filename=os.path.basename(file_path), media_type='application/zip')
+    if success:
+        product.downloads_count += 1
+        db.commit()
+        return {
+            "success": True,
+            "message": f"Архів '{product.get_title(language)}' було відправлено вам в особисті повідомлення."
+        }
+    else:
+        raise HTTPException(status_code=500, detail="Не вдалося відправити архів. Можливо, ви не запустили бота.")

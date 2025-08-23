@@ -2,7 +2,7 @@
 Роутер для автентифікації користувачів через Telegram Web App
 """
 
-from fastapi import APIRouter, HTTPException, Depends, Body
+from fastapi import APIRouter, HTTPException, Depends, Body, Request
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from sqlalchemy.orm import Session
 from typing import Dict, Optional
@@ -27,7 +27,7 @@ router = APIRouter(
 telegram_auth = TelegramAuth()
 
 # Security схема для Bearer токенів
-security = HTTPBearer()
+security = HTTPBearer(auto_error=False)
 
 
 # ====== СХЕМИ ДАНИХ (Pydantic моделі) ======
@@ -290,34 +290,53 @@ async def logout():
 # ====== HELPER ФУНКЦІЇ ======
 
 async def get_current_user_from_token(
-        credentials: HTTPAuthorizationCredentials = Depends(security),
+        request: Request,
+        credentials: Optional[HTTPAuthorizationCredentials] = Depends(security),
         db: Session = Depends(get_db)
 ) -> User:
     """
-    Допоміжна функція для отримання користувача з токена
-    Використовується в інших роутерах як залежність
+    Допоміжна функція для отримання користувача з токена.
+    Читає токен з заголовка "Authorization: Bearer <token>" або з параметра URL "?token=<token>".
+    Використовується в інших роутерах як залежність.
 
     Приклад:
     @router.get("/protected")
     async def protected_route(user: User = Depends(get_current_user_from_token)):
         return {"message": f"Привіт, {user.first_name}!"}
     """
-    token = credentials.credentials
-    payload = verify_access_token(token)
+    token = None
+    # Спочатку пробуємо отримати токен зі стандартного заголовка Authorization
+    if credentials:
+        token = credentials.credentials
 
+    # Якщо токена немає в заголовку, шукаємо його в параметрах URL (для завантаження файлів)
+    if not token:
+        token = request.query_params.get("token")
+
+    # Якщо токен так і не знайдено, повертаємо помилку
+    if not token:
+        raise HTTPException(
+            status_code=401,
+            detail="Токен авторизації не надано"
+        )
+
+    # Перевіряємо та декодуємо токен
+    payload = verify_access_token(token)
     if not payload:
         raise HTTPException(
             status_code=401,
-            detail="Невалідний токен"
+            detail="Невалідний або прострочений токен"
         )
 
+    # Отримуємо telegram_id з токена
     telegram_id = payload.get("sub")
     if not telegram_id:
         raise HTTPException(
             status_code=401,
-            detail="Невалідний токен"
+            detail="Невалідний формат токена"
         )
 
+    # Шукаємо користувача в базі даних
     user = db.query(User).filter(
         User.telegram_id == int(telegram_id)
     ).first()
@@ -328,6 +347,7 @@ async def get_current_user_from_token(
             detail="Користувача не знайдено"
         )
 
+    # Перевіряємо, чи користувач не заблокований
     if user.is_blocked:
         raise HTTPException(
             status_code=403,

@@ -456,21 +456,17 @@ class ProductsModule {
     async downloadProduct(productId) {
         try {
             Utils.showLoader(true);
+            const response = await api.get(`/products/${productId}/download`, {
+                language: Utils.getCurrentLanguage()
+            });
 
-            // Формуємо повний URL до файлу на бекенді
-            const downloadUrl = `${api.baseURL}/products/${productId}/download`;
+            // Показуємо повідомлення про успіх, яке прийшло з бекенду
+            Utils.showNotification(response.message, 'success');
 
-            // Отримуємо назву товару, щоб назвати файл
-            const product = this.currentProduct || this.products.find(p => p.id === productId) || {};
-            const filename = `${product.sku || 'archive'}.zip`;
-
-            // Викликаємо правильну функцію з api.js для завантаження файлу
-            await api.downloadFile(downloadUrl, filename);
-
-            Utils.showNotification(window.app.t('notifications.downloadStarted'), 'success');
         } catch (error) {
             console.error('Download error:', error);
-            Utils.showNotification(window.app.t('notifications.downloadError'), 'error');
+            // Показуємо помилку з бекенду (напр., "Не вдалося відправити архів...")
+            Utils.showNotification(error.message, 'error');
         } finally {
             Utils.showLoader(false);
         }
