@@ -12,24 +12,8 @@ import os
 load_dotenv()
 
 # Імпортуємо роутери
-from app.routers import auth, products, bonuses
-# Додамо інші роутери коли вони будуть створені:
-# from app.routers import orders, subscriptions, referrals, creators, admin
+from app.routers import auth, products, bonuses, orders, subscriptions, referrals, creators, admin
 
-# Імпортуємо нові роутери окремо з обробкою помилок
-try:
-    from app.routers import creators
-    CREATORS_AVAILABLE = True
-except ImportError as e:
-    print(f"⚠️ Creators router not available: {e}")
-    CREATORS_AVAILABLE = False
-
-try:
-    from app.routers import admin
-    ADMIN_AVAILABLE = True
-except ImportError as e:
-    print(f"⚠️ Admin router not available: {e}")
-    ADMIN_AVAILABLE = False
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -120,11 +104,16 @@ app.include_router(
     tags=["Products"]
 )
 
+app.include_router(auth.router, tags=["Auth"])
 app.include_router(bonuses.router, tags=["Bonuses"])
+app.include_router(products.router, tags=["Products"])
 app.include_router(orders.router, tags=["Orders"])
 app.include_router(subscriptions.router, tags=["Subscriptions"])
+app.include_router(referrals.router, tags=["Referrals"])
 app.include_router(creators.router, tags=["Creators"])
 app.include_router(admin.router, tags=["Admin"])
+
+
 
 # TODO: Додати інші роутери коли вони будуть готові
 # app.include_router(users.router, tags=["Users"])

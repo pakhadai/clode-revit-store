@@ -4,17 +4,26 @@
 
 # Імпортуємо всі роутери для зручності
 from . import auth
-from . import products
+from . import admin
+from . import referrals
+from . import creators
 from . import bonuses
+from . import orders
+from . import products
+from . import subscriptions
+
 
 # Буде додано пізніше:
-# from . import orders
-# from . import subscriptions
 # from . import users
-# from . import admin
 
 __all__ = [
     "auth",
     "products",
-    "bonuses"
+    "bonuses",
+    "orders",
+    "subscriptions",
+    "admin",
+    "referrals",
+    "creators"
+    # "users"  # Додати коли буде готово
 ]
