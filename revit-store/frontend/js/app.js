@@ -530,21 +530,37 @@ class App {
         `;
 
         return `
-            <div class="profile-page max-w-4xl mx-auto">
-                <div class="profile-header bg-white dark:bg-gray-800 rounded-lg p-6 mb-6 text-center">
-                    <div class="avatar w-24 h-24 bg-blue-500 rounded-full flex items-center justify-center text-white text-4xl mx-auto mb-4">
-                        ${user.first_name?.[0] || '👤'}
-                    </div>
-                    <h1 class="text-2xl font-bold dark:text-white">${user.first_name} ${user.last_name || ''}</h1>
-                    <p class="text-gray-600 dark:text-gray-400">@${user.username || `user_${user.telegram_id}`}</p>
-                    <div class="flex flex-wrap gap-4 mt-4 justify-center">
-                        <span class="text-sm font-medium ${user.vip_level > 0 ? 'text-yellow-500' : 'text-gray-500'}">${user.vip_level_name || this.t('profile.noVip')}</span>
-                        ${user.is_creator ? `<span class="text-sm font-medium text-purple-500">🎨 ${this.t('profile.creator')}</span>` : ''}
-                        ${user.is_admin ? `<span class="text-sm font-medium text-red-500">👑 ${this.t('profile.admin')}</span>` : ''}
+             <div class="profile-page max-w-4xl mx-auto">
+                <div class="profile-header bg-white dark:bg-gray-800 rounded-lg p-6 mb-4">
+                    <div class="flex items-center gap-4">
+                        <div class="avatar w-20 h-20 bg-blue-500 rounded-full flex items-center justify-center text-white text-3xl flex-shrink-0">
+                            ${user.first_name?.[0] || '👤'}
+                        </div>
+                        <div class="flex-1">
+                            <h1 class="text-2xl font-bold dark:text-white">${user.first_name} ${user.last_name || ''}</h1>
+                            <p class="text-gray-600 dark:text-gray-400">@${user.username || `user_${user.telegram_id}`}</p>
+                            <div class="flex flex-wrap gap-4 mt-2">
+                                <span class="text-sm font-medium ${user.vip_level > 0 ? 'text-yellow-500' : 'text-gray-500'}">${user.vip_level_name || this.t('profile.noVip')}</span>
+                                ${user.is_creator ? `<span class="text-sm font-medium text-purple-500">🎨 ${this.t('profile.creator')}</span>` : ''}
+                                ${user.is_admin ? `<span class="text-sm font-medium text-red-500">👑 ${this.t('profile.admin')}</span>` : ''}
+                            </div>
+                        </div>
+                        <div class="text-right">
+                            <div class="text-4xl font-bold text-blue-600 dark:text-blue-400">${user.balance}</div>
+                            <div class="text-sm text-gray-600 dark:text-gray-400">${this.t('profile.balance')}</div>
+                        </div>
                     </div>
                 </div>
 
-                <div class="grid grid-cols-2 md:grid-cols-3 gap-4 mb-6">
+                ${user.is_admin ? `
+                    <div class="mb-4">
+                        <button onclick="app.navigateTo('admin')" class="w-full bg-red-500 hover:bg-red-600 text-white px-4 py-3 rounded-lg font-bold text-lg">
+                            👑 Адмін панель
+                        </button>
+                    </div>
+                ` : ''}
+
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
                     ${createTile('downloads', '📥', 'profile.tabs.downloads')}
                     ${createTile('orders', '📋', 'profile.tabs.orders')}
                     ${createTile('favorites', '❤️', 'profile.tabs.favorites')}
@@ -552,23 +568,18 @@ class App {
                     ${createTile('settings', '⚙️', 'profile.tabs.settings')}
                     ${createTile('support', '💬', 'profile.tabs.support')}
                     ${createTile('faq', '❓', 'profile.tabs.faq')}
-                </div>
-                 <div class="flex flex-wrap gap-3 mt-6">
-                    ${user.is_creator ? `
-                        <button onclick="app.navigateTo('creator')" class="flex-1 bg-purple-500 hover:bg-purple-600 text-white px-4 py-3 rounded-lg font-bold">
-                            🎨 Кабінет творця
-                        </button>
-                    ` : ''}
-                    ${user.is_admin ? `
-                        <button onclick="app.navigateTo('admin')" class="flex-1 bg-red-500 hover:bg-red-600 text-white px-4 py-3 rounded-lg font-bold">
-                            👑 Адмін панель
-                        </button>
-                    ` : ''}
-                    ${!user.is_creator && !user.is_admin ? `
-                        <button onclick="admin.showCreatorApplicationModal()" class="w-full bg-green-500 hover:bg-green-600 text-white px-4 py-3 rounded-lg font-bold">
-                            🚀 Стати творцем
-                        </button>
-                    ` : ''}
+
+                    ${user.is_creator ?
+                        `<button onclick="app.navigateTo('creator')" class="bg-purple-100 dark:bg-purple-900 rounded-xl p-4 shadow hover:shadow-lg transition-shadow text-center">
+                            <div class="text-4xl mb-2">🎨</div>
+                            <div class="font-semibold text-purple-700 dark:text-purple-300">Кабінет творця</div>
+                        </button>`
+                    :
+                        `<button onclick="admin.showCreatorApplicationModal()" class="bg-green-100 dark:bg-green-900 rounded-xl p-4 shadow hover:shadow-lg transition-shadow text-center">
+                            <div class="text-4xl mb-2">🚀</div>
+                            <div class="font-semibold text-green-700 dark:text-green-300">Стати творцем</div>
+                        </button>`
+                    }
                 </div>
             </div>
         `;
