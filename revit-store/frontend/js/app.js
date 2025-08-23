@@ -815,16 +815,567 @@ class App {
      * Рендер контенту вкладки профілю
      */
     renderProfileTabContent(tab) {
-        // TODO: Реалізувати рендер для кожної вкладки
-        return `<p class="text-gray-600 dark:text-gray-400">${this.t('profile.tabs.contentPlaceholder').replace('{tab}', this.t(`profile.tabs.${tab}`))}</p>`;
+        const user = auth.user;
+
+        switch(tab) {
+            case 'downloads':
+                return this.renderDownloadsTab();
+            case 'orders':
+                return this.renderOrdersTab();
+            case 'favorites':
+                return this.renderFavoritesTab();
+            case 'referrals':
+                return this.renderReferralsTab();
+            case 'settings':
+                return this.renderSettingsTab();
+            case 'support':
+                return this.renderSupportTab();
+            case 'faq':
+                return this.renderFaqTab();
+            case 'statistics':
+                return this.renderStatisticsTab();
+            default:
+                return `<p class="text-gray-600 dark:text-gray-400">Вкладка "${tab}" в розробці</p>`;
+        }
+    }
+
+    /**
+     * Рендер вкладки завантажень
+     */
+    renderDownloadsTab() {
+        // Завантажуємо історію покупок
+        const downloads = Utils.storage.get('user_downloads', []);
+
+        if (downloads.length === 0) {
+            return `
+                <div class="text-center py-16">
+                    <div class="text-6xl mb-4">📥</div>
+                    <h3 class="text-xl font-bold mb-2 dark:text-white">Немає завантажень</h3>
+                    <p class="text-gray-600 dark:text-gray-400">Куплені архіви з'являться тут</p>
+                </div>
+            `;
+        }
+
+        return `
+            <div class="downloads-list">
+                <h3 class="text-xl font-bold mb-4 dark:text-white">📥 Мої завантаження</h3>
+                <div class="space-y-4">
+                    ${downloads.map(item => `
+                        <div class="bg-white dark:bg-gray-800 rounded-lg p-4 flex justify-between items-center">
+                            <div>
+                                <h4 class="font-bold dark:text-white">${item.title}</h4>
+                                <p class="text-sm text-gray-600 dark:text-gray-400">
+                                    Куплено: ${Utils.formatDate(item.purchased_at)}
+                                </p>
+                            </div>
+                            <button onclick="app.downloadProduct(${item.product_id})"
+                                    class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg">
+                                Завантажити
+                            </button>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+        `;
+    }
+
+    /**
+     * Рендер вкладки замовлень
+     */
+    renderOrdersTab() {
+        const orders = Utils.storage.get('user_orders', []);
+
+        if (orders.length === 0) {
+            return `
+                <div class="text-center py-16">
+                    <div class="text-6xl mb-4">📋</div>
+                    <h3 class="text-xl font-bold mb-2 dark:text-white">Немає замовлень</h3>
+                    <p class="text-gray-600 dark:text-gray-400">Ваші замовлення з'являться тут</p>
+                </div>
+            `;
+        }
+
+        return `
+            <div class="orders-list">
+                <h3 class="text-xl font-bold mb-4 dark:text-white">📋 Історія замовлень</h3>
+                <div class="space-y-4">
+                    ${orders.map(order => `
+                        <div class="bg-white dark:bg-gray-800 rounded-lg p-4">
+                            <div class="flex justify-between items-start mb-2">
+                                <div>
+                                    <h4 class="font-bold dark:text-white">Замовлення #${order.order_number}</h4>
+                                    <p class="text-sm text-gray-600 dark:text-gray-400">
+                                        ${Utils.formatDate(order.created_at)}
+                                    </p>
+                                </div>
+                                <span class="px-3 py-1 rounded-full text-sm ${
+                                    order.status === 'completed' ? 'bg-green-100 text-green-800' :
+                                    order.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+                                    'bg-red-100 text-red-800'
+                                }">
+                                    ${order.status === 'completed' ? '✅ Завершено' :
+                                      order.status === 'pending' ? '⏳ В обробці' :
+                                      '❌ Скасовано'}
+                                </span>
+                            </div>
+                            <div class="text-sm text-gray-600 dark:text-gray-400">
+                                Товарів: ${order.items_count} | Сума: ${Utils.formatPrice(order.total)}
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+        `;
+    }
+
+    /**
+     * Рендер вкладки обраного
+     */
+    renderFavoritesTab() {
+        const favorites = Utils.storage.get('favorites', []);
+
+        if (favorites.length === 0) {
+            return `
+                <div class="text-center py-16">
+                    <div class="text-6xl mb-4">❤️</div>
+                    <h3 class="text-xl font-bold mb-2 dark:text-white">Немає обраних товарів</h3>
+                    <p class="text-gray-600 dark:text-gray-400">Додайте товари в обране для швидкого доступу</p>
+                </div>
+            `;
+        }
+
+        return `
+            <div class="favorites-list">
+                <h3 class="text-xl font-bold mb-4 dark:text-white">❤️ Обрані товари</h3>
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    ${favorites.map(productId => `
+                        <div class="product-card bg-white dark:bg-gray-800 rounded-lg shadow-lg p-4">
+                            <div class="h-32 bg-gray-200 dark:bg-gray-700 rounded mb-2"></div>
+                            <h4 class="font-bold dark:text-white text-sm">Товар #${productId}</h4>
+                            <button onclick="app.navigateTo('product', true, {id: ${productId}})"
+                                    class="mt-2 w-full bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded text-sm">
+                                Переглянути
+                            </button>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+        `;
+    }
+
+    /**
+     * Рендер вкладки рефералів
+     */
+    renderReferralsTab() {
+        const user = auth.user;
+        const referralCode = user?.referral_code || 'NOCODE';
+        const referralLink = `https://t.me/OhMyRevitBot?start=${referralCode}`;
+
+        return `
+            <div class="referrals-content">
+                <h3 class="text-xl font-bold mb-4 dark:text-white">🤝 ${this.t('profile.referrals.title')}</h3>
+
+                <div class="bg-blue-50 dark:bg-blue-900 rounded-lg p-6 mb-6">
+                    <p class="text-sm text-gray-600 dark:text-gray-400 mb-2">Ваше реферальне посилання:</p>
+                    <div class="flex gap-2">
+                        <input type="text" value="${referralLink}" readonly
+                               class="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg
+                                      bg-white dark:bg-gray-800 dark:text-white">
+                        <button onclick="Utils.copyToClipboard('${referralLink}')"
+                                class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg">
+                            📋 Копіювати
+                        </button>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-4 mb-6">
+                    <div class="bg-white dark:bg-gray-800 rounded-lg p-4 text-center">
+                        <div class="text-3xl font-bold text-blue-600 dark:text-blue-400">
+                            ${user?.referral_count || 0}
+                        </div>
+                        <div class="text-sm text-gray-600 dark:text-gray-400">Запрошено друзів</div>
+                    </div>
+                    <div class="bg-white dark:bg-gray-800 rounded-lg p-4 text-center">
+                        <div class="text-3xl font-bold text-green-600 dark:text-green-400">
+                            ${user?.referral_earnings || 0}
+                        </div>
+                        <div class="text-sm text-gray-600 dark:text-gray-400">Зароблено бонусів</div>
+                    </div>
+                </div>
+
+                <div class="bg-gray-100 dark:bg-gray-800 rounded-lg p-4">
+                    <h4 class="font-bold mb-2 dark:text-white">Як це працює:</h4>
+                    <ul class="space-y-2 text-sm text-gray-600 dark:text-gray-400">
+                        <li>✅ Друг реєструється за вашим посиланням</li>
+                        <li>✅ Ви отримуєте 30 бонусів за реєстрацію</li>
+                        <li>✅ Отримуєте 5% від кожної покупки друга</li>
+                        <li>✅ Бонуси нараховуються автоматично</li>
+                    </ul>
+                </div>
+            </div>
+        `;
+    }
+
+    /**
+     * Рендер вкладки налаштувань
+     */
+    renderSettingsTab() {
+        const user = auth.user;
+
+        return `
+            <div class="settings-content">
+                <h3 class="text-xl font-bold mb-4 dark:text-white">⚙️ ${this.t('profile.tabs.settings')}</h3>
+
+                <div class="space-y-6">
+                    <!-- Мова -->
+                    <div>
+                        <label class="block text-sm font-medium mb-2 dark:text-gray-300">
+                            ${this.t('profile.settings.language')}
+                        </label>
+                        <select id="settings-language"
+                                class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg
+                                       dark:bg-gray-700 dark:text-white"
+                                onchange="app.updateSetting('language', this.value)">
+                            <option value="ua" ${user?.language === 'ua' ? 'selected' : ''}>🇺🇦 Українська</option>
+                            <option value="en" ${user?.language === 'en' ? 'selected' : ''}>🇬🇧 English</option>
+                            <option value="ru" ${user?.language === 'ru' ? 'selected' : ''}>⚪ Русский</option>
+                        </select>
+                    </div>
+
+                    <!-- Тема -->
+                    <div>
+                        <label class="block text-sm font-medium mb-2 dark:text-gray-300">
+                            ${this.t('profile.settings.theme')}
+                        </label>
+                        <div class="grid grid-cols-2 gap-4">
+                            <button onclick="app.updateSetting('theme', 'light')"
+                                    class="p-4 border-2 ${user?.theme === 'light' ? 'border-blue-500 bg-blue-50' : 'border-gray-300'}
+                                           rounded-lg hover:border-blue-500">
+                                <div class="text-3xl mb-2">☀️</div>
+                                <div>${this.t('profile.settings.light')}</div>
+                            </button>
+                            <button onclick="app.updateSetting('theme', 'dark')"
+                                    class="p-4 border-2 ${user?.theme === 'dark' ? 'border-blue-500 bg-blue-900' : 'border-gray-300 dark:border-gray-600'}
+                                           rounded-lg hover:border-blue-500">
+                                <div class="text-3xl mb-2">🌙</div>
+                                <div>${this.t('profile.settings.dark')}</div>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Сповіщення -->
+                    <div>
+                        <label class="block text-sm font-medium mb-2 dark:text-gray-300">
+                            ${this.t('profile.settings.notifications')}
+                        </label>
+                        <label class="flex items-center">
+                            <input type="checkbox"
+                                   ${user?.notifications_enabled ? 'checked' : ''}
+                                   onchange="app.updateSetting('notifications', this.checked)"
+                                   class="mr-3">
+                            <span class="dark:text-gray-300">
+                                ${user?.notifications_enabled ? this.t('profile.settings.enabled') : this.t('profile.settings.disabled')}
+                            </span>
+                        </label>
+                    </div>
+
+                    <!-- Безпека -->
+                    ${user?.is_creator || user?.is_admin ? `
+                        <div>
+                            <label class="block text-sm font-medium mb-2 dark:text-gray-300">
+                                ${this.t('profile.settings.security')}
+                            </label>
+                            <button onclick="app.showPinCodeModal()"
+                                    class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg">
+                                🔐 ${this.t('profile.settings.pinCode')} - ${this.t('profile.settings.change')}
+                            </button>
+                        </div>
+                    ` : ''}
+                </div>
+            </div>
+        `;
+    }
+
+    /**
+     * Рендер вкладки підтримки
+     */
+    renderSupportTab() {
+        return `
+            <div class="support-content">
+                <h3 class="text-xl font-bold mb-4 dark:text-white">💬 Підтримка</h3>
+
+                <div class="bg-white dark:bg-gray-800 rounded-lg p-6">
+                    <form onsubmit="app.sendSupportMessage(event)">
+                        <div class="mb-4">
+                            <label class="block text-sm font-medium mb-2 dark:text-gray-300">
+                                Тема звернення
+                            </label>
+                            <select id="support-topic"
+                                    class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg
+                                           dark:bg-gray-700 dark:text-white">
+                                <option value="general">Загальне питання</option>
+                                <option value="payment">Проблема з оплатою</option>
+                                <option value="download">Проблема з завантаженням</option>
+                                <option value="creator">Питання творця</option>
+                                <option value="other">Інше</option>
+                            </select>
+                        </div>
+
+                        <div class="mb-4">
+                            <label class="block text-sm font-medium mb-2 dark:text-gray-300">
+                                Повідомлення
+                            </label>
+                            <textarea id="support-message"
+                                      rows="5"
+                                      class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg
+                                             dark:bg-gray-700 dark:text-white"
+                                      placeholder="Опишіть вашу проблему або питання..."
+                                      required></textarea>
+                        </div>
+
+                        <button type="submit"
+                                class="bg-blue-500 hover:bg-blue-600 text-white px-6 py-3 rounded-lg font-bold">
+                            📤 Відправити
+                        </button>
+                    </form>
+                </div>
+
+                <div class="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <a href="https://t.me/ohmyrevit_support" target="_blank"
+                       class="bg-blue-50 dark:bg-blue-900 rounded-lg p-4 text-center hover:bg-blue-100 dark:hover:bg-blue-800">
+                        <div class="text-3xl mb-2">💬</div>
+                        <div class="font-medium dark:text-white">Telegram</div>
+                        <div class="text-sm text-gray-600 dark:text-gray-400">@ohmyrevit_support</div>
+                    </a>
+
+                    <a href="mailto:support@ohmyrevit.com"
+                       class="bg-green-50 dark:bg-green-900 rounded-lg p-4 text-center hover:bg-green-100 dark:hover:bg-green-800">
+                        <div class="text-3xl mb-2">✉️</div>
+                        <div class="font-medium dark:text-white">Email</div>
+                        <div class="text-sm text-gray-600 dark:text-gray-400">support@ohmyrevit.com</div>
+                    </a>
+
+                    <div class="bg-purple-50 dark:bg-purple-900 rounded-lg p-4 text-center">
+                        <div class="text-3xl mb-2">⏰</div>
+                        <div class="font-medium dark:text-white">Час відповіді</div>
+                        <div class="text-sm text-gray-600 dark:text-gray-400">24-48 годин</div>
+                    </div>
+                </div>
+            </div>
+        `;
     }
 
     /**
      * Показати плани підписок
      */
-    showSubscriptionPlans() {
-        // TODO: Реалізувати модальне вікно з планами підписок
-        Utils.showNotification(this.t('notifications.comingSoon'), 'info');
+    async showSubscriptionPlans() {
+        try {
+            Utils.showLoader(true);
+
+            // Завантажуємо плани з API
+            const response = await api.get('/subscriptions/plans', {
+                language: Utils.getCurrentLanguage()
+            });
+
+            const plans = response.plans || [];
+            const activeSubscription = response.active_subscription;
+
+            // Створюємо модальне вікно
+            const modal = document.createElement('div');
+            modal.id = 'subscription-plans-modal';
+            modal.className = 'fixed inset-0 bg-black bg-opacity-75 z-50 flex items-center justify-center p-4';
+
+            modal.innerHTML = `
+                <div class="bg-white dark:bg-gray-900 rounded-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+                    <div class="p-6">
+                        <!-- Заголовок -->
+                        <div class="flex justify-between items-center mb-6">
+                            <h2 class="text-3xl font-bold dark:text-white">
+                                ⭐ ${this.t('home.subscription.title')}
+                            </h2>
+                            <button onclick="document.getElementById('subscription-plans-modal').remove()"
+                                    class="text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-white text-3xl">
+                                &times;
+                            </button>
+                        </div>
+
+                        ${activeSubscription ? `
+                            <div class="bg-green-100 dark:bg-green-900 border border-green-300 dark:border-green-700 rounded-lg p-4 mb-6">
+                                <p class="text-green-800 dark:text-green-200">
+                                    ✅ У вас є активна підписка до ${Utils.formatDate(activeSubscription.expires_at)}
+                                    (залишилось ${activeSubscription.days_remaining} днів)
+                                </p>
+                            </div>
+                        ` : ''}
+
+                        <!-- Переваги підписки -->
+                        <div class="mb-8">
+                            <h3 class="text-xl font-bold mb-4 dark:text-white">Переваги підписки:</h3>
+                            <div class="grid md:grid-cols-2 gap-4">
+                                <div class="flex items-start gap-3">
+                                    <span class="text-green-500 text-xl">✅</span>
+                                    <span class="dark:text-gray-300">${this.t('home.subscription.benefits.newArchives')}</span>
+                                </div>
+                                <div class="flex items-start gap-3">
+                                    <span class="text-green-500 text-xl">✅</span>
+                                    <span class="dark:text-gray-300">${this.t('home.subscription.benefits.bonusSpins')}</span>
+                                </div>
+                                <div class="flex items-start gap-3">
+                                    <span class="text-green-500 text-xl">✅</span>
+                                    <span class="dark:text-gray-300">${this.t('home.subscription.benefits.cashback')}</span>
+                                </div>
+                                <div class="flex items-start gap-3">
+                                    <span class="text-green-500 text-xl">✅</span>
+                                    <span class="dark:text-gray-300">${this.t('home.subscription.benefits.support')}</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Плани підписок -->
+                        <div class="grid md:grid-cols-2 gap-6 mb-6">
+                            ${plans.map(plan => `
+                                <div class="border-2 ${plan.is_best_value ? 'border-purple-500' : 'border-gray-300 dark:border-gray-600'}
+                                            rounded-xl p-6 ${plan.is_best_value ? 'bg-purple-50 dark:bg-purple-900/20' : ''}">
+                                    ${plan.is_best_value ? `
+                                        <div class="bg-purple-500 text-white text-sm px-3 py-1 rounded-full inline-block mb-3">
+                                            🎯 Найкраща пропозиція
+                                        </div>
+                                    ` : ''}
+
+                                    <h4 class="text-2xl font-bold mb-2 dark:text-white">
+                                        ${plan.name[Utils.getCurrentLanguage()] || plan.name.en}
+                                    </h4>
+
+                                    <div class="text-4xl font-bold text-blue-600 dark:text-blue-400 mb-2">
+                                        $${plan.price_usd}
+                                    </div>
+
+                                    <p class="text-gray-600 dark:text-gray-400 mb-4">
+                                        ${plan.description[Utils.getCurrentLanguage()] || plan.description.en}
+                                    </p>
+
+                                    ${plan.discount ? `
+                                        <div class="bg-green-100 dark:bg-green-800 text-green-800 dark:text-green-200
+                                                    px-3 py-2 rounded-lg text-sm mb-4">
+                                            🎁 ${plan.discount}
+                                        </div>
+                                    ` : ''}
+
+                                    <button onclick="app.selectSubscriptionPlan('${plan.id}')"
+                                            class="w-full bg-blue-500 hover:bg-blue-600 text-white px-6 py-3 rounded-lg font-bold">
+                                        Вибрати план
+                                    </button>
+                                </div>
+                            `).join('')}
+                        </div>
+
+                        <!-- Методи оплати (прихований спочатку) -->
+                        <div id="payment-methods" style="display: none;" class="mt-6 p-6 bg-gray-100 dark:bg-gray-800 rounded-lg">
+                            <h3 class="text-xl font-bold mb-4 dark:text-white">Виберіть метод оплати:</h3>
+                            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                <button onclick="app.paySubscription('crypto', 'BTC')"
+                                        class="p-4 bg-orange-100 dark:bg-orange-900 hover:bg-orange-200 dark:hover:bg-orange-800 rounded-lg">
+                                    <div class="text-3xl mb-2">₿</div>
+                                    <div class="font-medium">Bitcoin</div>
+                                </button>
+                                <button onclick="app.paySubscription('crypto', 'ETH')"
+                                        class="p-4 bg-purple-100 dark:bg-purple-900 hover:bg-purple-200 dark:hover:bg-purple-800 rounded-lg">
+                                    <div class="text-3xl mb-2">Ξ</div>
+                                    <div class="font-medium">Ethereum</div>
+                                </button>
+                                <button onclick="app.paySubscription('crypto', 'USDT')"
+                                        class="p-4 bg-green-100 dark:bg-green-900 hover:bg-green-200 dark:hover:bg-green-800 rounded-lg">
+                                    <div class="text-3xl mb-2">₮</div>
+                                    <div class="font-medium">USDT</div>
+                                </button>
+                                <button onclick="app.paySubscription('bonuses')"
+                                        class="p-4 bg-blue-100 dark:bg-blue-900 hover:bg-blue-200 dark:hover:bg-blue-800 rounded-lg"
+                                        ${auth.user && auth.user.balance >= 500 ? '' : 'disabled style="opacity: 0.5;"'}>
+                                    <div class="text-3xl mb-2">🎁</div>
+                                    <div class="font-medium">Бонуси</div>
+                                    <div class="text-xs text-gray-600 dark:text-gray-400">
+                                        ${auth.user?.balance || 0} доступно
+                                    </div>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            document.body.appendChild(modal);
+
+        } catch (error) {
+            console.error('Load subscription plans error:', error);
+            Utils.showNotification('Помилка завантаження планів підписки', 'error');
+        } finally {
+            Utils.showLoader(false);
+        }
+    }
+
+    /**
+     * Вибрати план підписки
+     */
+    selectSubscriptionPlan(planId) {
+        this.selectedSubscriptionPlan = planId;
+
+        // Показуємо методи оплати
+        const paymentMethods = document.getElementById('payment-methods');
+        if (paymentMethods) {
+            paymentMethods.style.display = 'block';
+            paymentMethods.scrollIntoView({ behavior: 'smooth' });
+        }
+
+        // Підсвічуємо вибраний план
+        document.querySelectorAll('[onclick*="selectSubscriptionPlan"]').forEach(btn => {
+            const parent = btn.closest('.border-2');
+            if (btn.getAttribute('onclick').includes(planId)) {
+                parent.classList.add('ring-4', 'ring-blue-500');
+            } else {
+                parent.classList.remove('ring-4', 'ring-blue-500');
+            }
+        });
+    }
+
+    /**
+     * Оплатити підписку
+     */
+    async paySubscription(method, currency = 'USDT') {
+        if (!this.selectedSubscriptionPlan) {
+            Utils.showNotification('Спочатку виберіть план підписки', 'warning');
+            return;
+        }
+
+        try {
+            Utils.showLoader(true);
+
+            const response = await api.post('/subscriptions/create', {
+                plan_type: this.selectedSubscriptionPlan,
+                payment_method: method,
+                currency: currency
+            });
+
+            if (response.success) {
+                if (response.payment_url) {
+                    // Перенаправляємо на сторінку оплати
+                    window.location.href = response.payment_url;
+                } else {
+                    // Підписка активована (оплата бонусами)
+                    Utils.showNotification('Підписка успішно активована!', 'success');
+                    document.getElementById('subscription-plans-modal')?.remove();
+
+                    // Оновлюємо дані користувача
+                    await auth.getCurrentUser();
+                    this.render();
+                }
+            }
+
+        } catch (error) {
+            console.error('Payment error:', error);
+            Utils.showNotification('Помилка оплати', 'error');
+        } finally {
+            Utils.showLoader(false);
+        }
     }
 
     /**
