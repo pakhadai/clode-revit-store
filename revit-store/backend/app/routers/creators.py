@@ -4,6 +4,7 @@
 """
 
 from fastapi import APIRouter, HTTPException, Depends, UploadFile, File, Form, Query
+from app.models.user import CreatorApplication
 from sqlalchemy.orm import Session
 from sqlalchemy import and_, or_, desc, func
 from typing import List, Optional, Dict
@@ -16,7 +17,7 @@ from app.models.product import Product
 from app.models.order import Order, OrderItem
 from app.routers.auth import get_current_user_from_token
 from app.services.s3_service import s3_service
-from app.utils.security import generate_order_number  # Використовуємо існуючу функцію
+from app.utils.security import generate_order_number
 
 # Створюємо роутер
 router = APIRouter(
@@ -40,6 +41,39 @@ async def get_creator_user(
         )
     return current_user
 
+
+@router.post("/apply")
+async def apply_to_become_creator(
+        about_me: str = Form(...),
+        portfolio_url: Optional[str] = Form(None),
+        current_user: User = Depends(get_current_user_from_token),
+        db: Session = Depends(get_db)
+):
+    """Подача заявки на отримання статусу творця."""
+    if current_user.is_creator:
+        raise HTTPException(status_code=400, detail="Ви вже є творцем.")
+
+    existing_application = db.query(CreatorApplication).filter(CreatorApplication.user_id == current_user.id).first()
+    if existing_application and existing_application.status == 'pending':
+        raise HTTPException(status_code=400, detail="Ваша заявка вже знаходиться на розгляді.")
+
+    # Створюємо або оновлюємо заявку
+    if existing_application:
+        existing_application.about_me = about_me
+        existing_application.portfolio_url = portfolio_url
+        existing_application.status = 'pending'
+        existing_application.review_notes = None
+    else:
+        application = CreatorApplication(
+            user_id=current_user.id,
+            about_me=about_me,
+            portfolio_url=portfolio_url
+        )
+        db.add(application)
+
+    db.commit()
+
+    return {"message": "Заявку успішно відправлено на розгляд."}
 
 # ====== УПРАВЛІННЯ ТОВАРАМИ ======
 

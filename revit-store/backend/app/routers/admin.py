@@ -11,7 +11,7 @@ from datetime import datetime, timedelta
 import json
 
 from app.database import get_db
-from app.models.user import User
+from app.models.user import User, CreatorApplication
 from app.models.product import Product
 from app.models.order import Order, PromoCode, OrderItem
 from app.models.subscription import Subscription
@@ -606,6 +606,46 @@ async def delete_promocode(
         "message": "Promo code deactivated"
     }
 
+
+# ====== ЗАЯВКИ ТВОРЦІВ ======
+
+@router.get("/creator-applications")
+async def get_creator_applications(
+        status: str = "pending",
+        admin: User = Depends(get_admin_user),
+        db: Session = Depends(get_db)
+):
+    """Отримати список заявок на статус творця."""
+    applications = db.query(CreatorApplication).filter(CreatorApplication.status == status).all()
+    return applications
+
+
+@router.post("/creator-applications/{app_id}/approve")
+async def approve_creator_application(
+        app_id: int,
+        admin: User = Depends(get_admin_user),
+        db: Session = Depends(get_db)
+):
+    """Схвалити заявку творця."""
+    application = db.query(CreatorApplication).filter(CreatorApplication.id == app_id).first()
+    if not application:
+        raise HTTPException(status_code=404, detail="Заявку не знайдено.")
+
+    application.status = "approved"
+    application.reviewed_by_id = admin.id
+
+    user_to_promote = db.query(User).filter(User.id == application.user_id).first()
+    if user_to_promote:
+        user_to_promote.is_creator = True
+        db.commit()
+        await bot_service.send_message(
+            user_to_promote.telegram_id,
+            "🎉 Вітаємо! Вашу заявку на статус творця було схвалено. Тепер вам доступний 'Кабінет творця' у профілі."
+        )
+        return {"message": "Заявку схвалено, користувач отримав статус творця."}
+
+    db.commit()
+    return {"message": "Статус заявки оновлено, але користувача не знайдено."}
 
 # ====== РОЗСИЛКИ ======
 

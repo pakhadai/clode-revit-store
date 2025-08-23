@@ -816,6 +816,48 @@ class AdminModule {
         }
     }
 
+    showCreatorApplicationModal() {
+        const modal = document.createElement('div');
+        modal.id = 'creator-modal';
+        modal.className = 'fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4';
+        modal.innerHTML = `
+            <div class="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-lg w-full relative">
+                <button onclick="document.getElementById('creator-modal').remove()" class="absolute top-3 right-3 text-2xl">&times;</button>
+                <h2 class="text-2xl font-bold mb-4">Стати творцем OhMyRevit</h2>
+                <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                    Поділіться своїми роботами та почніть заробляти. Розкажіть нам про себе та свій досвід.
+                </p>
+                <form id="creator-application-form">
+                    <div class="mb-4">
+                        <label for="about-me" class="block text-sm font-medium mb-1">Розкажіть про себе *</label>
+                        <textarea id="about-me" name="about_me" rows="4" required class="w-full p-2 border rounded dark:bg-gray-700" placeholder="Ваш досвід у Revit..."></textarea>
+                    </div>
+                    <div class="mb-6">
+                        <label for="portfolio-url" class="block text-sm font-medium mb-1">Посилання на портфоліо (необов'язково)</label>
+                        <input type="url" id="portfolio-url" name="portfolio_url" class="w-full p-2 border rounded dark:bg-gray-700" placeholder="https://behance.net/yourname">
+                    </div>
+                    <div class="flex justify-end gap-3">
+                        <button type="button" onclick="document.getElementById('creator-modal').remove()" class="bg-gray-200 dark:bg-gray-600 px-4 py-2 rounded-lg">Скасувати</button>
+                        <button type="submit" class="bg-green-500 text-white px-4 py-2 rounded-lg font-bold">Відправити</button>
+                    </div>
+                </form>
+            </div>
+        `;
+        document.body.appendChild(modal);
+
+        document.getElementById('creator-application-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const formData = new FormData(e.target);
+            try {
+                await api.post('/creators/apply', formData, {'Content-Type': 'multipart/form-data'});
+                Utils.showNotification('Заявку успішно відправлено!', 'success');
+                modal.remove();
+            } catch (error) {
+                Utils.showNotification(error.message, 'error');
+            }
+        });
+    }
+
     /**
      * Показати модальне вікно зображення
      */

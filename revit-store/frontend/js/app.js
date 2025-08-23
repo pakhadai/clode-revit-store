@@ -553,8 +553,7 @@ class App {
                     ${createTile('support', '💬', 'profile.tabs.support')}
                     ${createTile('faq', '❓', 'profile.tabs.faq')}
                 </div>
-
-                <div class="flex flex-wrap gap-3">
+                 <div class="flex flex-wrap gap-3 mt-6">
                     ${user.is_creator ? `
                         <button onclick="app.navigateTo('creator')" class="flex-1 bg-purple-500 hover:bg-purple-600 text-white px-4 py-3 rounded-lg font-bold">
                             🎨 Кабінет творця
@@ -563,6 +562,11 @@ class App {
                     ${user.is_admin ? `
                         <button onclick="app.navigateTo('admin')" class="flex-1 bg-red-500 hover:bg-red-600 text-white px-4 py-3 rounded-lg font-bold">
                             👑 Адмін панель
+                        </button>
+                    ` : ''}
+                    ${!user.is_creator && !user.is_admin ? `
+                        <button onclick="admin.showCreatorApplicationModal()" class="w-full bg-green-500 hover:bg-green-600 text-white px-4 py-3 rounded-lg font-bold">
+                            🚀 Стати творцем
                         </button>
                     ` : ''}
                 </div>
@@ -891,9 +895,8 @@ class App {
             document.getElementById('search-input')?.focus();
         }, 100);
     }
-}
 
-// ========== PROFILE PAGES ==========
+    // ========== PROFILE PAGES ==========
 
     async renderReferralsPage() {
         const referralInfo = await api.get('/referrals/info');
@@ -903,9 +906,10 @@ class App {
             <h1 class="text-3xl font-bold mb-6 dark:text-white">🤝 ${this.t('profile.referrals.title')}</h1>
             <div class="bg-white dark:bg-gray-800 rounded-lg p-6">
                 <p class="mb-4">${this.t('profile.referrals.yourCode')}:</p>
-                <div class="flex gap-2 mb-6">
+                <div class="flex flex-col sm:flex-row gap-2 mb-6">
                     <input type="text" value="${referralInfo.referral_link}" readonly class="flex-1 px-4 py-2 border rounded-lg dark:bg-gray-700">
-                    <button onclick="Utils.copyToClipboard('${referralInfo.referral_link}')" class="bg-blue-500 text-white px-4 py-2 rounded-lg">${this.t('profile.referrals.copy')}</button>
+                    <button onclick="Utils.copyToClipboard('${referralInfo.referral_link}')" class="bg-gray-200 dark:bg-gray-600 px-4 py-2 rounded-lg font-semibold">${this.t('profile.referrals.copy')}</button>
+                    <button onclick="auth.showInviteFriend()" class="bg-blue-500 text-white px-4 py-2 rounded-lg font-bold">${this.t('profile.referrals.invite')}</button>
                 </div>
                 <div class="grid grid-cols-2 gap-4">
                     <div class="text-center p-4 bg-gray-100 dark:bg-gray-700 rounded-lg">
@@ -969,6 +973,8 @@ class App {
     renderOrdersPage() { return this.renderPlaceholderPage('profile.tabs.orders', '📋'); }
     renderSupportPage() { return this.renderPlaceholderPage('profile.tabs.support', '💬'); }
     renderFaqPage() { return this.renderPlaceholderPage('profile.tabs.faq', '❓'); }
+
+}
 
 // Створюємо та запускаємо додаток
 const app = new App();

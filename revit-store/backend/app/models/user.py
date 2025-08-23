@@ -3,7 +3,7 @@
 """
 
 from datetime import datetime
-from sqlalchemy import Column, Integer, String, DateTime, BigInteger, Boolean, Text, JSON
+from sqlalchemy import Column, Integer, String, DateTime, BigInteger, Boolean, Text, JSON, ForeignKey
 from sqlalchemy.orm import relationship
 from app.database import Base
 
@@ -117,3 +117,16 @@ class User(Base):
             self.vip_level = 1  # Bronze
         else:
             self.vip_level = 0  # None
+
+class CreatorApplication(Base):
+    __tablename__ = "creator_applications"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey('users.id'), nullable=False, unique=True)
+    portfolio_url = Column(Text, nullable=True)
+    about_me = Column(Text, nullable=False)
+    status = Column(String(50), default='pending')  # pending, approved, rejected
+    review_notes = Column(Text, nullable=True) # Коментар адміна
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    user = relationship("User")

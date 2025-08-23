@@ -102,6 +102,17 @@ class AuthModule {
     }
 
     /**
+     * Показати вікно запрошення друзів (тільки в Telegram)
+     */
+    showInviteFriend() {
+        if (this.tg && this.tg.showInviteFriend) {
+            this.tg.showInviteFriend();
+        } else {
+            Utils.showNotification('Ця функція доступна лише в Telegram', 'warning');
+        }
+    }
+
+    /**
      * Ініціалізація Telegram Web App
      */
     initTelegram() {
