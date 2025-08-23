@@ -5,6 +5,7 @@
 
 import os
 from typing import Optional, List, Dict
+import httpx
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -16,92 +17,89 @@ class TelegramBotService:
     """
 
     def __init__(self):
-        self.bot_token = os.getenv("TELEGRAM_BOT_TOKEN", "")
+        self.bot_token = os.getenv("TELEGRAM_BOT_TOKEN")
+        if not self.bot_token or self.bot_token == "your_telegram_bot_token":
+            print("⚠️ TELEGRAM_BOT_TOKEN не встановлений або має значення за замовчуванням. Сервіс буде працювати в режимі логування.")
+            self.bot_token = None
+        self.api_url = f"https://api.telegram.org/bot{self.bot_token}"
 
+    async def _make_request(self, method: str, data: Dict) -> Optional[Dict]:
+        """Універсальний метод для відправки запитів до Telegram API."""
         if not self.bot_token:
-            print("⚠️ TELEGRAM_BOT_TOKEN не встановлений - розсилки не працюватимуть")
+            print(f"📦 TELEGRAM API CALL (DRY RUN): Метод={method}, Дані={data}")
+            return {"ok": True, "result": "Dry run success"}
+
+        async with httpx.AsyncClient() as client:
+            try:
+                response = await client.post(f"{self.api_url}/{method}", json=data, timeout=10.0)
+                response.raise_for_status()  # Викличе помилку для 4xx/5xx статусів
+                return response.json()
+            except httpx.HTTPStatusError as e:
+                print(f"❌ Помилка HTTP запиту до Telegram API: {e.response.status_code} - {e.response.text}")
+            except httpx.RequestError as e:
+                print(f"❌ Помилка запиту до Telegram API: {e}")
+            except Exception as e:
+                print(f"❌ Невідома помилка при роботі з Telegram API: {e}")
+        return None
 
     async def send_message(
             self,
             telegram_id: int,
             message: str,
-            parse_mode: str = "HTML"
+            parse_mode: str = "HTML",
+            reply_markup: Optional[Dict] = None
     ) -> bool:
         """
-        Відправити повідомлення користувачу
-
-        Args:
-            telegram_id: Telegram ID користувача
-            message: Текст повідомлення
-            parse_mode: Режим парсингу (HTML, Markdown)
-
-        Returns:
-            True якщо успішно відправлено
+        Відправити повідомлення користувачу.
         """
-        # TODO: Реалізувати через aiogram або httpx
-        # Поки що просто логуємо
-        print(f"📨 Telegram message to {telegram_id}:")
-        print(f"   {message}")
+        payload = {
+            "chat_id": telegram_id,
+            "text": message,
+            "parse_mode": parse_mode
+        }
+        if reply_markup:
+            payload["reply_markup"] = reply_markup
 
-        # В реальній реалізації тут буде:
-        # async with httpx.AsyncClient() as client:
-        #     response = await client.post(
-        #         f"https://api.telegram.org/bot{self.bot_token}/sendMessage",
-        #         json={
-        #             "chat_id": telegram_id,
-        #             "text": message,
-        #             "parse_mode": parse_mode
-        #         }
-        #     )
-        #     return response.status_code == 200
-
-        return True
+        response = await self._make_request("sendMessage", payload)
+        return response and response.get("ok", False)
 
     async def send_photo(
             self,
             telegram_id: int,
             photo_url: str,
-            caption: Optional[str] = None
+            caption: Optional[str] = None,
+            parse_mode: str = "HTML"
     ) -> bool:
         """
-        Відправити фото користувачу
-
-        Args:
-            telegram_id: Telegram ID користувача
-            photo_url: URL фото
-            caption: Підпис до фото
-
-        Returns:
-            True якщо успішно відправлено
+        Відправити фото користувачу.
         """
-        print(f"📸 Telegram photo to {telegram_id}: {photo_url}")
-        if caption:
-            print(f"   Caption: {caption}")
-
-        return True
+        payload = {
+            "chat_id": telegram_id,
+            "photo": photo_url,
+            "caption": caption,
+            "parse_mode": parse_mode
+        }
+        response = await self._make_request("sendPhoto", payload)
+        return response and response.get("ok", False)
 
     async def send_document(
             self,
             telegram_id: int,
             document_url: str,
-            caption: Optional[str] = None
+            caption: Optional[str] = None,
+            parse_mode: str = "HTML"
     ) -> bool:
         """
-        Відправити документ користувачу
-
-        Args:
-            telegram_id: Telegram ID користувача
-            document_url: URL документа
-            caption: Підпис до документа
-
-        Returns:
-            True якщо успішно відправлено
+        Відправити документ користувачу.
         """
-        print(f"📄 Telegram document to {telegram_id}: {document_url}")
-        if caption:
-            print(f"   Caption: {caption}")
-
-        return True
+        payload = {
+            "chat_id": telegram_id,
+            "document": document_url,
+            "caption": caption,
+            "parse_mode": parse_mode
+        }
+        response = await self._make_request("sendDocument", payload)
+        return response and response.get("ok", False)
 
     async def send_invoice(
             self,
@@ -114,24 +112,19 @@ class TelegramBotService:
             prices: List[Dict]
     ) -> bool:
         """
-        Відправити інвойс для оплати
-
-        Args:
-            telegram_id: Telegram ID користувача
-            title: Назва товару
-            description: Опис
-            payload: Payload для ідентифікації
-            provider_token: Токен платіжного провайдера
-            currency: Валюта
-            prices: Список цін
-
-        Returns:
-            True якщо успішно відправлено
+        Відправити інвойс для оплати через Telegram Payments.
         """
-        print(f"💳 Telegram invoice to {telegram_id}: {title}")
-        print(f"   Amount: {sum(p.get('amount', 0) for p in prices)} {currency}")
-
-        return True
+        payload_data = {
+            "chat_id": telegram_id,
+            "title": title,
+            "description": description,
+            "payload": payload,
+            "provider_token": provider_token,
+            "currency": currency,
+            "prices": prices
+        }
+        response = await self._make_request("sendInvoice", payload_data)
+        return response and response.get("ok", False)
 
     async def broadcast(
             self,
@@ -140,30 +133,18 @@ class TelegramBotService:
             parse_mode: str = "HTML"
     ) -> Dict:
         """
-        Масова розсилка повідомлень
-
-        Args:
-            telegram_ids: Список Telegram ID
-            message: Текст повідомлення
-            parse_mode: Режим парсингу
-
-        Returns:
-            Статистика розсилки
+        Масова розсилка повідомлень.
         """
         sent = 0
         failed = 0
 
         for telegram_id in telegram_ids:
-            try:
-                success = await self.send_message(telegram_id, message, parse_mode)
-                if success:
-                    sent += 1
-                else:
-                    failed += 1
-            except Exception as e:
-                print(f"❌ Failed to send to {telegram_id}: {e}")
+            if await self.send_message(telegram_id, message, parse_mode):
+                sent += 1
+            else:
                 failed += 1
 
+        print(f"📊 Результат розсилки: Успішно - {sent}, Невдало - {failed}")
         return {
             "total": len(telegram_ids),
             "sent": sent,
@@ -172,50 +153,35 @@ class TelegramBotService:
 
     async def set_webhook(self, webhook_url: str) -> bool:
         """
-        Встановити webhook для бота
-
-        Args:
-            webhook_url: URL для webhook
-
-        Returns:
-            True якщо успішно встановлено
+        Встановити webhook для бота.
         """
-        print(f"🔗 Setting webhook: {webhook_url}")
-
-        # TODO: Реалізувати через API
-        # response = await client.post(
-        #     f"https://api.telegram.org/bot{self.bot_token}/setWebhook",
-        #     json={"url": webhook_url}
-        # )
-
-        return True
+        payload = {"url": webhook_url}
+        response = await self._make_request("setWebhook", payload)
+        if response and response.get("ok"):
+            print(f"✅ Webhook успішно встановлено на: {webhook_url}")
+            return True
+        print(f"❌ Не вдалося встановити webhook.")
+        return False
 
     async def delete_webhook(self) -> bool:
         """
-        Видалити webhook
-
-        Returns:
-            True якщо успішно видалено
+        Видалити webhook.
         """
-        print("🔗 Deleting webhook")
-
-        return True
+        response = await self._make_request("deleteWebhook", {})
+        if response and response.get("ok"):
+            print("✅ Webhook успішно видалено.")
+            return True
+        print("❌ Не вдалося видалити webhook.")
+        return False
 
     async def get_me(self) -> Optional[Dict]:
         """
-        Отримати інформацію про бота
-
-        Returns:
-            Інформація про бота
+        Отримати інформацію про бота.
         """
-        # TODO: Реалізувати через API
-        return {
-            "id": 123456789,
-            "is_bot": True,
-            "first_name": "OhMyRevit Bot",
-            "username": "ohmyrevit_bot"
-        }
-
+        response = await self._make_request("getMe", {})
+        if response and response.get("ok"):
+            return response.get("result")
+        return None
 
 # Створюємо глобальний екземпляр сервісу
 bot_service = TelegramBotService()

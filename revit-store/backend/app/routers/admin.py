@@ -5,7 +5,7 @@
 
 from fastapi import APIRouter, HTTPException, Depends, Query, Body
 from sqlalchemy.orm import Session
-from sqlalchemy import func, desc, and_, or_
+from sqlalchemy import func, desc, and_, or_, cast, String
 from typing import List, Optional, Dict
 from datetime import datetime, timedelta
 import json
@@ -106,7 +106,7 @@ async def get_dashboard_stats(
         func.date(Order.created_at)
     ).all()
 
-    # Топ продукти за тиждень
+    # Топ продукти за тиждень (ВИПРАВЛЕНО)
     top_products = db.query(
         Product.id,
         Product.sku,
@@ -195,7 +195,7 @@ async def get_users(
                 User.username.ilike(search_term),
                 User.first_name.ilike(search_term),
                 User.last_name.ilike(search_term),
-                User.telegram_id.cast(db.String).like(search_term)
+                cast(User.telegram_id, String).like(search_term)
             )
         )
 
@@ -251,11 +251,11 @@ async def get_users(
 @router.put("/users/{user_id}")
 async def update_user(
     user_id: int,
-    balance: Optional[int] = None,
-    vip_level: Optional[int] = None,
-    is_creator: Optional[bool] = None,
-    is_admin: Optional[bool] = None,
-    is_blocked: Optional[bool] = None,
+    balance: Optional[int] = Body(None),
+    vip_level: Optional[int] = Body(None),
+    is_creator: Optional[bool] = Body(None),
+    is_admin: Optional[bool] = Body(None),
+    is_blocked: Optional[bool] = Body(None),
     admin: User = Depends(get_admin_user),
     db: Session = Depends(get_db)
 ) -> Dict:

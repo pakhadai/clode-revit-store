@@ -10,6 +10,7 @@ class AdminModule {
         this.moderation = [];
         this.promocodes = [];
         this.currentTab = 'dashboard';
+        this.userFilters = {};
     }
 
     /**
@@ -32,11 +33,11 @@ class AdminModule {
             Utils.showLoader(true);
             const response = await api.get('/admin/dashboard');
             this.dashboard = response;
-            return response;
+            this.updateDashboardUI(); // Оновлюємо UI після завантаження
         } catch (error) {
             console.error('Load dashboard error:', error);
             Utils.showNotification('Помилка завантаження дашборду', 'error');
-            throw error;
+            // throw error;
         } finally {
             Utils.showLoader(false);
         }
@@ -47,13 +48,16 @@ class AdminModule {
      */
     async loadUsers(filters = {}) {
         try {
-            const response = await api.get('/admin/users', filters);
+            Utils.showLoader(true);
+            this.userFilters = { ...this.userFilters, ...filters };
+            const response = await api.get('/admin/users', this.userFilters);
             this.users = response.users;
-            return response;
+            this.updateUsersTable(); // Оновлюємо UI після завантаження
         } catch (error) {
             console.error('Load users error:', error);
             Utils.showNotification('Помилка завантаження користувачів', 'error');
-            throw error;
+        } finally {
+            Utils.showLoader(false);
         }
     }
 
@@ -62,13 +66,17 @@ class AdminModule {
      */
     async updateUser(userId, data) {
         try {
+            Utils.showLoader(true);
             const response = await api.put(`/admin/users/${userId}`, data);
             Utils.showNotification('Користувача оновлено', 'success');
+            await this.loadUsers(); // Перезавантажуємо список після оновлення
             return response;
         } catch (error) {
             console.error('Update user error:', error);
             Utils.showNotification('Помилка оновлення користувача', 'error');
             throw error;
+        } finally {
+            Utils.showLoader(false);
         }
     }
 
@@ -77,13 +85,15 @@ class AdminModule {
      */
     async loadModeration() {
         try {
+            Utils.showLoader(true);
             const response = await api.get('/admin/moderation');
             this.moderation = response.products;
-            return response;
+            this.updateModerationUI(); // Оновлюємо UI після завантаження
         } catch (error) {
             console.error('Load moderation error:', error);
             Utils.showNotification('Помилка завантаження модерації', 'error');
-            throw error;
+        } finally {
+            Utils.showLoader(false);
         }
     }
 
@@ -95,7 +105,6 @@ class AdminModule {
             await api.post(`/admin/moderation/${productId}/approve`);
             Utils.showNotification('Товар схвалено', 'success');
             await this.loadModeration();
-            this.updateModerationUI();
         } catch (error) {
             console.error('Approve product error:', error);
             Utils.showNotification('Помилка схвалення товару', 'error');
@@ -110,7 +119,6 @@ class AdminModule {
             await api.post(`/admin/moderation/${productId}/reject`, { reason });
             Utils.showNotification('Товар відхилено', 'info');
             await this.loadModeration();
-            this.updateModerationUI();
         } catch (error) {
             console.error('Reject product error:', error);
             Utils.showNotification('Помилка відхилення товару', 'error');
@@ -121,6 +129,11 @@ class AdminModule {
      * Створити сторінку адмін панелі
      */
     createAdminPage() {
+        // Запускаємо завантаження даних для першої вкладки
+        if(this.currentTab === 'dashboard' && !this.dashboard) {
+            this.loadDashboard();
+        }
+
         return `
             <div class="admin-panel max-w-7xl mx-auto">
                 <div class="header bg-gradient-to-r from-red-500 to-purple-600 rounded-2xl p-8 text-white mb-8">
@@ -172,40 +185,49 @@ class AdminModule {
     async showTab(tab) {
         this.currentTab = tab;
 
-        // Оновлюємо активну вкладку
+        // Оновлюємо UI вкладок
+        const pageContent = document.getElementById('page-content');
+        if (pageContent) {
+            pageContent.innerHTML = this.createAdminPage();
+        } else {
+            // fallback if page-content is not found
+            this.updateActiveTabButton(tab);
+        }
+
+        // Завантажуємо дані для нової вкладки
+        switch(tab) {
+            case 'dashboard':
+                await this.loadDashboard();
+                break;
+            case 'users':
+                await this.loadUsers();
+                break;
+            case 'moderation':
+                await this.loadModeration();
+                break;
+            case 'promocodes':
+                await this.loadPromocodes();
+                break;
+            case 'broadcast':
+                this.updateBroadcastUI();
+                break;
+        }
+    }
+
+    updateActiveTabButton(activeTab) {
         document.querySelectorAll('.tab-btn').forEach(btn => {
-            if (btn.dataset.tab === tab) {
+            if (btn.dataset.tab === activeTab) {
                 btn.classList.add('border-b-2', 'border-red-500', 'text-red-600');
             } else {
                 btn.classList.remove('border-b-2', 'border-red-500', 'text-red-600');
             }
         });
-
-        // Завантажуємо дані якщо потрібно
-        if (tab === 'dashboard' && !this.dashboard) {
-            await this.loadDashboard();
-        } else if (tab === 'users' && this.users.length === 0) {
-            await this.loadUsers();
-        } else if (tab === 'moderation' && this.moderation.length === 0) {
-            await this.loadModeration();
-        }
-
-        // Рендеримо контент
-        const content = document.getElementById('admin-tab-content');
-        if (content) {
-            content.innerHTML = this.renderTabContent();
-
-            // Ініціалізуємо графіки для дашборду
-            if (tab === 'dashboard') {
-                this.initDashboardCharts();
-            }
-        }
     }
 
     /**
      * Рендер контенту вкладки
      */
-    renderTabContent() {
+     renderTabContent() {
         switch (this.currentTab) {
             case 'dashboard':
                 return this.renderDashboard();
@@ -218,14 +240,14 @@ class AdminModule {
             case 'broadcast':
                 return this.renderBroadcast();
             default:
-                return '';
+                return '<div class="text-center">Завантаження...</div>';
         }
     }
 
     /**
      * Рендер дашборду
      */
-    renderDashboard() {
+     renderDashboard() {
         if (!this.dashboard) {
             return '<div class="text-center">Завантаження дашборду...</div>';
         }
@@ -367,7 +389,7 @@ class AdminModule {
     /**
      * Рендер користувачів
      */
-    renderUsers() {
+     renderUsers() {
         return `
             <div class="users-management">
                 <div class="filters bg-gray-50 dark:bg-gray-700 rounded-lg p-4 mb-6">
@@ -375,23 +397,23 @@ class AdminModule {
                         <input type="text" id="user-search" placeholder="Пошук користувача..."
                                class="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg
                                       dark:bg-gray-800 dark:text-white"
-                               onkeyup="admin.searchUsers(this.value)">
+                               onkeyup="admin.searchUsers(this.value)" value="${this.userFilters.search || ''}">
 
-                        <select id="role-filter" onchange="admin.filterUsers()"
+                        <select id="role-filter" onchange="admin.filterUsers('role', this.value)"
                                 class="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg
                                        dark:bg-gray-800 dark:text-white">
-                            <option value="">Всі ролі</option>
-                            <option value="users">Користувачі</option>
-                            <option value="creators">Творці</option>
-                            <option value="admins">Адміни</option>
+                            <option value="" ${!this.userFilters.role ? 'selected' : ''}>Всі ролі</option>
+                            <option value="users" ${this.userFilters.role === 'users' ? 'selected' : ''}>Користувачі</option>
+                            <option value="creators" ${this.userFilters.role === 'creators' ? 'selected' : ''}>Творці</option>
+                            <option value="admins" ${this.userFilters.role === 'admins' ? 'selected' : ''}>Адміни</option>
                         </select>
 
-                        <select id="status-filter" onchange="admin.filterUsers()"
+                        <select id="status-filter" onchange="admin.filterUsers('status', this.value)"
                                 class="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg
                                        dark:bg-gray-800 dark:text-white">
-                            <option value="">Всі статуси</option>
-                            <option value="active">Активні</option>
-                            <option value="blocked">Заблоковані</option>
+                            <option value="" ${!this.userFilters.status ? 'selected' : ''}>Всі статуси</option>
+                            <option value="active" ${this.userFilters.status === 'active' ? 'selected' : ''}>Активні</option>
+                            <option value="blocked" ${this.userFilters.status === 'blocked' ? 'selected' : ''}>Заблоковані</option>
                         </select>
 
                         <button onclick="admin.loadUsers()"
@@ -454,15 +476,15 @@ class AdminModule {
                                     <td class="py-3 px-4">
                                         <div class="flex gap-2">
                                             <button onclick="admin.saveUserChanges(${user.id})"
-                                                    class="text-blue-500 hover:text-blue-600">
+                                                    class="text-blue-500 hover:text-blue-600" title="Зберегти">
                                                 💾
                                             </button>
                                             <button onclick="admin.toggleUserBlock(${user.id}, ${!user.is_blocked})"
-                                                    class="text-${user.is_blocked ? 'green' : 'red'}-500">
+                                                    class="text-${user.is_blocked ? 'green' : 'red'}-500" title="${user.is_blocked ? 'Розблокувати' : 'Заблокувати'}">
                                                 ${user.is_blocked ? '🔓' : '🔒'}
                                             </button>
                                             <button onclick="admin.grantSubscription(${user.id})"
-                                                    class="text-purple-500">
+                                                    class="text-purple-500" title="Видати підписку">
                                                 ⭐
                                             </button>
                                         </div>
@@ -618,7 +640,7 @@ class AdminModule {
     /**
      * Рендер розсилки
      */
-    renderBroadcast() {
+     renderBroadcast() {
         return `
             <div class="broadcast max-w-2xl mx-auto">
                 <h3 class="text-2xl font-bold mb-6 dark:text-white">📢 Масова розсилка через Telegram</h3>
@@ -731,17 +753,27 @@ class AdminModule {
         ctx.stroke();
     }
 
+     updateDashboardUI() {
+        const content = document.getElementById('admin-tab-content');
+        if (content && this.currentTab === 'dashboard') {
+            content.innerHTML = this.renderDashboard();
+            this.initDashboardCharts();
+        }
+    }
+
     /**
      * Зберегти зміни користувача
      */
     async saveUserChanges(userId) {
-        const balance = parseInt(document.getElementById(`balance-${userId}`).value);
-        const vipLevel = parseInt(document.getElementById(`vip-${userId}`).value);
+        const balanceInput = document.getElementById(`balance-${userId}`);
+        const vipInput = document.getElementById(`vip-${userId}`);
 
-        await this.updateUser(userId, {
-            balance: balance,
-            vip_level: vipLevel
-        });
+        const data = {
+            balance: parseInt(balanceInput.value),
+            vip_level: parseInt(vipInput.value)
+        };
+
+        await this.updateUser(userId, data);
     }
 
     /**
@@ -749,8 +781,6 @@ class AdminModule {
      */
     async toggleUserBlock(userId, block) {
         await this.updateUser(userId, { is_blocked: block });
-        await this.loadUsers();
-        this.showTab('users');
     }
 
     /**
@@ -762,9 +792,9 @@ class AdminModule {
         if (!plan) return;
 
         let data = {};
-        if (plan === '1' || plan === 'monthly') {
+        if (plan === '1' || plan.toLowerCase() === 'monthly') {
             data = { plan_type: 'monthly' };
-        } else if (plan === '2' || plan === 'yearly') {
+        } else if (plan === '2' || plan.toLowerCase() === 'yearly') {
             data = { plan_type: 'yearly' };
         } else {
             const days = parseInt(plan);
@@ -772,7 +802,7 @@ class AdminModule {
                 Utils.showNotification('Невірна кількість днів', 'error');
                 return;
             }
-            data = { plan_type: 'monthly', days: days };
+            data = { plan_type: 'custom', days: days };
         }
 
         try {
@@ -780,6 +810,7 @@ class AdminModule {
             Utils.showNotification('Підписку видано', 'success');
         } catch (error) {
             console.error('Grant subscription error:', error);
+            Utils.showNotification('Помилка видачі підписки', 'error');
         }
     }
 
@@ -897,11 +928,14 @@ class AdminModule {
      */
     async loadPromocodes() {
         try {
+            Utils.showLoader(true);
             const response = await api.get('/admin/promocodes');
             this.promocodes = response.promocodes;
             this.updatePromocodesTable();
         } catch (error) {
             console.error('Load promocodes error:', error);
+        } finally {
+            Utils.showLoader(false);
         }
     }
 
@@ -913,13 +947,7 @@ class AdminModule {
         if (!tbody) return;
 
         if (this.promocodes.length === 0) {
-            tbody.innerHTML = `
-                <tr>
-                    <td colspan="7" class="text-center py-8 text-gray-500">
-                        Немає промокодів
-                    </td>
-                </tr>
-            `;
+            tbody.innerHTML = `<tr><td colspan="7" class="text-center py-8 text-gray-500">Немає промокодів</td></tr>`;
             return;
         }
 
@@ -975,23 +1003,21 @@ class AdminModule {
 
         try {
             Utils.showLoader(true);
-
-            const response = await api.post('/admin/broadcast', {
-                message: message,
-                target: target
-            });
-
-            Utils.showNotification(
-                `Розсилку відправлено: ${response.stats.sent}/${response.stats.total}`,
-                'success'
-            );
-
+            const response = await api.post('/admin/broadcast', { message, target });
+            Utils.showNotification(`Розсилку відправлено: ${response.stats.sent}/${response.stats.total}`, 'success');
             document.getElementById('broadcast-message').value = '';
         } catch (error) {
             console.error('Broadcast error:', error);
             Utils.showNotification('Помилка розсилки', 'error');
         } finally {
             Utils.showLoader(false);
+        }
+    }
+
+    updateBroadcastUI() {
+        const content = document.getElementById('admin-tab-content');
+        if(content && this.currentTab === 'broadcast') {
+            content.innerHTML = this.renderBroadcast();
         }
     }
 
@@ -1009,19 +1035,14 @@ class AdminModule {
      * Пошук користувачів
      */
     searchUsers = Utils.debounce(async (query) => {
-        await this.loadUsers({ search: query });
-        this.updateUsersTable();
+        await this.loadUsers({ search: query, page: 1 });
     }, 500);
 
     /**
      * Фільтрувати користувачів
      */
-    async filterUsers() {
-        const role = document.getElementById('role-filter').value;
-        const status = document.getElementById('status-filter').value;
-
-        await this.loadUsers({ role, status });
-        this.updateUsersTable();
+    async filterUsers(key, value) {
+        await this.loadUsers({ [key]: value, page: 1 });
     }
 
     /**

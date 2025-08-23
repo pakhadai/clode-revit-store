@@ -493,6 +493,11 @@ class App {
 
         const user = auth.user;
 
+        // Ensure default tab is set for initial render
+        if (!this.currentProfileTab) {
+            this.currentProfileTab = 'downloads';
+        }
+
         return `
             <div class="profile-page max-w-4xl mx-auto">
                 <div class="profile-header bg-white dark:bg-gray-800 rounded-lg p-6 mb-6">
@@ -505,12 +510,12 @@ class App {
                                 ${user.first_name} ${user.last_name || ''}
                             </h1>
                             <p class="text-gray-600 dark:text-gray-400">@${user.username || `user_${user.telegram_id}`}</p>
-                            <div class="flex gap-4 mt-2">
-                                <span class="text-sm ${user.vip_level > 0 ? 'text-yellow-500' : 'text-gray-500'}">
+                            <div class="flex flex-wrap gap-4 mt-2">
+                                <span class="text-sm font-medium ${user.vip_level > 0 ? 'text-yellow-500' : 'text-gray-500'}">
                                     ${user.vip_level_name || this.t('profile.noVip')}
                                 </span>
-                                ${user.is_creator ? `<span class="text-sm text-purple-500">🎨 ${this.t('profile.creator')}</span>` : ''}
-                                ${user.is_admin ? `<span class="text-sm text-red-500">👑 ${this.t('profile.admin')}</span>` : ''}
+                                ${user.is_creator ? `<span class="text-sm font-medium text-purple-500">🎨 ${this.t('profile.creator')}</span>` : ''}
+                                ${user.is_admin ? `<span class="text-sm font-medium text-red-500">👑 ${this.t('profile.admin')}</span>` : ''}
                             </div>
                         </div>
                         <div class="text-right">
@@ -518,39 +523,53 @@ class App {
                             <div class="text-sm text-gray-600 dark:text-gray-400">${this.t('profile.balance')}</div>
                         </div>
                     </div>
+
+                    <div class="flex flex-wrap gap-3 mt-6">
+                        ${user.is_creator ? `
+                            <button onclick="app.navigateTo('creator')" class="flex-1 bg-purple-500 hover:bg-purple-600 text-white px-4 py-2 rounded-lg font-bold text-sm">
+                                🎨 Кабінет творця
+                            </button>
+                        ` : ''}
+                        ${user.is_admin ? `
+                            <button onclick="app.navigateTo('admin')" class="flex-1 bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg font-bold text-sm">
+                                👑 Адмін панель
+                            </button>
+                        ` : ''}
+                    </div>
                 </div>
 
                 <div class="tabs bg-white dark:bg-gray-800 rounded-lg mb-6">
-                    <div class="flex border-b dark:border-gray-700">
+                    <div class="flex border-b dark:border-gray-700 overflow-x-auto">
                         <button onclick="app.showProfileTab('downloads')"
-                                class="tab-btn px-6 py-3 font-medium hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-white"
+                                class="tab-btn flex-shrink-0 px-6 py-3 font-medium hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-white ${this.currentProfileTab === 'downloads' ? 'border-b-2 border-blue-500 text-blue-600' : ''}"
                                 data-tab="downloads">
                             📥 ${this.t('profile.tabs.downloads')}
                         </button>
                         <button onclick="app.showProfileTab('orders')"
-                                class="tab-btn px-6 py-3 font-medium hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-white"
+                                class="tab-btn flex-shrink-0 px-6 py-3 font-medium hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-white ${this.currentProfileTab === 'orders' ? 'border-b-2 border-blue-500 text-blue-600' : ''}"
                                 data-tab="orders">
                             📋 ${this.t('profile.tabs.orders')}
                         </button>
                         <button onclick="app.showProfileTab('favorites')"
-                                class="tab-btn px-6 py-3 font-medium hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-white"
+                                class="tab-btn flex-shrink-0 px-6 py-3 font-medium hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-white ${this.currentProfileTab === 'favorites' ? 'border-b-2 border-blue-500 text-blue-600' : ''}"
                                 data-tab="favorites">
                             ❤️ ${this.t('profile.tabs.favorites')}
                         </button>
                         <button onclick="app.showProfileTab('referrals')"
-                                class="tab-btn px-6 py-3 font-medium hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-white"
+                                class="tab-btn flex-shrink-0 px-6 py-3 font-medium hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-white ${this.currentProfileTab === 'referrals' ? 'border-b-2 border-blue-500 text-blue-600' : ''}"
                                 data-tab="referrals">
                             🤝 ${this.t('profile.tabs.referrals')}
                         </button>
                         <button onclick="app.showProfileTab('settings')"
-                                class="tab-btn px-6 py-3 font-medium hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-white"
+                                class="tab-btn flex-shrink-0 px-6 py-3 font-medium hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-white ${this.currentProfileTab === 'settings' ? 'border-b-2 border-blue-500 text-blue-600' : ''}"
                                 data-tab="settings">
                             ⚙️ ${this.t('profile.tabs.settings')}
                         </button>
                     </div>
 
                     <div class="tab-content p-6" id="profile-tab-content">
-                        </div>
+                         ${await this.renderProfileTabContent(this.currentProfileTab)}
+                    </div>
                 </div>
             </div>
         `;

@@ -1,7 +1,7 @@
 """
 Роутер для реферальної системи
 """
-
+import os
 from fastapi import APIRouter, HTTPException, Depends
 from sqlalchemy.orm import Session
 from typing import Dict, List
