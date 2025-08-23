@@ -858,7 +858,10 @@ class AdminModule {
             e.preventDefault();
             const formData = new FormData(e.target);
             try {
-                await api.post('/creators/apply', formData, {'Content-Type': 'multipart/form-data'});
+                await api.request('/creators/apply', {
+                    method: 'POST',
+                    body: formData
+                });
                 Utils.showNotification('Заявку успішно відправлено!', 'success');
                 modal.remove();
             } catch (error) {
