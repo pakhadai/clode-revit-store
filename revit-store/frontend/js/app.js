@@ -203,6 +203,216 @@ class App {
         window.scrollTo(0, 0);
     }
 
+    /**
+     * Відправити повідомлення в підтримку
+     */
+    sendSupportMessage(event) {
+        event.preventDefault();
+
+        const topic = document.getElementById('support-topic')?.value;
+        const message = document.getElementById('support-message')?.value;
+
+        if (!message) {
+            Utils.showNotification('Введіть повідомлення', 'warning');
+            return;
+        }
+
+        // Тут буде відправка на сервер
+        console.log('Sending support message:', { topic, message });
+
+        // Очищаємо форму
+        document.getElementById('support-message').value = '';
+
+        Utils.showNotification('Повідомлення відправлено! Ми відповімо протягом 24 годин.', 'success');
+    }
+
+    /**
+     * Оновити налаштування
+     */
+    updateSetting(setting, value) {
+        const updates = {};
+        updates[setting] = value;
+
+        // Оновлюємо локально
+        if (setting === 'theme') {
+            Utils.setTheme(value);
+            this.applyTheme();
+        } else if (setting === 'language') {
+            Utils.setLanguage(value);
+            this.loadTranslations().then(() => {
+                this.render();
+            });
+        }
+
+        // Якщо авторизований - зберігаємо на сервері
+        if (auth.isAuthenticated()) {
+            auth.updateProfile(updates).catch(error => {
+                console.error('Failed to update setting:', error);
+            });
+        }
+
+        Utils.showNotification('Налаштування збережено', 'success');
+    }
+
+    /**
+     * Показати модальне вікно PIN-коду
+     */
+    showPinCodeModal() {
+        const modal = document.createElement('div');
+        modal.id = 'pin-modal';
+        modal.className = 'fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4';
+
+        modal.innerHTML = `
+            <div class="bg-white dark:bg-gray-800 rounded-2xl max-w-sm w-full p-6">
+                <h3 class="text-xl font-bold mb-4 dark:text-white">🔐 Встановити PIN-код</h3>
+
+                <form onsubmit="app.savePinCode(event)">
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium mb-2 dark:text-gray-300">
+                            Новий PIN-код (4 цифри)
+                        </label>
+                        <input type="password" id="new-pin" pattern="[0-9]{4}" maxlength="4" required
+                               class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg
+                                      dark:bg-gray-700 dark:text-white text-center text-2xl tracking-widest"
+                               placeholder="• • • •">
+                    </div>
+
+                    <div class="mb-6">
+                        <label class="block text-sm font-medium mb-2 dark:text-gray-300">
+                            Підтвердіть PIN-код
+                        </label>
+                        <input type="password" id="confirm-pin" pattern="[0-9]{4}" maxlength="4" required
+                               class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg
+                                      dark:bg-gray-700 dark:text-white text-center text-2xl tracking-widest"
+                               placeholder="• • • •">
+                    </div>
+
+                    <div class="flex gap-3">
+                        <button type="button" onclick="document.getElementById('pin-modal').remove()"
+                                class="flex-1 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600
+                                       text-gray-700 dark:text-gray-300 px-4 py-2 rounded-lg font-medium">
+                            ${this.t('buttons.cancel')}
+                        </button>
+                        <button type="submit"
+                                class="flex-1 bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg font-medium">
+                            ${this.t('buttons.save')}
+                        </button>
+                    </div>
+                </form>
+            </div>
+        `;
+
+        document.body.appendChild(modal);
+    }
+
+    /**
+     * Зберегти PIN-код
+     */
+    savePinCode(event) {
+        event.preventDefault();
+
+        const newPin = document.getElementById('new-pin')?.value;
+        const confirmPin = document.getElementById('confirm-pin')?.value;
+
+        if (newPin !== confirmPin) {
+            Utils.showNotification('PIN-коди не співпадають', 'error');
+            return;
+        }
+
+        // Тут буде відправка на сервер
+        console.log('Saving PIN code');
+
+        document.getElementById('pin-modal')?.remove();
+        Utils.showNotification('PIN-код успішно встановлено', 'success');
+    }
+
+    /**
+     * Показати реферальний код
+     */
+    showReferralCode(code) {
+        const referralLink = `https://t.me/OhMyRevitBot?start=${code}`;
+
+        const modal = document.createElement('div');
+        modal.id = 'referral-modal';
+        modal.className = 'fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4';
+
+        modal.innerHTML = `
+            <div class="bg-white dark:bg-gray-800 rounded-2xl max-w-md w-full p-6">
+                <h3 class="text-xl font-bold mb-4 dark:text-white">🤝 Ваш реферальний код</h3>
+
+                <div class="bg-gray-100 dark:bg-gray-700 rounded-lg p-4 mb-4">
+                    <div class="text-center text-2xl font-mono font-bold text-blue-600 dark:text-blue-400 mb-2">
+                        ${code}
+                    </div>
+                    <div class="text-sm text-gray-600 dark:text-gray-400 text-center">
+                        Ваш унікальний код
+                    </div>
+                </div>
+
+                <div class="mb-4">
+                    <label class="block text-sm font-medium mb-2 dark:text-gray-300">
+                        Реферальне посилання:
+                    </label>
+                    <div class="flex gap-2">
+                        <input type="text" value="${referralLink}" readonly
+                               class="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg
+                                      bg-white dark:bg-gray-700 dark:text-white text-sm">
+                        <button onclick="Utils.copyToClipboard('${referralLink}')"
+                                class="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg">
+                            📋
+                        </button>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-3 gap-3 mb-4">
+                    <button onclick="app.shareReferral('telegram')"
+                            class="p-3 bg-blue-100 dark:bg-blue-900 rounded-lg hover:bg-blue-200 dark:hover:bg-blue-800">
+                        <div class="text-2xl">✈️</div>
+                        <div class="text-xs">Telegram</div>
+                    </button>
+                    <button onclick="app.shareReferral('whatsapp')"
+                            class="p-3 bg-green-100 dark:bg-green-900 rounded-lg hover:bg-green-200 dark:hover:bg-green-800">
+                        <div class="text-2xl">📱</div>
+                        <div class="text-xs">WhatsApp</div>
+                    </button>
+                    <button onclick="app.shareReferral('copy')"
+                            class="p-3 bg-gray-100 dark:bg-gray-700 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600">
+                        <div class="text-2xl">🔗</div>
+                        <div class="text-xs">Копіювати</div>
+                    </button>
+                </div>
+
+                <button onclick="document.getElementById('referral-modal').remove()"
+                        class="w-full bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600
+                               text-gray-700 dark:text-gray-300 px-4 py-2 rounded-lg font-medium">
+                    ${this.t('buttons.close')}
+                </button>
+            </div>
+        `;
+
+        document.body.appendChild(modal);
+    }
+
+    /**
+     * Поділитися реферальним посиланням
+     */
+    shareReferral(platform) {
+        const code = auth.user?.referral_code || 'NOCODE';
+        const referralLink = `https://t.me/OhMyRevitBot?start=${code}`;
+        const message = `Приєднуйся до OhMyRevit - найкращого маркетплейсу архівів Revit! Отримай 30 бонусів за реєстрацію: ${referralLink}`;
+
+        switch(platform) {
+            case 'telegram':
+                window.open(`https://t.me/share/url?url=${encodeURIComponent(referralLink)}&text=${encodeURIComponent(message)}`);
+                break;
+            case 'whatsapp':
+                window.open(`https://wa.me/?text=${encodeURIComponent(message)}`);
+                break;
+            case 'copy':
+                Utils.copyToClipboard(referralLink);
+                break;
+        }
+    }
 
     /**
      * Рендер сторінки
