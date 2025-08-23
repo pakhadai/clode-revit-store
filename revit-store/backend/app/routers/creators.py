@@ -19,6 +19,7 @@ from app.routers.auth import get_current_user_from_token
 #from app.services.s3_service import s3_service
 from app.services.local_file_service import local_file_service as file_service
 from app.utils.security import generate_order_number
+from app.services.telegram_bot import bot_service
 
 # Створюємо роутер
 router = APIRouter(
@@ -54,16 +55,17 @@ async def apply_to_become_creator(
     if current_user.is_creator:
         raise HTTPException(status_code=400, detail="Ви вже є творцем.")
 
-    existing_application = db.query(CreatorApplication).filter(CreatorApplication.user_id == current_user.id).first()
-    if existing_application and existing_application.status == 'pending':
+    application = db.query(CreatorApplication).filter(CreatorApplication.user_id == current_user.id).first()
+
+    if application and application.status == 'pending':
         raise HTTPException(status_code=400, detail="Ваша заявка вже знаходиться на розгляді.")
 
     # Створюємо або оновлюємо заявку
-    if existing_application:
-        existing_application.about_me = about_me
-        existing_application.portfolio_url = portfolio_url
-        existing_application.status = 'pending'
-        existing_application.review_notes = None
+    if application:
+        application.about_me = about_me
+        application.portfolio_url = portfolio_url
+        application.status = 'pending'
+        application.review_notes = None
     else:
         application = CreatorApplication(
             user_id=current_user.id,
@@ -73,8 +75,36 @@ async def apply_to_become_creator(
         db.add(application)
 
     db.commit()
+    db.refresh(application)  # Оновлюємо об'єкт, щоб отримати ID
+
+    # Сповіщення для адміністраторів
+    admins = db.query(User).filter(User.is_admin == True).all()
+    message = (
+        f"<b>Нова заявка 'Стати творцем'</b>\n\n"
+        f"<b>Від:</b> {current_user.get_full_name()} (ID: {current_user.id})\n"
+        f"<b>Текст заявки:</b> {about_me}\n"
+    )
+    if portfolio_url:
+        message += f"<b>Портфоліо:</b> {portfolio_url}\n"
+
+    # Створення inline-кнопок
+    keyboard = {
+        "inline_keyboard": [[
+            {"text": "✅ Схвалити", "callback_data": f"approve_creator_{application.id}"},
+            {"text": "❌ Відхилити", "callback_data": f"reject_creator_{application.id}"},
+            {"text": "📝 Написати", "url": f"tg://user?id={current_user.telegram_id}"}
+        ]]
+    }
+
+    for admin in admins:
+        await bot_service.send_message(
+            admin.telegram_id,
+            message,
+            reply_markup=keyboard
+        )
 
     return {"message": "Заявку успішно відправлено на розгляд."}
+
 
 # ====== УПРАВЛІННЯ ТОВАРАМИ ======
 
