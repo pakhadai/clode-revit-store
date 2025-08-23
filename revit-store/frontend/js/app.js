@@ -835,7 +835,7 @@ class App {
             case 'statistics':
                 return this.renderStatisticsTab();
             default:
-                return `<p class="text-gray-600 dark:text-gray-400">Вкладка "${tab}" в розробці</p>`;
+                return `<p class="text-gray-600 dark:text-gray-400">${this.t('profile.tabs.contentPlaceholder').replace('{tab}', tab)}</p>`;
         }
     }
 
@@ -1097,6 +1097,28 @@ class App {
     }
 
     /**
+     * Рендер вкладки статистики
+     */
+    renderStatisticsTab() {
+        // Використовуємо модуль бонусів для створення статистики
+        if (bonuses && bonuses.statistics) {
+            return bonuses.createStatisticsHTML();
+        }
+
+        // Fallback якщо статистика не завантажена
+        return `
+            <div class="statistics-content">
+                <h3 class="text-xl font-bold mb-4 dark:text-white">📊 ${this.t('profile.statistics.title')}</h3>
+
+                <div class="text-center py-8">
+                    <div class="loader ease-linear rounded-full border-8 border-t-8 border-gray-200 h-16 w-16 mx-auto mb-4"></div>
+                    <p class="text-gray-600 dark:text-gray-400">${this.t('notifications.loading')}</p>
+                </div>
+            </div>
+        `;
+    }
+
+    /**
      * Рендер вкладки підтримки
      */
     renderSupportTab() {
@@ -1163,6 +1185,94 @@ class App {
                 </div>
             </div>
         `;
+    }
+
+    /**
+     * Рендер вкладки FAQ
+     */
+    renderFaqTab() {
+        const faqItems = [
+            {
+                question: 'Як отримати безкоштовні архіви?',
+                answer: 'Безкоштовні архіви доступні всім користувачам у розділі "Безкоштовні" маркетплейсу. Просто виберіть потрібний архів та завантажте його.'
+            },
+            {
+                question: 'Що дає підписка?',
+                answer: 'Підписка надає доступ до всіх преміум архівів, які вийшли під час дії підписки, +2 прокрутки колеса щодня, 5% кешбек бонусами та пріоритетну підтримку.'
+            },
+            {
+                question: 'Як працює реферальна програма?',
+                answer: 'Запрошуйте друзів за вашим посиланням. Ви отримаєте 30 бонусів за кожну реєстрацію та 5% від усіх покупок ваших рефералів.'
+            },
+            {
+                question: 'Як стати творцем?',
+                answer: 'Натисніть кнопку "Стати творцем" у профілі, заповніть заявку з інформацією про себе та портфоліо. Після схвалення модератором ви отримаєте доступ до кабінету творця.'
+            },
+            {
+                question: 'Які методи оплати доступні?',
+                answer: 'Ми приймаємо криптовалюту (Bitcoin, Ethereum, USDT), бонуси системи та оплату через активну підписку для преміум товарів.'
+            },
+            {
+                question: 'Як використовувати промокод?',
+                answer: 'Введіть промокод у спеціальне поле при оформленні замовлення в кошику. Знижка буде застосована автоматично.'
+            },
+            {
+                question: 'Скільки разів можна крутити колесо фортуни?',
+                answer: 'Ви отримуєте 1 безкоштовну спробу щодня, з підпискою - 3 спроби. Додаткові спроби можна купити за 5 бонусів.'
+            },
+            {
+                question: 'Як працює VIP система?',
+                answer: 'VIP рівень залежить від загальної суми покупок: Bronze ($100+), Silver ($500+), Gold ($1000+), Diamond ($5000+). Кожен рівень дає додатковий кешбек.'
+            }
+        ];
+
+        return `
+            <div class="faq-content">
+                <h3 class="text-xl font-bold mb-6 dark:text-white">❓ Часті питання</h3>
+
+                <div class="space-y-4">
+                    ${faqItems.map((item, index) => `
+                        <div class="faq-item bg-white dark:bg-gray-800 rounded-lg overflow-hidden">
+                            <button onclick="app.toggleFaqItem(${index})"
+                                    class="w-full text-left px-6 py-4 flex justify-between items-center hover:bg-gray-50 dark:hover:bg-gray-700">
+                                <span class="font-medium dark:text-white">${item.question}</span>
+                                <span class="text-gray-400 transform transition-transform" id="faq-icon-${index}">
+                                    ▼
+                                </span>
+                            </button>
+                            <div id="faq-answer-${index}" class="hidden px-6 pb-4">
+                                <p class="text-gray-600 dark:text-gray-400">${item.answer}</p>
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+
+                <div class="mt-8 p-6 bg-blue-50 dark:bg-blue-900 rounded-lg">
+                    <p class="text-blue-800 dark:text-blue-200">
+                        💡 Не знайшли відповідь на своє питання?
+                        <button onclick="app.showProfileTab('support')"
+                                class="underline hover:no-underline">
+                            Зверніться до підтримки
+                        </button>
+                    </p>
+                </div>
+            </div>
+        `;
+    }
+
+    /**
+     * Перемкнути FAQ елемент
+     */
+    toggleFaqItem(index) {
+        const answer = document.getElementById(`faq-answer-${index}`);
+        const icon = document.getElementById(`faq-icon-${index}`);
+
+        if (answer) {
+            answer.classList.toggle('hidden');
+            if (icon) {
+                icon.style.transform = answer.classList.contains('hidden') ? 'rotate(0deg)' : 'rotate(180deg)';
+            }
+        }
     }
 
     /**
@@ -1432,20 +1542,255 @@ class App {
      * Показати меню мов
      */
     showLanguageMenu() {
-        // TODO: Реалізувати меню вибору мови
-        const languages = ['en', 'ua', 'ru'];
         const currentLang = Utils.getCurrentLanguage();
-        const nextLang = languages[(languages.indexOf(currentLang) + 1) % languages.length];
-        Utils.setLanguage(nextLang);
+
+        const modal = document.createElement('div');
+        modal.id = 'language-modal';
+        modal.className = 'fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4';
+
+        modal.innerHTML = `
+            <div class="bg-white dark:bg-gray-800 rounded-2xl max-w-sm w-full p-6">
+                <h3 class="text-xl font-bold mb-4 dark:text-white">🌐 ${this.t('profile.settings.language')}</h3>
+
+                <div class="space-y-2">
+                    <button onclick="app.selectLanguage('ua')"
+                            class="w-full text-left px-4 py-3 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700
+                                   ${currentLang === 'ua' ? 'bg-blue-100 dark:bg-blue-900' : ''}
+                                   flex items-center justify-between">
+                        <div class="flex items-center gap-3">
+                            <span class="text-2xl">🇺🇦</span>
+                            <span class="dark:text-white">Українська</span>
+                        </div>
+                        ${currentLang === 'ua' ? '<span class="text-blue-500">✓</span>' : ''}
+                    </button>
+
+                    <button onclick="app.selectLanguage('en')"
+                            class="w-full text-left px-4 py-3 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700
+                                   ${currentLang === 'en' ? 'bg-blue-100 dark:bg-blue-900' : ''}
+                                   flex items-center justify-between">
+                        <div class="flex items-center gap-3">
+                            <span class="text-2xl">🇬🇧</span>
+                            <span class="dark:text-white">English</span>
+                        </div>
+                        ${currentLang === 'en' ? '<span class="text-blue-500">✓</span>' : ''}
+                    </button>
+
+                    <button onclick="app.selectLanguage('ru')"
+                            class="w-full text-left px-4 py-3 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700
+                                   ${currentLang === 'ru' ? 'bg-blue-100 dark:bg-blue-900' : ''}
+                                   flex items-center justify-between">
+                        <div class="flex items-center gap-3">
+                            <span class="text-2xl">⚪</span>
+                            <span class="dark:text-white">Русский</span>
+                        </div>
+                        ${currentLang === 'ru' ? '<span class="text-blue-500">✓</span>' : ''}
+                    </button>
+                </div>
+
+                <button onclick="document.getElementById('language-modal').remove()"
+                        class="mt-6 w-full bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600
+                               text-gray-700 dark:text-gray-300 px-4 py-2 rounded-lg font-medium">
+                    ${this.t('buttons.close')}
+                </button>
+            </div>
+        `;
+
+        document.body.appendChild(modal);
+    }
+
+    /**
+     * Вибрати мову
+     */
+    selectLanguage(lang) {
+        Utils.setLanguage(lang);
+
+        // Якщо користувач авторизований - зберігаємо на сервері
+        if (auth.isAuthenticated()) {
+            auth.updateProfile({ language: lang }).catch(error => {
+                console.error('Failed to update language preference:', error);
+            });
+        }
+
+        // Закриваємо модальне вікно
+        document.getElementById('language-modal')?.remove();
+
+        // Оновлюємо UI
         this.updateLanguageButton();
+
+        // Перезавантажуємо переклади та перерендеримо сторінку
+        this.loadTranslations().then(() => {
+            this.render();
+            Utils.showNotification('✅ Мову змінено', 'success');
+        });
     }
 
     /**
      * Показати сповіщення
      */
     showNotifications() {
-        // TODO: Реалізувати сторінку сповіщень
-        Utils.showNotification(this.t('notifications.noNotifications'), 'info');
+        // Моковані сповіщення для демонстрації
+        const notifications = [
+            {
+                id: 1,
+                type: 'bonus',
+                icon: '🎁',
+                title: 'Щоденний бонус доступний!',
+                message: 'Не забудьте отримати свій щоденний бонус',
+                time: new Date().toISOString(),
+                read: false
+            },
+            {
+                id: 2,
+                type: 'product',
+                icon: '✅',
+                title: 'Товар схвалено',
+                message: 'Ваш товар "Modern Furniture Pack" було схвалено та опубліковано',
+                time: new Date(Date.now() - 3600000).toISOString(),
+                read: false
+            },
+            {
+                id: 3,
+                type: 'sale',
+                icon: '💰',
+                title: 'Новий продаж!',
+                message: 'Користувач придбав ваш товар "Kitchen Set Pro"',
+                time: new Date(Date.now() - 86400000).toISOString(),
+                read: true
+            },
+            {
+                id: 4,
+                type: 'subscription',
+                icon: '⭐',
+                title: 'Підписка закінчується',
+                message: 'Ваша підписка закінчиться через 3 дні',
+                time: new Date(Date.now() - 172800000).toISOString(),
+                read: true
+            }
+        ];
+
+        const unreadCount = notifications.filter(n => !n.read).length;
+
+        const modal = document.createElement('div');
+        modal.id = 'notifications-modal';
+        modal.className = 'fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4';
+
+        modal.innerHTML = `
+            <div class="bg-white dark:bg-gray-800 rounded-2xl max-w-md w-full max-h-[80vh] overflow-hidden flex flex-col">
+                <div class="p-6 border-b dark:border-gray-700">
+                    <div class="flex justify-between items-center">
+                        <h3 class="text-xl font-bold dark:text-white">
+                            🔔 Сповіщення ${unreadCount > 0 ? `(${unreadCount})` : ''}
+                        </h3>
+                        <button onclick="document.getElementById('notifications-modal').remove()"
+                                class="text-gray-500 hover:text-gray-700 dark:text-gray-400 text-2xl">
+                            ×
+                        </button>
+                    </div>
+
+                    ${unreadCount > 0 ? `
+                        <button onclick="app.markAllAsRead()"
+                                class="mt-3 text-sm text-blue-500 hover:text-blue-600">
+                            Позначити всі як прочитані
+                        </button>
+                    ` : ''}
+                </div>
+
+                <div class="flex-1 overflow-y-auto">
+                    ${notifications.length > 0 ? `
+                        <div class="divide-y dark:divide-gray-700">
+                            ${notifications.map(notif => `
+                                <div class="p-4 hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer
+                                            ${!notif.read ? 'bg-blue-50 dark:bg-blue-900/20' : ''}"
+                                     onclick="app.handleNotificationClick(${notif.id})">
+                                    <div class="flex gap-3">
+                                        <div class="text-2xl flex-shrink-0">${notif.icon}</div>
+                                        <div class="flex-1">
+                                            <div class="font-medium dark:text-white ${!notif.read ? 'font-bold' : ''}">
+                                                ${notif.title}
+                                            </div>
+                                            <p class="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                                                ${notif.message}
+                                            </p>
+                                            <div class="text-xs text-gray-500 dark:text-gray-500 mt-2">
+                                                ${this.formatNotificationTime(notif.time)}
+                                            </div>
+                                        </div>
+                                        ${!notif.read ? '<div class="w-2 h-2 bg-blue-500 rounded-full flex-shrink-0 mt-2"></div>' : ''}
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    ` : `
+                        <div class="text-center py-16">
+                            <div class="text-5xl mb-4">📭</div>
+                            <p class="text-gray-600 dark:text-gray-400">${this.t('notifications.noNotifications')}</p>
+                        </div>
+                    `}
+                </div>
+
+                <div class="p-4 border-t dark:border-gray-700">
+                    <button onclick="app.clearAllNotifications()"
+                            class="w-full text-center text-sm text-red-500 hover:text-red-600">
+                        Очистити всі сповіщення
+                    </button>
+                </div>
+            </div>
+        `;
+
+        document.body.appendChild(modal);
+    }
+
+    /**
+     * Форматувати час сповіщення
+     */
+    formatNotificationTime(timestamp) {
+        const date = new Date(timestamp);
+        const now = new Date();
+        const diff = now - date;
+
+        const minutes = Math.floor(diff / 60000);
+        const hours = Math.floor(diff / 3600000);
+        const days = Math.floor(diff / 86400000);
+
+        if (minutes < 1) return 'Щойно';
+        if (minutes < 60) return `${minutes} хв. тому`;
+        if (hours < 24) return `${hours} год. тому`;
+        if (days < 7) return `${days} ${Utils.pluralize(days, ['день', 'дні', 'днів'])} тому`;
+
+        return date.toLocaleDateString('uk-UA');
+    }
+
+    /**
+     * Обробка кліку на сповіщення
+     */
+    handleNotificationClick(notificationId) {
+        // Позначаємо як прочитане
+        console.log('Notification clicked:', notificationId);
+
+        // Закриваємо модальне вікно
+        document.getElementById('notifications-modal')?.remove();
+
+        // Тут можна додати навігацію до відповідної сторінки
+        // залежно від типу сповіщення
+    }
+
+    /**
+     * Позначити всі як прочитані
+     */
+    markAllAsRead() {
+        console.log('Marking all notifications as read');
+        // Тут буде логіка позначення всіх сповіщень як прочитаних
+        this.showNotifications(); // Перерендерити модальне вікно
+    }
+
+    /**
+     * Очистити всі сповіщення
+     */
+    clearAllNotifications() {
+        console.log('Clearing all notifications');
+        // Тут буде логіка очищення всіх сповіщень
+        document.getElementById('notifications-modal')?.remove();
+        Utils.showNotification('Сповіщення очищено', 'info');
     }
 
     /**
