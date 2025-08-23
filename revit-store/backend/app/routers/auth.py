@@ -277,6 +277,40 @@ async def get_current_user(
     }
 
 
+@router.put("/me")
+async def update_current_user(
+        data: Dict,
+        current_user: User = Depends(get_current_user_from_token),
+        db: Session = Depends(get_db)
+):
+    """
+    Оновити дані поточного користувача (мова, тема, тощо).
+    """
+    updated = False
+    if "language" in data and data["language"] in ["en", "ua", "ru"]:
+        current_user.language = data["language"]
+        updated = True
+
+    if "theme" in data and data["theme"] in ["light", "dark"]:
+        current_user.theme = data["theme"]
+        updated = True
+
+    if "notifications_enabled" in data:
+        current_user.notifications_enabled = bool(data["notifications_enabled"])
+        updated = True
+
+    if updated:
+        db.commit()
+        db.refresh(current_user)
+
+    return {
+        "id": current_user.id,
+        "language": current_user.language,
+        "theme": current_user.theme,
+        "notifications_enabled": current_user.notifications_enabled
+    }
+
+
 @router.post("/logout")
 async def logout():
     """

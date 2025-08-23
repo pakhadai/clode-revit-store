@@ -1277,7 +1277,7 @@ class App {
                                 onchange="app.updateSetting('language', this.value)">
                             <option value="uk" ${user?.language === 'uk' ? 'selected' : ''}>🇺🇦 Українська</option>
                             <option value="en" ${user?.language === 'en' ? 'selected' : ''}>🇬🇧 English</option>
-                            <option value="ru" ${user?.language === 'ru' ? 'selected' : ''}>⚪ Русский</option>
+                            <option value="ru" ${user?.language === 'ru' ? 'selected' : ''}>🏳 Русский</option>
                         </select>
                     </div>
 
