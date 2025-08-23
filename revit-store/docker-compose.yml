@@ -90,6 +90,7 @@ services:
     volumes:
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf
       - ./frontend:/usr/share/nginx/html
+      - revit_media:/var/www/media:ro
     ports:
       - "80:80"
       - "443:443"

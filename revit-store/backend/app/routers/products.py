@@ -1,7 +1,8 @@
 """
 Роутер для роботи з продуктами (архівами Revit)
 """
-
+import os
+from fastapi.responses import FileResponse
 from fastapi import APIRouter, HTTPException, Depends, Query
 from sqlalchemy.orm import Session
 from sqlalchemy import or_, and_, desc, asc
@@ -321,7 +322,7 @@ async def get_home_products(
             "price": p.price,
             "current_price": p.get_current_price(),
             "discount_percent": p.discount_percent if p.discount_ends_at and p.discount_ends_at > datetime.utcnow() else 0,
-            "preview_image": p.preview_images[0] if p.preview_images else None,
+            "preview_images": p.preview_images or [],
             "rating": p.rating,
             "is_free": p.is_free()
         }
@@ -383,3 +384,35 @@ async def get_user_favorites(
             })
 
     return favorites
+
+@router.get("/{product_id}/download")
+async def download_product_archive(
+    product_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user_from_token) # Перевіряємо, чи користувач авторизований
+):
+    """
+    Надає посилання для завантаження архіву товару.
+    """
+    product = db.query(Product).filter(Product.id == product_id).first()
+
+    if not product:
+        raise HTTPException(status_code=404, detail="Товар не знайдено")
+
+    # TODO: Додайте перевірку, чи користувач купив цей товар, якщо він не безкоштовний
+    # if not product.is_free() and not user_has_purchased(user, product_id):
+    #     raise HTTPException(status_code=403, detail="Ви не придбали цей товар")
+
+    # Формуємо абсолютний шлях до файлу всередині контейнера
+    # product.file_url містить відносний шлях, напр. '/media/archives/file.zip'
+    file_path = os.path.join("/app", product.file_url.lstrip('/'))
+
+    if not os.path.exists(file_path):
+        raise HTTPException(status_code=404, detail="Файл архіву не знайдено на сервері")
+
+    # Збільшуємо лічильник завантажень
+    product.downloads_count += 1
+    db.commit()
+
+    # Повертаємо файл для завантаження
+    return FileResponse(path=file_path, filename=os.path.basename(file_path), media_type='application/zip')

@@ -45,13 +45,17 @@ class ApiClient {
     /**
      * Базовий метод для запитів
      */
-    async request(endpoint, options = {}) {
+     async request(endpoint, options = {}) {
         const url = `${this.baseURL}${endpoint}`;
+        const headers = this.getHeaders();
+        if (options.body instanceof FormData) {
+            delete headers['Content-Type'];
+        }
 
         const config = {
             ...options,
             headers: {
-                ...this.getHeaders(),
+                ...headers,
                 ...options.headers,
             },
         };
@@ -275,21 +279,27 @@ class ApiClient {
      */
     async downloadFile(url, filename) {
         try {
+            // Додаємо токен авторизації до заголовків запиту
             const response = await fetch(url, {
                 headers: this.getHeaders()
             });
 
-            if (!response.ok) throw new Error('Download failed');
+            if (!response.ok) {
+                // Якщо сервер повернув помилку, спробуємо прочитати її як текст
+                const errorData = await response.json().catch(() => ({ detail: 'Download failed' }));
+                throw new Error(errorData.detail);
+            }
 
             const blob = await response.blob();
             const downloadUrl = window.URL.createObjectURL(blob);
             const a = document.createElement('a');
+            a.style.display = 'none';
             a.href = downloadUrl;
             a.download = filename;
             document.body.appendChild(a);
             a.click();
-            document.body.removeChild(a);
             window.URL.revokeObjectURL(downloadUrl);
+            a.remove();
         } catch (error) {
             console.error('Download error:', error);
             throw error;
