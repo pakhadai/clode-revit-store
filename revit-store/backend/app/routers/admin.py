@@ -488,6 +488,54 @@ async def reject_product(
     }
 
 
+@router.post("/moderation/{product_id}/revision")
+async def send_for_revision(
+        product_id: int,
+        notes: str = Body(..., description="Що потрібно виправити"),
+        admin: User = Depends(get_admin_user),
+        db: Session = Depends(get_db)
+) -> Dict:
+    """
+    Відправити товар на доопрацювання
+
+    Returns:
+        Результат відправки на доопрацювання
+    """
+    product = db.query(Product).filter(Product.id == product_id).first()
+
+    if not product:
+        raise HTTPException(
+            status_code=404,
+            detail="Product not found"
+        )
+
+    # Помічаємо товар як такий, що потребує доопрацювання
+    product.is_approved = False
+    product.is_active = False
+    product.rejection_reason = f"REVISION_NEEDED: {notes}"
+    product.approved_at = datetime.utcnow()
+    product.approved_by_id = admin.id
+
+    db.commit()
+
+    # Повідомляємо творця
+    if product.creator:
+        message = (
+            f"📝 Ваш товар '{product.get_title('uk')}' потребує доопрацювання.\n\n"
+            f"<b>Що потрібно виправити:</b>\n{notes}\n\n"
+            f"Після внесення змін ви можете повторно відправити товар на модерацію."
+        )
+        await bot_service.send_message(
+            product.creator.telegram_id,
+            message
+        )
+
+    return {
+        "success": True,
+        "message": "Product sent for revision",
+        "notes": notes
+    }
+
 # ====== ПРОМОКОДИ ======
 
 @router.get("/promocodes")
@@ -617,8 +665,62 @@ async def get_creator_applications(
         db: Session = Depends(get_db)
 ):
     """Отримати список заявок на статус творця."""
-    applications = db.query(CreatorApplication).filter(CreatorApplication.status == status).all()
-    return applications
+    applications = db.query(CreatorApplication).filter(
+        CreatorApplication.status == status
+    ).all()
+
+    # Додаємо інформацію про користувачів
+    result = []
+    for app in applications:
+        user = db.query(User).filter(User.id == app.user_id).first()
+        app_data = {
+            "id": app.id,
+            "user_id": app.user_id,
+            "portfolio_url": app.portfolio_url,
+            "about_me": app.about_me,
+            "status": app.status,
+            "review_notes": app.review_notes,
+            "created_at": app.created_at.isoformat() if app.created_at else None,
+            "user": {
+                "id": user.id,
+                "telegram_id": user.telegram_id,
+                "username": user.username,
+                "first_name": user.first_name,
+                "last_name": user.last_name,
+                "photo_url": user.photo_url
+            } if user else None
+        }
+        result.append(app_data)
+
+    return result
+
+
+@router.post("/creator-applications/{app_id}/reject")
+async def reject_creator_application(
+        app_id: int,
+        data: Dict = Body(...),  # Змінено: приймаємо як словник
+        admin: User = Depends(get_admin_user),
+        db: Session = Depends(get_db)
+):
+    """Відхилити заявку творця."""
+    application = db.query(CreatorApplication).filter(CreatorApplication.id == app_id).first()
+    if not application:
+        raise HTTPException(status_code=404, detail="Заявку не знайдено.")
+
+    reason = data.get("reason", "Не вказано")  # Змінено: витягуємо reason з словника
+
+    application.status = "rejected"
+    application.review_notes = reason
+
+    user = db.query(User).filter(User.id == application.user_id).first()
+    if user:
+        await bot_service.send_message(
+            user.telegram_id,
+            f"❌ На жаль, вашу заявку на статус творця було відхилено.\n\nПричина: {reason}\n\nВи можете подати нову заявку після виправлення зауважень."
+        )
+
+    db.commit()
+    return {"success": True, "message": "Заявку відхилено."}
 
 
 @router.post("/creator-applications/{app_id}/approve")

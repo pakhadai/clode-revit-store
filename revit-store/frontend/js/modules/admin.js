@@ -12,6 +12,8 @@ class AdminModule {
         this.products = [];
         this.currentTab = 'dashboard';
         this.userFilters = {};
+        this.currentModerationTab = 'applications';
+        this.creatorApplications = [];
     }
 
     /**
@@ -207,7 +209,10 @@ class AdminModule {
             case 'dashboard': await this.loadDashboard(); break;
             case 'users': await this.loadUsers(); break;
             case 'products': await this.loadAdminProducts(); break;
-            case 'moderation': await this.loadModeration(); break;
+            case 'moderation':
+                this.initModeration();
+                await this.loadModeration();
+                break;
             case 'promocodes': await this.loadPromocodes(); break;
             case 'broadcast': this.updateBroadcastUI(); break;
         }
@@ -500,10 +505,145 @@ class AdminModule {
     }
 
     /**
-     * Рендер модерації
+     * Рендер модерації з двома вкладками
      */
     renderModeration() {
-        if (this.moderation.length === 0) {
+        return `
+            <div class="moderation-section">
+                <!-- Підвкладки модерації -->
+                <div class="sub-tabs flex border-b dark:border-gray-700 mb-6">
+                    <button onclick="admin.showModerationSubTab('applications')"
+                            class="sub-tab-btn px-6 py-3 font-medium ${this.currentModerationTab === 'applications' ? 'border-b-2 border-orange-500 text-orange-600' : ''}"
+                            data-subtab="applications">
+                        👥 Заявки творців
+                        ${this.creatorApplications?.length > 0 ?
+                            `<span class="ml-2 bg-orange-500 text-white text-xs px-2 py-1 rounded-full">${this.creatorApplications.length}</span>` : ''}
+                    </button>
+                    <button onclick="admin.showModerationSubTab('products')"
+                            class="sub-tab-btn px-6 py-3 font-medium ${this.currentModerationTab === 'products' ? 'border-b-2 border-orange-500 text-orange-600' : ''}"
+                            data-subtab="products">
+                        📦 Модерація товарів
+                        ${this.moderation?.length > 0 ?
+                            `<span class="ml-2 bg-yellow-500 text-white text-xs px-2 py-1 rounded-full">${this.moderation.length}</span>` : ''}
+                    </button>
+                </div>
+
+                <!-- Контент підвкладки -->
+                <div id="moderation-subtab-content">
+                    ${this.currentModerationTab === 'applications' ?
+                        this.renderCreatorApplications() :
+                        this.renderProductModeration()}
+                </div>
+            </div>
+        `;
+    }
+
+    /**
+     * Рендер заявок творців
+     */
+    renderCreatorApplications() {
+        if (!this.creatorApplications || this.creatorApplications.length === 0) {
+            return `
+                <div class="text-center py-16">
+                    <div class="text-6xl mb-4">👥</div>
+                    <h3 class="text-xl font-bold mb-4 dark:text-white">Немає заявок на розгляд</h3>
+                    <p class="text-gray-600 dark:text-gray-400">Нові заявки творців з'являться тут</p>
+                </div>
+            `;
+        }
+
+        return `
+            <div class="applications-list space-y-4">
+                ${this.creatorApplications.map(app => {
+                    // Безпечне отримання даних користувача
+                    const user = app.user || {};
+                    const firstName = user.first_name || '';
+                    const lastName = user.last_name || '';
+                    const fullName = `${firstName} ${lastName}`.trim() || 'Невідомий користувач';
+                    const username = user.username || `user_${user.telegram_id || app.user_id}`;
+                    const telegramId = user.telegram_id || 'Не вказано';
+                    const photoUrl = user.photo_url;
+
+                    return `
+                    <div class="application-card bg-white dark:bg-gray-800 rounded-lg p-6 border border-gray-200 dark:border-gray-700">
+                        <div class="flex gap-6">
+                            <!-- Інформація про користувача -->
+                            <div class="user-info flex-shrink-0">
+                                ${photoUrl ?
+                                    `<img src="${photoUrl}" alt="${firstName}"
+                                          class="w-20 h-20 rounded-full object-cover">` :
+                                    `<div class="w-20 h-20 bg-blue-500 rounded-full flex items-center justify-center text-white text-2xl">
+                                        ${firstName?.[0] || '👤'}
+                                    </div>`
+                                }
+                            </div>
+
+                            <!-- Основна інформація -->
+                            <div class="flex-1">
+                                <div class="mb-4">
+                                    <h3 class="text-xl font-bold dark:text-white">
+                                        ${fullName}
+                                    </h3>
+                                    <p class="text-sm text-gray-500">
+                                        @${username}
+                                    </p>
+                                    <p class="text-xs text-gray-400">
+                                        Telegram ID: ${telegramId}
+                                    </p>
+                                </div>
+
+                                <!-- Текст заявки -->
+                                <div class="mb-4">
+                                    <h4 class="font-medium mb-2 dark:text-gray-300">Про себе:</h4>
+                                    <div class="bg-gray-50 dark:bg-gray-700 rounded p-3">
+                                        <p class="text-gray-700 dark:text-gray-300">${app.about_me || 'Не вказано'}</p>
+                                    </div>
+                                </div>
+
+                                ${app.portfolio_url ? `
+                                    <div class="mb-4">
+                                        <h4 class="font-medium mb-2 dark:text-gray-300">Портфоліо:</h4>
+                                        <a href="${app.portfolio_url}" target="_blank"
+                                           class="text-blue-500 hover:text-blue-600 underline">
+                                            ${app.portfolio_url}
+                                        </a>
+                                    </div>
+                                ` : ''}
+
+                                <!-- Дата подачі -->
+                                <div class="text-sm text-gray-500 mb-4">
+                                    Подано: ${app.created_at ? new Date(app.created_at).toLocaleDateString('uk-UA') : 'Невідома дата'}
+                                </div>
+
+                                <!-- Кнопки дій -->
+                                <div class="flex gap-3">
+                                    <button onclick="admin.approveCreatorApplication(${app.id})"
+                                            class="bg-green-500 hover:bg-green-600 text-white px-6 py-2 rounded-lg font-bold">
+                                        ✅ Підтвердити
+                                    </button>
+                                    <button onclick="admin.showRejectCreatorDialog(${app.id})"
+                                            class="bg-red-500 hover:bg-red-600 text-white px-6 py-2 rounded-lg font-bold">
+                                        ❌ Відхилити
+                                    </button>
+                                    <a href="https://t.me/${username !== `user_${telegramId}` ? username : telegramId}" target="_blank"
+                                       class="bg-blue-500 hover:bg-blue-600 text-white px-6 py-2 rounded-lg font-bold inline-flex items-center">
+                                        ✈️ Написати
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    `;
+                }).join('')}
+            </div>
+        `;
+    }
+
+    /**
+     * Рендер модерації товарів
+     */
+    renderProductModeration() {
+        if (!this.moderation || this.moderation.length === 0) {
             return `
                 <div class="text-center py-16">
                     <div class="text-6xl mb-4">✅</div>
@@ -514,87 +654,97 @@ class AdminModule {
         }
 
         return `
-            <div class="moderation-queue">
-                <div class="mb-4 p-4 bg-yellow-50 dark:bg-yellow-900 rounded-lg">
-                    <p class="text-yellow-800 dark:text-yellow-200">
-                        ⚠️ На модерації: ${this.moderation.length} товарів
-                    </p>
-                </div>
-
-                <div class="space-y-6">
-                    ${this.moderation.map(product => `
-                        <div class="moderation-item bg-white dark:bg-gray-800 rounded-lg p-6 border border-gray-200 dark:border-gray-700">
-                            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                                <div class="col-span-2">
-                                    <div class="flex justify-between items-start mb-4">
-                                        <div>
-                                            <h3 class="text-xl font-bold dark:text-white">
-                                                ${product.title.en || product.title}
-                                            </h3>
-                                            <p class="text-sm text-gray-500">SKU: ${product.sku}</p>
-                                        </div>
-                                        <div class="text-2xl font-bold text-blue-600">
-                                            ${Utils.formatPrice(product.price)}
-                                        </div>
+            <div class="products-moderation space-y-6">
+                ${this.moderation.map(product => `
+                    <div class="moderation-item bg-white dark:bg-gray-800 rounded-lg p-6 border border-gray-200 dark:border-gray-700">
+                        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                            <!-- Основна інформація -->
+                            <div class="col-span-2">
+                                <div class="mb-4">
+                                    <h3 class="text-2xl font-bold dark:text-white mb-2">
+                                        ${product.title.en || product.title}
+                                    </h3>
+                                    <div class="flex gap-4 text-sm text-gray-500">
+                                        <span>SKU: ${product.sku}</span>
+                                        <span>Категорія: ${product.category}</span>
+                                        <span>Тип: ${product.product_type}</span>
                                     </div>
+                                </div>
 
-                                    <div class="mb-4">
-                                        <h4 class="font-medium mb-2 dark:text-gray-300">Опис:</h4>
-                                        <p class="text-gray-700 dark:text-gray-400">
+                                <!-- Опис -->
+                                <div class="mb-4">
+                                    <h4 class="font-medium mb-2 dark:text-gray-300">Опис:</h4>
+                                    <div class="bg-gray-50 dark:bg-gray-700 rounded p-4">
+                                        <p class="text-gray-700 dark:text-gray-300">
                                             ${product.description.en || product.description}
                                         </p>
                                     </div>
+                                </div>
 
-                                    <div class="grid grid-cols-2 gap-4 mb-4">
-                                        <div>
-                                            <span class="text-sm text-gray-500">Категорія:</span>
-                                            <span class="ml-2 font-medium dark:text-white">${product.category}</span>
-                                        </div>
-                                        <div>
-                                            <span class="text-sm text-gray-500">Тип:</span>
-                                            <span class="ml-2 font-medium dark:text-white">${product.product_type}</span>
+                                <!-- Ціна та деталі -->
+                                <div class="grid grid-cols-2 gap-4 mb-4">
+                                    <div class="bg-blue-50 dark:bg-blue-900 rounded p-3">
+                                        <span class="text-sm text-gray-600 dark:text-gray-400">Ціна:</span>
+                                        <div class="text-2xl font-bold text-blue-600 dark:text-blue-400">
+                                            ${Utils.formatPrice(product.price)}
                                         </div>
                                     </div>
-
-                                    ${product.creator ? `
-                                        <div class="creator-info bg-gray-50 dark:bg-gray-700 rounded p-3 mb-4">
-                                            <span class="text-sm text-gray-500">Творець:</span>
-                                            <span class="ml-2 font-medium dark:text-white">
-                                                ${product.creator.full_name} (@${product.creator.username})
-                                            </span>
+                                    <div class="bg-gray-50 dark:bg-gray-700 rounded p-3">
+                                        <span class="text-sm text-gray-600 dark:text-gray-400">Теги:</span>
+                                        <div class="flex flex-wrap gap-1 mt-1">
+                                            ${(product.tags || []).map(tag =>
+                                                `<span class="text-xs bg-gray-200 dark:bg-gray-600 px-2 py-1 rounded">#${tag}</span>`
+                                            ).join('')}
                                         </div>
-                                    ` : ''}
-
-                                    <div class="actions flex gap-3">
-                                        <button onclick="admin.approveProduct(${product.id})"
-                                                class="bg-green-500 hover:bg-green-600 text-white px-6 py-2 rounded-lg font-bold">
-                                            ✅ Схвалити
-                                        </button>
-                                        <button onclick="admin.showRejectDialog(${product.id})"
-                                                class="bg-red-500 hover:bg-red-600 text-white px-6 py-2 rounded-lg font-bold">
-                                            ❌ Відхилити
-                                        </button>
-                                        <button onclick="admin.previewProduct(${product.id})"
-                                                class="bg-gray-500 hover:bg-gray-600 text-white px-6 py-2 rounded-lg">
-                                            👁️ Переглянути
-                                        </button>
                                     </div>
                                 </div>
 
-                                <div class="preview-images">
-                                    <h4 class="font-medium mb-2 dark:text-gray-300">Превʼю:</h4>
-                                    <div class="grid grid-cols-2 gap-2">
-                                        ${product.preview_images?.map(img => `
-                                            <img src="${img}" alt="Preview"
-                                                 class="w-full h-24 object-cover rounded cursor-pointer hover:opacity-80"
-                                                 onclick="admin.showImageModal('${img}')">
-                                        `).join('') || '<p class="text-gray-500">Немає превʼю</p>'}
+                                <!-- Інформація про творця -->
+                                ${product.creator ? `
+                                    <div class="creator-info bg-purple-50 dark:bg-purple-900 rounded p-3 mb-4">
+                                        <span class="text-sm text-gray-600 dark:text-gray-400">Творець:</span>
+                                        <div class="font-medium dark:text-white">
+                                            ${product.creator.full_name}
+                                            <span class="text-gray-500">(@${product.creator.username})</span>
+                                        </div>
                                     </div>
+                                ` : ''}
+
+                                <!-- Кнопки дій -->
+                                <div class="flex flex-wrap gap-3">
+                                    <button onclick="admin.downloadArchiveForReview(${product.id})"
+                                            class="bg-gray-500 hover:bg-gray-600 text-white px-6 py-2 rounded-lg font-bold">
+                                        📥 Завантажити архів
+                                    </button>
+                                    <button onclick="admin.approveProduct(${product.id})"
+                                            class="bg-green-500 hover:bg-green-600 text-white px-6 py-2 rounded-lg font-bold">
+                                        ✅ Розмістити на маркетплейсі
+                                    </button>
+                                    <button onclick="admin.showRevisionDialog(${product.id})"
+                                            class="bg-yellow-500 hover:bg-yellow-600 text-white px-6 py-2 rounded-lg font-bold">
+                                        ✏️ На доопрацювання
+                                    </button>
+                                    <button onclick="admin.showRejectDialog(${product.id})"
+                                            class="bg-red-500 hover:bg-red-600 text-white px-6 py-2 rounded-lg font-bold">
+                                        ❌ Відхилити
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Превʼю зображення -->
+                            <div>
+                                <h4 class="font-medium mb-3 dark:text-gray-300">Превʼю зображення:</h4>
+                                <div class="space-y-2">
+                                    ${product.preview_images?.map(img => `
+                                        <img src="${img}" alt="Preview"
+                                             class="w-full rounded-lg cursor-pointer hover:opacity-90 transition-opacity"
+                                             onclick="admin.showImageModal('${img}')">
+                                    `).join('') || '<p class="text-gray-500">Немає превʼю</p>'}
                                 </div>
                             </div>
                         </div>
-                    `).join('')}
-                </div>
+                    </div>
+                `).join('')}
             </div>
         `;
     }
@@ -822,6 +972,219 @@ class AdminModule {
         const reason = prompt('Вкажіть причину відхилення:');
         if (reason) {
             this.rejectProduct(productId, reason);
+        }
+    }
+
+    /**
+     * Ініціалізація модерації
+     */
+    initModeration() {
+        this.currentModerationTab = 'applications';
+        this.creatorApplications = [];
+        this.loadCreatorApplications();
+    }
+
+    /**
+     * Показати підвкладку модерації
+     */
+    showModerationSubTab(tab) {
+        this.currentModerationTab = tab;
+
+        // Оновлюємо активну кнопку
+        document.querySelectorAll('.sub-tab-btn').forEach(btn => {
+            if (btn.dataset.subtab === tab) {
+                btn.classList.add('border-b-2', 'border-orange-500', 'text-orange-600');
+            } else {
+                btn.classList.remove('border-b-2', 'border-orange-500', 'text-orange-600');
+            }
+        });
+
+        // Оновлюємо контент
+        const content = document.getElementById('moderation-subtab-content');
+        if (content) {
+            if (tab === 'applications') {
+                this.loadCreatorApplications().then(() => {
+                    content.innerHTML = this.renderCreatorApplications();
+                });
+            } else {
+                this.loadModeration().then(() => {
+                    content.innerHTML = this.renderProductModeration();
+                });
+            }
+        }
+    }
+
+    /**
+     * Завантажити заявки творців
+     */
+    async loadCreatorApplications() {
+        try {
+            Utils.showLoader(true);
+            const response = await api.get('/admin/creator-applications', { status: 'pending' });
+            this.creatorApplications = response;
+            return response;
+        } catch (error) {
+            console.error('Load creator applications error:', error);
+            Utils.showNotification('Помилка завантаження заявок', 'error');
+        } finally {
+            Utils.showLoader(false);
+        }
+    }
+
+    /**
+     * Схвалити заявку творця
+     */
+    async approveCreatorApplication(appId) {
+        if (!confirm('Підтвердити заявку і надати статус творця?')) return;
+
+        try {
+            await api.post(`/admin/creator-applications/${appId}/approve`);
+            Utils.showNotification('Заявку схвалено', 'success');
+            await this.loadCreatorApplications();
+            this.showModerationSubTab('applications');
+        } catch (error) {
+            console.error('Approve creator application error:', error);
+            Utils.showNotification('Помилка схвалення заявки', 'error');
+        }
+    }
+
+    /**
+     * Показати діалог відхилення заявки творця
+     */
+    showRejectCreatorDialog(appId) {
+        const modal = document.createElement('div');
+        modal.className = 'fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4';
+        modal.innerHTML = `
+            <div class="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-md w-full">
+                <h3 class="text-xl font-bold mb-4 dark:text-white">Відхилити заявку</h3>
+
+                <div class="mb-4">
+                    <label class="block text-sm font-medium mb-2 dark:text-gray-300">
+                        Причина відхилення
+                    </label>
+                    <textarea id="reject-reason" rows="4"
+                              class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg
+                                     dark:bg-gray-700 dark:text-white"
+                              placeholder="Вкажіть причину відхилення заявки..."
+                              required></textarea>
+                </div>
+
+                <div class="flex gap-3">
+                    <button onclick="admin.rejectCreatorApplication(${appId})"
+                            class="flex-1 bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg">
+                        Відхилити
+                    </button>
+                    <button onclick="this.closest('.fixed').remove()"
+                            class="flex-1 bg-gray-300 hover:bg-gray-400 text-gray-700 px-4 py-2 rounded-lg">
+                        Скасувати
+                    </button>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(modal);
+    }
+
+   /**
+    * Відхилити заявку творця
+    */
+    async rejectCreatorApplication(appId) {
+        const reason = document.getElementById('reject-reason')?.value;
+        if (!reason) {
+            Utils.showNotification('Вкажіть причину відхилення', 'warning');
+            return;
+        }
+
+        try {
+            // Відправляємо як JSON об'єкт
+            const response = await api.post(`/admin/creator-applications/${appId}/reject`, {
+                reason: reason  // Правильний формат даних
+            });
+
+            if (response.success) {
+                Utils.showNotification('Заявку відхилено', 'info');
+                document.querySelector('.fixed').remove();
+                await this.loadCreatorApplications();
+                this.showModerationSubTab('applications');
+            }
+        } catch (error) {
+            console.error('Reject creator application error:', error);
+            Utils.showNotification('Помилка відхилення заявки', 'error');
+        }
+    }
+
+    /**
+     * Показати діалог відправки на доопрацювання
+     */
+    showRevisionDialog(productId) {
+        const modal = document.createElement('div');
+        modal.className = 'fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4';
+        modal.innerHTML = `
+            <div class="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-md w-full">
+                <h3 class="text-xl font-bold mb-4 dark:text-white">Відправити на доопрацювання</h3>
+
+                <div class="mb-4">
+                    <label class="block text-sm font-medium mb-2 dark:text-gray-300">
+                        Що потрібно виправити?
+                    </label>
+                    <textarea id="revision-notes" rows="6"
+                              class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg
+                                     dark:bg-gray-700 dark:text-white"
+                              placeholder="Опишіть детально, що потрібно виправити або доопрацювати..."
+                              required></textarea>
+                </div>
+
+                <div class="flex gap-3">
+                    <button onclick="admin.sendForRevision(${productId})"
+                            class="flex-1 bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2 rounded-lg">
+                        Відправити
+                    </button>
+                    <button onclick="this.closest('.fixed').remove()"
+                            class="flex-1 bg-gray-300 hover:bg-gray-400 text-gray-700 px-4 py-2 rounded-lg">
+                        Скасувати
+                    </button>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(modal);
+    }
+
+    /**
+     * Відправити товар на доопрацювання
+     */
+    async sendForRevision(productId) {
+        const notes = document.getElementById('revision-notes')?.value;
+        if (!notes) {
+            Utils.showNotification('Вкажіть що потрібно виправити', 'warning');
+            return;
+        }
+
+        try {
+            await api.post(`/admin/moderation/${productId}/revision`, { notes });
+            Utils.showNotification('Відправлено на доопрацювання', 'info');
+            document.querySelector('.fixed').remove();
+            await this.loadModeration();
+            this.showModerationSubTab('products');
+        } catch (error) {
+            console.error('Send for revision error:', error);
+            Utils.showNotification('Помилка відправки на доопрацювання', 'error');
+        }
+    }
+
+    /**
+     * Завантажити архів для перевірки
+     */
+    async downloadArchiveForReview(productId) {
+        try {
+            const product = this.moderation.find(p => p.id === productId);
+            if (!product) return;
+
+            // Використовуємо той самий механізм завантаження, що й для звичайних користувачів
+            const downloadUrl = `${api.baseURL}/products/${productId}/download?token=${api.token}&admin_review=true`;
+            window.open(downloadUrl, '_blank');
+            Utils.showNotification('Завантаження архіву для перевірки', 'info');
+        } catch (error) {
+            console.error('Download for review error:', error);
+            Utils.showNotification('Помилка завантаження архіву', 'error');
         }
     }
 
