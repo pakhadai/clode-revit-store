@@ -41,8 +41,8 @@ class User(Base):
     referral_earnings = Column(Integer, default=0)  # Заробіток з рефералів
 
     # Щоденні бонуси
-    #daily_bonuses = relationship("DailyBonus", back_populates="user")
-    #wheel_spins = relationship("WheelSpin", back_populates="user")
+    daily_bonuses = relationship("DailyBonus", back_populates="user")
+    wheel_spins = relationship("WheelSpin", back_populates="user")
     #bonus_history = relationship("BonusHistory", back_populates="user")
     daily_streak = Column(Integer, default=0)  # Поточний стрік
     last_daily_bonus = Column(DateTime, nullable=True)  # Остання дата отримання
@@ -120,6 +120,13 @@ class User(Base):
             self.vip_level = 1  # Bronze
         else:
             self.vip_level = 0  # None
+
+    def has_active_subscription(self, db: "Session") -> bool:  # <--- Додайте цей метод
+        """Перевіряє, чи є у користувача активна підписка."""
+        for sub in self.subscriptions:
+            if sub.is_valid():
+                return True
+        return False
 
 class CreatorApplication(Base):
     __tablename__ = "creator_applications"

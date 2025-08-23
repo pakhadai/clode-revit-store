@@ -148,6 +148,9 @@ class DailyBonus(Base):
 
     claimed_at = Column(DateTime, default=datetime.utcnow)
 
+    # Відносини
+    user = relationship("User", back_populates="daily_bonuses")
+
     def __repr__(self):
         return f"<DailyBonus User:{self.user_id} Day:{self.day_number}>"
 
@@ -187,6 +190,9 @@ class WheelSpin(Base):
     cost = Column(Integer, default=0)  # Вартість в бонусах
 
     spun_at = Column(DateTime, default=datetime.utcnow)
+
+    # Відносини
+    user = relationship("User", back_populates="wheel_spins")
 
     def __repr__(self):
         return f"<WheelSpin User:{self.user_id} Prize:{self.prize}>"

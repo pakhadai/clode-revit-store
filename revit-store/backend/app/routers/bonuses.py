@@ -14,6 +14,7 @@ from app.database import get_db
 from app.models.user import User
 from app.models.subscription import DailyBonus, WheelSpin
 from app.routers.auth import get_current_user_from_token
+from app.services.bonus_service import BonusService
 
 router = APIRouter(
     prefix="/api/bonuses",
@@ -46,7 +47,7 @@ WHEEL_SECTORS = [
     {"id": 9, "value": 3, "probability": 0.1, "label": "🎯 3 бонуси"}         # 10%
 ]
 
-@router.get("/daily")
+@router.get("/daily/status")
 async def get_daily_bonus_status(
     current_user: User = Depends(get_current_user_from_token),
     db: Session = Depends(get_db)
@@ -72,10 +73,10 @@ async def get_daily_bonus_status(
         if days_diff == 0:
             # Вже отримано сьогодні
             can_claim = False
-            current_streak = last_bonus.streak_day
+            current_streak = last_bonus.day_number
         elif days_diff == 1:
             # Продовжуємо стрік
-            current_streak = min(last_bonus.streak_day + 1, 7)
+            current_streak = min(last_bonus.day_number + 1, 7)
         else:
             # Стрік обнулився
             current_streak = 1
@@ -110,7 +111,7 @@ async def claim_daily_bonus(
     # Створюємо запис
     daily_bonus = DailyBonus(
         user_id=current_user.id,
-        streak_day=status["current_streak"],
+        day_number=status["current_streak"],
         bonus_amount=status["bonus_amount"],
         claimed_at=datetime.utcnow()
     )
@@ -138,22 +139,28 @@ async def claim_daily_bonus(
         "next_bonus": (datetime.utcnow().replace(hour=0, minute=0, second=0) + timedelta(days=1)).isoformat()
     }
 
-@router.get("/wheel")
+@router.get("/wheel/config")
+async def get_wheel_config() -> Dict:
+
+    return {
+        "sectors": WHEEL_SECTORS,
+        "spin_cost": 5
+    }
+
+
+@router.get("/wheel/status")
 async def get_wheel_status(
     current_user: User = Depends(get_current_user_from_token),
     db: Session = Depends(get_db)
 ) -> Dict:
-    """Отримати статус колеса фортуни"""
 
     today = datetime.utcnow().date()
 
-    # Рахуємо спроби за сьогодні
     spins_today = db.query(func.count(WheelSpin.id)).filter(
         WheelSpin.user_id == current_user.id,
         func.date(WheelSpin.spun_at) == today
     ).scalar() or 0
 
-    # Перевіряємо підписку для додаткових спроб
     has_subscription = current_user.has_active_subscription(db)
     free_spins = 3 if has_subscription else 1
 
@@ -207,10 +214,11 @@ async def spin_wheel(
     # Записуємо спробу
     spin = WheelSpin(
         user_id=current_user.id,
-        sector_id=selected_sector["id"],
-        prize_amount=selected_sector["value"],
-        is_free=status["free_spins_remaining"] > 0,
-        spun_at=datetime.utcnow()
+        sector=selected_sector["id"],      # <--- Виправлено
+        prize=selected_sector["value"],   # <--- Виправлено
+        is_free=(status["free_spins_remaining"] > 0) and not use_bonus,
+        spun_at=datetime.utcnow(),
+        cost=0 if (status["free_spins_remaining"] > 0 and not use_bonus) else status["spin_cost"]
     )
     db.add(spin)
 
@@ -218,22 +226,53 @@ async def spin_wheel(
     if selected_sector["value"] > 0:
         current_user.balance += selected_sector["value"]
 
-        # Записуємо в історію
-        #history = BonusHistory(
-        #    user_id=current_user.id,
-        #    type="wheel",
-        #    amount=selected_sector["value"],
-        #    details={"sector": selected_sector["label"]}
-        #)
-        #db.add(history)
-
     db.commit()
+    db.refresh(current_user)
 
     return {
         "success": True,
-        "sector_id": selected_sector["id"],
+        "sector": selected_sector["id"],
         "prize": selected_sector["value"],
         "label": selected_sector["label"],
         "new_balance": current_user.balance,
-        "is_jackpot": selected_sector["value"] == 100
+        "is_jackpot": selected_sector["value"] == 100,
+        "free_spins_left": status["free_spins_remaining"] - 1 if (status["free_spins_remaining"] > 0 and not use_bonus) else status["free_spins_remaining"]
+    }
+
+# --- ДОДАЙТЕ ЦІ НОВІ ЕНДПОІНТИ ---
+
+@router.get("/statistics")
+async def get_user_statistics(
+    current_user: User = Depends(get_current_user_from_token),
+    db: Session = Depends(get_db)
+):
+    """Отримати статистику бонусів для користувача."""
+    bonus_service = BonusService()
+    # Це спрощена версія, для повної реалізації потрібен сервісний шар
+    daily_stats = db.query(DailyBonus).filter(DailyBonus.user_id == current_user.id).count()
+    wheel_stats = bonus_service.get_wheel_statistics(current_user.id, db)
+    return {
+        "current_balance": current_user.balance,
+        "total_earned": current_user.balance, # Поки що заглушка
+        "daily_bonuses": {"total_claimed": daily_stats, "current_streak": current_user.daily_streak},
+        "wheel": wheel_stats,
+        "referrals": {"total_earned": current_user.referral_earnings}
+    }
+
+@router.get("/wheel/history")
+async def get_wheel_history(
+    limit: int = 10,
+    current_user: User = Depends(get_current_user_from_token),
+    db: Session = Depends(get_db)
+):
+    """Отримати історію обертань колеса."""
+    history = db.query(WheelSpin).filter(WheelSpin.user_id == current_user.id).order_by(WheelSpin.spun_at.desc()).limit(limit).all()
+    return {
+        "history": [
+            {
+                "date": spin.spun_at,
+                "prize": spin.prize,
+                "is_jackpot": spin.is_jackpot
+            } for spin in history
+        ]
     }

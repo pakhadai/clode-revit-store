@@ -4,6 +4,7 @@
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 from contextlib import asynccontextmanager
 from dotenv import load_dotenv
 import os
@@ -112,21 +113,25 @@ app.include_router(admin.router, tags=["Admin"])
 @app.exception_handler(404)
 async def not_found_handler(request, exc):
     """Обробка 404 помилок"""
-    return {
-        "error": "Not Found",
-        "message": "Сторінку не знайдено",
-        "status_code": 404
-    }
+    return JSONResponse( # <--- ВИКОРИСТОВУЙТЕ JSONResponse
+        status_code=404,
+        content={
+            "error": "Not Found",
+            "message": "Сторінку не знайдено",
+        }
+    )
 
 
 @app.exception_handler(500)
 async def internal_error_handler(request, exc):
     """Обробка 500 помилок"""
-    return {
-        "error": "Internal Server Error",
-        "message": "Внутрішня помилка сервера",
-        "status_code": 500
-    }
+    return JSONResponse( # <--- ВИКОРИСТОВУЙТЕ JSONResponse
+        status_code=500,
+        content={
+            "error": "Internal Server Error",
+            "message": "Внутрішня помилка сервера",
+        }
+    )
 
 
 # ====== STARTUP MESSAGE ======
