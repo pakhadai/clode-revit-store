@@ -449,11 +449,11 @@ class App {
                     break;
 
                 case 'downloads':
-                    html = this.renderDownloadsPage();
+                    html = this.renderDownloadsTab();
                     break;
 
                 case 'orders':
-                    html = this.renderOrdersPage();
+                    html = this.renderOrdersTab();
                     break;
 
                 case 'favorites':
@@ -461,19 +461,19 @@ class App {
                     break;
 
                 case 'referrals':
-                    html = await this.renderReferralsPage();
+                    html = this.renderReferralsTab();
                     break;
 
                 case 'settings':
-                    html = this.renderSettingsPage();
+                    html = this.renderSettingsTab();
                     break;
 
                 case 'support':
-                    html = this.renderSupportPage();
+                    html = this.renderSupportTab();
                     break;
 
                 case 'faq':
-                    html = this.renderFaqPage();
+                    html = this.renderFaqTab();
                     break;
 
                 case 'creator':
@@ -2085,12 +2085,6 @@ class App {
             </div>
         `;
     }
-
-    renderDownloadsPage() { return this.renderPlaceholderPage('profile.tabs.downloads', '📥'); }
-    renderOrdersPage() { return this.renderPlaceholderPage('profile.tabs.orders', '📋'); }
-    renderSupportPage() { return this.renderPlaceholderPage('profile.tabs.support', '💬'); }
-    renderFaqPage() { return this.renderPlaceholderPage('profile.tabs.faq', '❓'); }
-
 }
 
 // Створюємо та запускаємо додаток
