@@ -16,7 +16,7 @@ from app.models.product import Product
 from app.models.order import Order, OrderItem
 from app.routers.auth import get_current_user_from_token
 from app.services.s3_service import s3_service
-from app.utils.security import generate_unique_code
+from app.utils.security import generate_order_number  # Використовуємо існуючу функцію
 
 # Створюємо роутер
 router = APIRouter(
@@ -570,7 +570,7 @@ async def request_withdrawal(
     return {
         "success": True,
         "message": "Withdrawal request created",
-        "request_id": "WD_" + generate_unique_code(),
+        "request_id": "WD_" + generate_order_number(),
         "amount": amount,
         "commission": int(amount * 0.02),
         "net_amount": int(amount * 0.98),
@@ -599,6 +599,6 @@ async def contact_support(
     return {
         "success": True,
         "message": "Support ticket created",
-        "ticket_id": "TKT_" + generate_unique_code(),
+        "ticket_id": "TKT_" + generate_order_number(),
         "estimated_response": "24 hours"
     }

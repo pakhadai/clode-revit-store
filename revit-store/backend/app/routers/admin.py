@@ -13,7 +13,7 @@ import json
 from app.database import get_db
 from app.models.user import User
 from app.models.product import Product
-from app.models.order import Order, PromoCode
+from app.models.order import Order, PromoCode, OrderItem
 from app.models.subscription import Subscription
 from app.routers.auth import get_current_user_from_token
 from app.services.telegram_bot import bot_service
@@ -28,7 +28,7 @@ router = APIRouter(
 # ====== MIDDLEWARE ======
 
 async def get_admin_user(
-        current_user: User = Depends(get_current_user_from_token)
+    current_user: User = Depends(get_current_user_from_token)
 ) -> User:
     """
     Перевірка чи користувач є адміністратором
@@ -45,8 +45,8 @@ async def get_admin_user(
 
 @router.get("/dashboard")
 async def get_dashboard_stats(
-        admin: User = Depends(get_admin_user),
-        db: Session = Depends(get_db)
+    admin: User = Depends(get_admin_user),
+    db: Session = Depends(get_db)
 ) -> Dict:
     """
     Отримати статистику для дашборду
@@ -171,13 +171,13 @@ async def get_dashboard_stats(
 
 @router.get("/users")
 async def get_users(
-        page: int = Query(1, ge=1),
-        limit: int = Query(50, ge=1, le=100),
-        search: Optional[str] = None,
-        role: Optional[str] = Query(None, description="all, users, creators, admins"),
-        status: Optional[str] = Query(None, description="all, active, blocked"),
-        admin: User = Depends(get_admin_user),
-        db: Session = Depends(get_db)
+    page: int = Query(1, ge=1),
+    limit: int = Query(50, ge=1, le=100),
+    search: Optional[str] = None,
+    role: Optional[str] = Query(None, description="all, users, creators, admins"),
+    status: Optional[str] = Query(None, description="all, active, blocked"),
+    admin: User = Depends(get_admin_user),
+    db: Session = Depends(get_db)
 ) -> Dict:
     """
     Отримати список користувачів
@@ -250,14 +250,14 @@ async def get_users(
 
 @router.put("/users/{user_id}")
 async def update_user(
-        user_id: int,
-        balance: Optional[int] = None,
-        vip_level: Optional[int] = None,
-        is_creator: Optional[bool] = None,
-        is_admin: Optional[bool] = None,
-        is_blocked: Optional[bool] = None,
-        admin: User = Depends(get_admin_user),
-        db: Session = Depends(get_db)
+    user_id: int,
+    balance: Optional[int] = None,
+    vip_level: Optional[int] = None,
+    is_creator: Optional[bool] = None,
+    is_admin: Optional[bool] = None,
+    is_blocked: Optional[bool] = None,
+    admin: User = Depends(get_admin_user),
+    db: Session = Depends(get_db)
 ) -> Dict:
     """
     Оновити дані користувача
@@ -305,11 +305,11 @@ async def update_user(
 
 @router.post("/users/{user_id}/subscription")
 async def grant_subscription(
-        user_id: int,
-        plan_type: str = Body(..., description="monthly or yearly"),
-        days: Optional[int] = Body(None, description="Custom days"),
-        admin: User = Depends(get_admin_user),
-        db: Session = Depends(get_db)
+    user_id: int,
+    plan_type: str = Body(..., description="monthly or yearly"),
+    days: Optional[int] = Body(None, description="Custom days"),
+    admin: User = Depends(get_admin_user),
+    db: Session = Depends(get_db)
 ) -> Dict:
     """
     Видати підписку користувачу
@@ -366,8 +366,8 @@ async def grant_subscription(
 
 @router.get("/moderation")
 async def get_moderation_queue(
-        admin: User = Depends(get_admin_user),
-        db: Session = Depends(get_db)
+    admin: User = Depends(get_admin_user),
+    db: Session = Depends(get_db)
 ) -> Dict:
     """
     Отримати товари на модерації
@@ -405,9 +405,9 @@ async def get_moderation_queue(
 
 @router.post("/moderation/{product_id}/approve")
 async def approve_product(
-        product_id: int,
-        admin: User = Depends(get_admin_user),
-        db: Session = Depends(get_db)
+    product_id: int,
+    admin: User = Depends(get_admin_user),
+    db: Session = Depends(get_db)
 ) -> Dict:
     """
     Схвалити товар
@@ -446,10 +446,10 @@ async def approve_product(
 
 @router.post("/moderation/{product_id}/reject")
 async def reject_product(
-        product_id: int,
-        reason: str = Body(..., description="Rejection reason"),
-        admin: User = Depends(get_admin_user),
-        db: Session = Depends(get_db)
+    product_id: int,
+    reason: str = Body(..., description="Rejection reason"),
+    admin: User = Depends(get_admin_user),
+    db: Session = Depends(get_db)
 ) -> Dict:
     """
     Відхилити товар
@@ -491,8 +491,8 @@ async def reject_product(
 
 @router.get("/promocodes")
 async def get_promocodes(
-        admin: User = Depends(get_admin_user),
-        db: Session = Depends(get_db)
+    admin: User = Depends(get_admin_user),
+    db: Session = Depends(get_db)
 ) -> Dict:
     """
     Отримати список промокодів
@@ -524,14 +524,14 @@ async def get_promocodes(
 
 @router.post("/promocodes")
 async def create_promocode(
-        code: str = Body(...),
-        discount_type: str = Body(..., description="percent or fixed"),
-        discount_value: int = Body(..., ge=1),
-        max_uses: Optional[int] = Body(None),
-        min_order_amount: int = Body(0),
-        valid_days: Optional[int] = Body(None, description="Days until expiration"),
-        admin: User = Depends(get_admin_user),
-        db: Session = Depends(get_db)
+    code: str = Body(...),
+    discount_type: str = Body(..., description="percent or fixed"),
+    discount_value: int = Body(..., ge=1),
+    max_uses: Optional[int] = Body(None),
+    min_order_amount: int = Body(0),
+    valid_days: Optional[int] = Body(None, description="Days until expiration"),
+    admin: User = Depends(get_admin_user),
+    db: Session = Depends(get_db)
 ) -> Dict:
     """
     Створити новий промокод
@@ -580,9 +580,9 @@ async def create_promocode(
 
 @router.delete("/promocodes/{promocode_id}")
 async def delete_promocode(
-        promocode_id: int,
-        admin: User = Depends(get_admin_user),
-        db: Session = Depends(get_db)
+    promocode_id: int,
+    admin: User = Depends(get_admin_user),
+    db: Session = Depends(get_db)
 ) -> Dict:
     """
     Видалити промокод
@@ -611,10 +611,10 @@ async def delete_promocode(
 
 @router.post("/broadcast")
 async def send_broadcast(
-        message: str = Body(...),
-        target: str = Body(..., description="all, users, creators, subscribers"),
-        admin: User = Depends(get_admin_user),
-        db: Session = Depends(get_db)
+    message: str = Body(...),
+    target: str = Body(..., description="all, users, creators, subscribers"),
+    admin: User = Depends(get_admin_user),
+    db: Session = Depends(get_db)
 ) -> Dict:
     """
     Відправити масову розсилку через Telegram
