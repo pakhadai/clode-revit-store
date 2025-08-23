@@ -10,7 +10,7 @@ class AdminModule {
         this.moderation = [];
         this.promocodes = [];
         this.products = [];
-        this.currentTab = 'dashboard';
+        this.currentTab = 'main';
         this.userFilters = {};
         this.currentModerationTab = 'applications';
         this.creatorApplications = [];
@@ -132,57 +132,69 @@ class AdminModule {
      * Створити сторінку адмін панелі
      */
     createAdminPage() {
-        // Запускаємо завантаження даних для першої вкладки
-        if(this.currentTab === 'dashboard' && !this.dashboard) {
+        // Запускаємо завантаження даних, якщо це потрібно
+        if (this.currentTab === 'dashboard' && !this.dashboard) {
             this.loadDashboard();
         }
 
+        const mainContent = this.currentTab === 'main'
+            ? this.renderMainMenu()
+            : this.renderTabContent();
+
+        const backButton = this.currentTab !== 'main'
+            ? `<button onclick="admin.showTab('main')"
+                        class="absolute top-6 left-6 flex items-center gap-2 text-white hover:underline">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clip-rule="evenodd" />
+                    </svg>
+                    Назад
+                </button>`
+            : '';
+
         return `
             <div class="admin-panel max-w-7xl mx-auto">
-                <div class="header bg-gradient-to-r from-red-500 to-purple-600 rounded-2xl p-8 text-white mb-8">
-                    <h1 class="text-3xl font-bold mb-4">👑 Адмін панель</h1>
-                    <p class="opacity-90">Повний контроль над платформою OhMyRevit</p>
-                </div>
-
-                <div class="tabs bg-white dark:bg-gray-800 rounded-lg mb-6">
-                    <div class="flex flex-wrap border-b dark:border-gray-700">
-                        <button onclick="admin.showTab('dashboard')"
-                                class="tab-btn px-6 py-3 font-medium ${this.currentTab === 'dashboard' ? 'border-b-2 border-red-500 text-red-600' : ''}"
-                                data-tab="dashboard">
-                            📊 Дашборд
-                        </button>
-                        <button onclick="admin.showTab('users')"
-                                class="tab-btn px-6 py-3 font-medium ${this.currentTab === 'users' ? 'border-b-2 border-red-500 text-red-600' : ''}"
-                                data-tab="users">
-                            👥 Користувачі
-                        </button>
-                        <button onclick="admin.showTab('products')"
-                                class="tab-btn px-6 py-3 font-medium ${this.currentTab === 'products' ? 'border-b-2 border-red-500 text-red-600' : ''}"
-                                data-tab="products">
-                            🛍️ Товари
-                        </button>
-                        <button onclick="admin.showTab('moderation')"
-                                class="tab-btn px-6 py-3 font-medium ${this.currentTab === 'moderation' ? 'border-b-2 border-red-500 text-red-600' : ''}"
-                                data-tab="moderation">
-                            🔍 Модерація
-                            ${this.moderation?.length > 0 ? `<span class="ml-2 bg-red-500 text-white text-xs px-2 py-1 rounded-full">${this.moderation.length}</span>` : ''}
-                        </button>
-                        <button onclick="admin.showTab('promocodes')"
-                                class="tab-btn px-6 py-3 font-medium ${this.currentTab === 'promocodes' ? 'border-b-2 border-red-500 text-red-600' : ''}"
-                                data-tab="promocodes">
-                            🏷️ Промокоди
-                        </button>
-                        <button onclick="admin.showTab('broadcast')"
-                                class="tab-btn px-6 py-3 font-medium ${this.currentTab === 'broadcast' ? 'border-b-2 border-red-500 text-red-600' : ''}"
-                                data-tab="broadcast">
-                            📢 Розсилка
-                        </button>
-                    </div>
-
-                    <div class="tab-content p-6" id="admin-tab-content">
-                        ${this.renderTabContent()}
+                <div class="header bg-gradient-to-r from-red-500 to-purple-600 rounded-2xl p-8 text-white mb-8 relative">
+                    ${backButton}
+                    <div class="text-center">
+                        <h1 class="text-3xl font-bold mb-2">👑 Адмін Панель</h1>
+                        <p class="opacity-90">Повний контроль над платформою OhMyRevit</p>
                     </div>
                 </div>
+
+                <div class="admin-content p-4" id="admin-tab-content">
+                    ${mainContent}
+                </div>
+            </div>
+        `;
+    }
+
+    renderMainMenu() {
+        const pendingProductsCount = this.moderation?.length || 0;
+        const pendingAppsCount = this.creatorApplications?.length || 0;
+        const totalPending = pendingProductsCount + pendingAppsCount;
+
+        const createMenuButton = (tab, icon, title, notificationCount = 0) => {
+            const notificationBadge = notificationCount > 0
+                ? `<span class="absolute -top-2 -right-2 bg-yellow-400 text-black text-xs font-bold w-6 h-6 flex items-center justify-center rounded-full">${notificationCount}</span>`
+                : '';
+
+            return `
+                <button onclick="admin.showTab('${tab}')" class="admin-menu-button relative bg-white dark:bg-gray-800 rounded-xl p-6 shadow hover:shadow-lg hover:-translate-y-1 transition-transform text-center">
+                    <div class="text-5xl mb-3">${icon}</div>
+                    <div class="font-semibold text-lg dark:text-white">${title}</div>
+                    ${notificationBadge}
+                </button>
+            `;
+        };
+
+        return `
+            <div class="grid grid-cols-2 md:grid-cols-3 gap-6">
+                ${createMenuButton('dashboard', '📊', 'Дашборд')}
+                ${createMenuButton('users', '👥', 'Користувачі')}
+                ${createMenuButton('products', '🛍️', 'Товари')}
+                ${createMenuButton('moderation', '🔍', 'Модерація', totalPending)}
+                ${createMenuButton('promocodes', '🏷️', 'Промокоди')}
+                ${createMenuButton('broadcast', '📢', 'Розсилка')}
             </div>
         `;
     }
@@ -193,29 +205,60 @@ class AdminModule {
     async showTab(tab) {
         this.currentTab = tab;
 
-        // Оновлюємо стиль активної кнопки вкладки
-        document.querySelectorAll('.tab-btn').forEach(btn => {
-            btn.classList.toggle('border-b-2', btn.dataset.tab === tab);
-            btn.classList.toggle('border-red-500', btn.dataset.tab === tab);
-            btn.classList.toggle('text-red-600', btn.dataset.tab === tab);
-        });
+        // 1. Повністю перемальовуємо структуру адмін-панелі.
+        // Функція createAdminPage сама визначить, чи показати головне меню (для tab='main'),
+        // чи контейнер для вмісту вкладки.
+        const pageContent = document.getElementById('page-content');
+        if (pageContent) {
+            pageContent.innerHTML = this.createAdminPage();
+        }
 
-        const content = document.getElementById('admin-tab-content');
-        if (!content) return;
-        content.innerHTML = '<div class="text-center p-8">Завантаження...</div>';
+        // 2. Якщо ми перейшли на головне меню, нічого більше робити не потрібно.
+        if (tab === 'main') {
+            // Завантажимо актуальні дані для бейджів модерації в фоні
+            this.loadCreatorApplications();
+            this.loadModeration();
+            return;
+        }
 
-        // Завантажуємо дані та оновлюємо ТІЛЬКИ контент вкладки
-        switch(tab) {
-            case 'dashboard': await this.loadDashboard(); break;
-            case 'users': await this.loadUsers(); break;
-            case 'products': await this.loadAdminProducts(); break;
+        // 3. Якщо ми перейшли на конкретну вкладку, завантажуємо для неї дані.
+        const contentContainer = document.getElementById('admin-tab-content');
+        if (!contentContainer) return;
+
+        // Показуємо індикатор завантаження, поки дані вантажаться
+        contentContainer.innerHTML = '<div class="text-center p-8">Завантаження...</div>';
+
+        // 4. Завантажуємо дані в залежності від вкладки
+        switch (tab) {
+            case 'dashboard':
+                await this.loadDashboard();
+                break;
+            case 'users':
+                await this.loadUsers();
+                break;
+            case 'products':
+                await this.loadAdminProducts();
+                break;
             case 'moderation':
                 this.initModeration();
+                // Послідовно завантажуємо дані для обох підвкладок
+                await this.loadCreatorApplications();
                 await this.loadModeration();
+                // Відображаємо першу підвкладку
+                this.showModerationSubTab(this.currentModerationTab);
                 break;
-            case 'promocodes': await this.loadPromocodes(); break;
-            case 'broadcast': this.updateBroadcastUI(); break;
+            case 'promocodes':
+                await this.loadPromocodes();
+                break;
+            case 'broadcast':
+                // Ця вкладка не потребує завантаження даних, просто оновлюємо UI
+                this.updateBroadcastUI();
+                break;
         }
+
+        // 5. Функції завантаження (loadDashboard, loadUsers і т.д.) тепер самі оновлюють свій контент.
+        // Наприклад, updateDashboardUI() викликається всередині loadDashboard().
+        // Це робить код чистішим і надійнішим.
     }
 
     updateActiveTabButton(activeTab) {
