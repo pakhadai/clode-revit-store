@@ -69,7 +69,7 @@ class AdminModule {
             Utils.showLoader(true);
             const response = await api.put(`/admin/users/${userId}`, data);
             Utils.showNotification('Користувача оновлено', 'success');
-            await this.loadUsers(); // Перезавантажуємо список після оновлення
+            await this.loadUsers();
             return response;
         } catch (error) {
             console.error('Update user error:', error);
@@ -185,32 +185,24 @@ class AdminModule {
     async showTab(tab) {
         this.currentTab = tab;
 
-        // Оновлюємо UI вкладок
-        const pageContent = document.getElementById('page-content');
-        if (pageContent) {
-            pageContent.innerHTML = this.createAdminPage();
-        } else {
-            // fallback if page-content is not found
-            this.updateActiveTabButton(tab);
-        }
+        // Оновлюємо стиль активної кнопки вкладки
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            btn.classList.toggle('border-b-2', btn.dataset.tab === tab);
+            btn.classList.toggle('border-red-500', btn.dataset.tab === tab);
+            btn.classList.toggle('text-red-600', btn.dataset.tab === tab);
+        });
 
-        // Завантажуємо дані для нової вкладки
+        const content = document.getElementById('admin-tab-content');
+        if (!content) return;
+        content.innerHTML = '<div class="text-center p-8">Завантаження...</div>';
+
+        // Завантажуємо дані та оновлюємо ТІЛЬКИ контент вкладки
         switch(tab) {
-            case 'dashboard':
-                await this.loadDashboard();
-                break;
-            case 'users':
-                await this.loadUsers();
-                break;
-            case 'moderation':
-                await this.loadModeration();
-                break;
-            case 'promocodes':
-                await this.loadPromocodes();
-                break;
-            case 'broadcast':
-                this.updateBroadcastUI();
-                break;
+            case 'dashboard': await this.loadDashboard(); break;
+            case 'users': await this.loadUsers(); break;
+            case 'moderation': await this.loadModeration(); break;
+            case 'promocodes': await this.loadPromocodes(); break;
+            case 'broadcast': this.updateBroadcastUI(); break;
         }
     }
 
@@ -943,33 +935,36 @@ class AdminModule {
      * Оновити таблицю промокодів
      */
     updatePromocodesTable() {
-        const tbody = document.getElementById('promocodes-tbody');
-        if (!tbody) return;
+        const content = document.getElementById('admin-tab-content');
+        if (content && this.currentTab === 'promocodes') {
+            content.innerHTML = this.renderPromocodes(); // Спочатку рендеримо структуру
+            const tbody = document.getElementById('promocodes-tbody');
+            if (!tbody) return;
 
-        if (this.promocodes.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="7" class="text-center py-8 text-gray-500">Немає промокодів</td></tr>`;
-            return;
+            if (this.promocodes.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="7" class="text-center py-8 text-gray-500">Немає промокодів</td></tr>`;
+                return;
+            }
+            tbody.innerHTML = this.promocodes.map(promo => `
+                <tr class="border-b dark:border-gray-700">
+                    <td class="py-3 px-4 font-mono">${promo.code}</td>
+                    <td class="py-3 px-4">
+                        ${promo.discount_type === 'percent' ? `${promo.discount_value}%` : Utils.formatPrice(promo.discount_value)}
+                    </td>
+                    <td class="py-3 px-4">${promo.uses_count}/${promo.max_uses || '∞'}</td>
+                    <td class="py-3 px-4">${Utils.formatPrice(promo.min_order_amount)}</td>
+                    <td class="py-3 px-4">${promo.valid_until ? new Date(promo.valid_until).toLocaleDateString() : 'Безстроково'}</td>
+                    <td class="py-3 px-4">
+                        ${promo.is_valid ? '<span class="text-green-500">✅ Активний</span>' : '<span class="text-red-500">❌ Неактивний</span>'}
+                    </td>
+                    <td class="py-3 px-4">
+                        <button onclick="admin.deletePromocode(${promo.id})" class="text-red-500 hover:text-red-600">
+                            🗑️
+                        </button>
+                    </td>
+                </tr>
+            `).join('');
         }
-
-        tbody.innerHTML = this.promocodes.map(promo => `
-            <tr class="border-b dark:border-gray-700">
-                <td class="py-3 px-4 font-mono">${promo.code}</td>
-                <td class="py-3 px-4">
-                    ${promo.discount_type === 'percent' ? `${promo.discount_value}%` : Utils.formatPrice(promo.discount_value)}
-                </td>
-                <td class="py-3 px-4">${promo.uses_count}/${promo.max_uses || '∞'}</td>
-                <td class="py-3 px-4">${Utils.formatPrice(promo.min_order_amount)}</td>
-                <td class="py-3 px-4">${promo.valid_until ? new Date(promo.valid_until).toLocaleDateString() : 'Безстроково'}</td>
-                <td class="py-3 px-4">
-                    ${promo.is_valid ? '<span class="text-green-500">✅ Активний</span>' : '<span class="text-red-500">❌ Неактивний</span>'}
-                </td>
-                <td class="py-3 px-4">
-                    <button onclick="admin.deletePromocode(${promo.id})" class="text-red-500 hover:text-red-600">
-                        🗑️
-                    </button>
-                </td>
-            </tr>
-        `).join('');
     }
 
     /**

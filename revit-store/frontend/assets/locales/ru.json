@@ -144,6 +144,8 @@
     "tabs": {
       "downloads": "Загрузки",
       "orders": "Заказы",
+      "support": "Поддержка",
+      "faq": "FAQ",
       "favorites": "Избранное",
       "referrals": "Рефералы",
       "settings": "Настройки"

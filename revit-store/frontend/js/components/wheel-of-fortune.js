@@ -75,7 +75,7 @@ class WheelOfFortune {
                                        w-24 h-24 bg-gradient-to-br from-yellow-400 to-orange-500
                                        rounded-full text-white font-bold text-xl
                                        shadow-lg hover:shadow-xl transition-all
-                                       hover:scale-105 active:scale-95
+                                       hover:scale-105 active:scale-95 flex items-center justify-center
                                        ${this.isSpinning ? 'opacity-50 cursor-not-allowed' : ''}"
                                 ${this.isSpinning ? 'disabled' : ''}>
                             ${window.app.t('wheel.spinButton')}
@@ -83,19 +83,19 @@ class WheelOfFortune {
                     </div>
                 </div>
 
-                <div class="wheel-actions flex gap-4 justify-center mb-6">
+                <div class="wheel-actions flex flex-col sm:flex-row gap-4 justify-center mb-6">
                     <button onclick="wheelOfFortune.spin(true)"
-                            class="bg-green-500 hover:bg-green-600 text-white px-6 py-3 rounded-lg font-bold
-                                   ${this.status.free_spins_available <= 0 || this.isSpinning ? 'opacity-50 cursor-not-allowed' : ''}"
-                            ${this.status.free_spins_available <= 0 || this.isSpinning ? 'disabled' : ''}>
-                        🎁 ${window.app.t('wheel.freeSpin')} (${this.status.free_spins_available})
+                            class="flex-1 bg-green-500 hover:bg-green-600 text-white px-6 py-3 rounded-lg font-bold flex items-center justify-center gap-2"
+                            ${this.status.free_spins_available > 0 && !this.isSpinning ? '' : 'disabled style="opacity: 0.5; cursor: not-allowed;"'}>
+                        <span>🎁</span>
+                        <span>${window.app.t('wheel.freeSpin')} (${this.status.free_spins_available})</span>
                     </button>
 
                     <button onclick="wheelOfFortune.spin(false)"
-                            class="bg-blue-500 hover:bg-blue-600 text-white px-6 py-3 rounded-lg font-bold
-                                   ${this.status.user_balance < this.config.spin_cost || this.isSpinning ? 'opacity-50 cursor-not-allowed' : ''}"
-                            ${this.status.user_balance < this.config.spin_cost || this.isSpinning ? 'disabled' : ''}>
-                        💰 ${window.app.t('wheel.paidSpin')} (${this.config.spin_cost} ${window.app.t('currency.bonuses')})
+                            class="flex-1 bg-blue-500 hover:bg-blue-600 text-white px-6 py-3 rounded-lg font-bold flex items-center justify-center gap-2"
+                            ${this.status.user_balance >= this.config.spin_cost && !this.isSpinning ? '' : 'disabled style="opacity: 0.5; cursor: not-allowed;"'}>
+                        <span>💰</span>
+                        <span>${window.app.t('wheel.paidSpin')} (${this.config.spin_cost})</span>
                     </button>
                 </div>
 
@@ -108,13 +108,12 @@ class WheelOfFortune {
 
                 <div class="wheel-legend mt-6 bg-gray-100 dark:bg-gray-800 rounded-lg p-4">
                     <h3 class="font-bold mb-3 dark:text-white">🎯 ${window.app.t('wheel.prizes')}</h3>
-                    <div class="grid grid-cols-2 md:grid-cols-5 gap-2">
-                        ${this.config.sectors.map(sector => `
+                    <div class="grid grid-cols-2 md:grid-cols-3 gap-2">
+                        ${this.config.sectors.filter(s => s.type !== 'empty').map(sector => `
                             <div class="flex items-center gap-2">
                                 <div class="w-4 h-4 rounded" style="background-color: ${sector.color}"></div>
                                 <span class="text-sm dark:text-gray-300">
-                                    ${sector.value > 0 ? `${sector.value} 🎁` : window.app.t('wheel.emptyPrize')}
-                                    ${sector.type === 'mega' ? '🏆' : ''}
+                                    ${sector.value} ${sector.type === 'mega' ? '🏆' : '🎁'}
                                 </span>
                             </div>
                         `).join('')}

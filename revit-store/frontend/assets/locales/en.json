@@ -144,6 +144,8 @@
     "tabs": {
       "downloads": "Downloads",
       "orders": "Orders",
+      "support": "Support",
+      "faq": "FAQ",
       "favorites": "Favorites",
       "referrals": "Referrals",
       "settings": "Settings"

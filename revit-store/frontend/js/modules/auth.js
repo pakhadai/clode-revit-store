@@ -217,7 +217,10 @@ class AuthModule {
                 Utils.storage.set('user', this.user);
 
                 // Встановлюємо мову з Telegram або з профілю
-                const language = this.user.language || this.tg.initDataUnsafe?.user?.language_code || 'ua';
+                let language = this.user.language || this.tg.initDataUnsafe?.user?.language_code || 'ua';
+                if (language === 'uk') {
+                    language = 'ua';
+                }
                 Utils.setLanguage(language);
 
                 // Встановлюємо тему

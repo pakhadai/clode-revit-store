@@ -120,7 +120,7 @@ async def telegram_login(
             username=user_data.get('username'),
             first_name=user_data.get('first_name'),
             last_name=user_data.get('last_name'),
-            language=user_data.get('language_code', 'en')[:2],  # uk, en, ru
+            language=user_data.get('language_code', 'en')[:2].replace('uk', 'ua'),
             photo_url=user_data.get('photo_url'),
             referral_code=generate_referral_code(telegram_id),
             created_at=datetime.utcnow(),

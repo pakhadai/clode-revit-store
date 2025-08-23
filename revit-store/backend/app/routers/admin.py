@@ -120,7 +120,7 @@ async def get_dashboard_stats(
         Order.status == 'completed',
         Order.created_at >= week_ago
     ).group_by(
-        Product.id, Product.sku, Product.title
+        Product.id, Product.sku, cast(Product.title, String)
     ).order_by(
         desc('sales')
     ).limit(5).all()
@@ -641,26 +641,11 @@ async def send_broadcast(
     users = query.all()
 
     # Відправляємо повідомлення
-    sent = 0
-    failed = 0
-
-    for user in users:
-        try:
-            await bot_service.send_message(
-                user.telegram_id,
-                f"📢 Повідомлення від OhMyRevit:\n\n{message}"
-            )
-            sent += 1
-        except Exception as e:
-            print(f"Failed to send to {user.telegram_id}: {e}")
-            failed += 1
+    telegram_ids = [user.telegram_id for user in users]
+    stats = await bot_service.broadcast(telegram_ids, message)
 
     return {
         "success": True,
         "message": "Broadcast sent",
-        "stats": {
-            "total": len(users),
-            "sent": sent,
-            "failed": failed
-        }
+        "stats": stats
     }

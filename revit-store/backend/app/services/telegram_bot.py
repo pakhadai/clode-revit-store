@@ -32,7 +32,7 @@ class TelegramBotService:
         async with httpx.AsyncClient() as client:
             try:
                 response = await client.post(f"{self.api_url}/{method}", json=data, timeout=10.0)
-                response.raise_for_status()  # Викличе помилку для 4xx/5xx статусів
+                response.raise_for_status()
                 return response.json()
             except httpx.HTTPStatusError as e:
                 print(f"❌ Помилка HTTP запиту до Telegram API: {e.response.status_code} - {e.response.text}")

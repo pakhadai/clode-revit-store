@@ -238,6 +238,34 @@ class App {
                     html = await this.renderProductPage(productId);
                     break;
 
+                case 'downloads':
+                    html = this.renderDownloadsPage();
+                    break;
+
+                case 'orders':
+                    html = this.renderOrdersPage();
+                    break;
+
+                case 'favorites':
+                    html = await favorites.createFavoritesPage();
+                    break;
+
+                case 'referrals':
+                    html = await this.renderReferralsPage();
+                    break;
+
+                case 'settings':
+                    html = this.renderSettingsPage();
+                    break;
+
+                case 'support':
+                    html = this.renderSupportPage();
+                    break;
+
+                case 'faq':
+                    html = this.renderFaqPage();
+                    break;
+
                 case 'creator':
                     if (auth.isCreator()) {
                         html = creator.createCreatorPage();
@@ -493,83 +521,50 @@ class App {
 
         const user = auth.user;
 
-        // Ensure default tab is set for initial render
-        if (!this.currentProfileTab) {
-            this.currentProfileTab = 'downloads';
-        }
+        // Helper function to create a tile button
+        const createTile = (page, icon, titleKey) => `
+            <button onclick="app.navigateTo('${page}')" class="bg-white dark:bg-gray-800 rounded-xl p-4 shadow hover:shadow-lg transition-shadow text-center">
+                <div class="text-4xl mb-2">${icon}</div>
+                <div class="font-semibold dark:text-white">${this.t(titleKey)}</div>
+            </button>
+        `;
 
         return `
             <div class="profile-page max-w-4xl mx-auto">
-                <div class="profile-header bg-white dark:bg-gray-800 rounded-lg p-6 mb-6">
-                    <div class="flex items-center gap-4">
-                        <div class="avatar w-20 h-20 bg-blue-500 rounded-full flex items-center justify-center text-white text-3xl">
-                            ${user.first_name?.[0] || '👤'}
-                        </div>
-                        <div class="flex-1">
-                            <h1 class="text-2xl font-bold dark:text-white">
-                                ${user.first_name} ${user.last_name || ''}
-                            </h1>
-                            <p class="text-gray-600 dark:text-gray-400">@${user.username || `user_${user.telegram_id}`}</p>
-                            <div class="flex flex-wrap gap-4 mt-2">
-                                <span class="text-sm font-medium ${user.vip_level > 0 ? 'text-yellow-500' : 'text-gray-500'}">
-                                    ${user.vip_level_name || this.t('profile.noVip')}
-                                </span>
-                                ${user.is_creator ? `<span class="text-sm font-medium text-purple-500">🎨 ${this.t('profile.creator')}</span>` : ''}
-                                ${user.is_admin ? `<span class="text-sm font-medium text-red-500">👑 ${this.t('profile.admin')}</span>` : ''}
-                            </div>
-                        </div>
-                        <div class="text-right">
-                            <div class="text-3xl font-bold text-blue-600 dark:text-blue-400">${user.balance}</div>
-                            <div class="text-sm text-gray-600 dark:text-gray-400">${this.t('profile.balance')}</div>
-                        </div>
+                <div class="profile-header bg-white dark:bg-gray-800 rounded-lg p-6 mb-6 text-center">
+                    <div class="avatar w-24 h-24 bg-blue-500 rounded-full flex items-center justify-center text-white text-4xl mx-auto mb-4">
+                        ${user.first_name?.[0] || '👤'}
                     </div>
-
-                    <div class="flex flex-wrap gap-3 mt-6">
-                        ${user.is_creator ? `
-                            <button onclick="app.navigateTo('creator')" class="flex-1 bg-purple-500 hover:bg-purple-600 text-white px-4 py-2 rounded-lg font-bold text-sm">
-                                🎨 Кабінет творця
-                            </button>
-                        ` : ''}
-                        ${user.is_admin ? `
-                            <button onclick="app.navigateTo('admin')" class="flex-1 bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg font-bold text-sm">
-                                👑 Адмін панель
-                            </button>
-                        ` : ''}
+                    <h1 class="text-2xl font-bold dark:text-white">${user.first_name} ${user.last_name || ''}</h1>
+                    <p class="text-gray-600 dark:text-gray-400">@${user.username || `user_${user.telegram_id}`}</p>
+                    <div class="flex flex-wrap gap-4 mt-4 justify-center">
+                        <span class="text-sm font-medium ${user.vip_level > 0 ? 'text-yellow-500' : 'text-gray-500'}">${user.vip_level_name || this.t('profile.noVip')}</span>
+                        ${user.is_creator ? `<span class="text-sm font-medium text-purple-500">🎨 ${this.t('profile.creator')}</span>` : ''}
+                        ${user.is_admin ? `<span class="text-sm font-medium text-red-500">👑 ${this.t('profile.admin')}</span>` : ''}
                     </div>
                 </div>
 
-                <div class="tabs bg-white dark:bg-gray-800 rounded-lg mb-6">
-                    <div class="flex border-b dark:border-gray-700 overflow-x-auto">
-                        <button onclick="app.showProfileTab('downloads')"
-                                class="tab-btn flex-shrink-0 px-6 py-3 font-medium hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-white ${this.currentProfileTab === 'downloads' ? 'border-b-2 border-blue-500 text-blue-600' : ''}"
-                                data-tab="downloads">
-                            📥 ${this.t('profile.tabs.downloads')}
-                        </button>
-                        <button onclick="app.showProfileTab('orders')"
-                                class="tab-btn flex-shrink-0 px-6 py-3 font-medium hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-white ${this.currentProfileTab === 'orders' ? 'border-b-2 border-blue-500 text-blue-600' : ''}"
-                                data-tab="orders">
-                            📋 ${this.t('profile.tabs.orders')}
-                        </button>
-                        <button onclick="app.showProfileTab('favorites')"
-                                class="tab-btn flex-shrink-0 px-6 py-3 font-medium hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-white ${this.currentProfileTab === 'favorites' ? 'border-b-2 border-blue-500 text-blue-600' : ''}"
-                                data-tab="favorites">
-                            ❤️ ${this.t('profile.tabs.favorites')}
-                        </button>
-                        <button onclick="app.showProfileTab('referrals')"
-                                class="tab-btn flex-shrink-0 px-6 py-3 font-medium hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-white ${this.currentProfileTab === 'referrals' ? 'border-b-2 border-blue-500 text-blue-600' : ''}"
-                                data-tab="referrals">
-                            🤝 ${this.t('profile.tabs.referrals')}
-                        </button>
-                        <button onclick="app.showProfileTab('settings')"
-                                class="tab-btn flex-shrink-0 px-6 py-3 font-medium hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-white ${this.currentProfileTab === 'settings' ? 'border-b-2 border-blue-500 text-blue-600' : ''}"
-                                data-tab="settings">
-                            ⚙️ ${this.t('profile.tabs.settings')}
-                        </button>
-                    </div>
+                <div class="grid grid-cols-2 md:grid-cols-3 gap-4 mb-6">
+                    ${createTile('downloads', '📥', 'profile.tabs.downloads')}
+                    ${createTile('orders', '📋', 'profile.tabs.orders')}
+                    ${createTile('favorites', '❤️', 'profile.tabs.favorites')}
+                    ${createTile('referrals', '🤝', 'profile.tabs.referrals')}
+                    ${createTile('settings', '⚙️', 'profile.tabs.settings')}
+                    ${createTile('support', '💬', 'profile.tabs.support')}
+                    ${createTile('faq', '❓', 'profile.tabs.faq')}
+                </div>
 
-                    <div class="tab-content p-6" id="profile-tab-content">
-                         ${await this.renderProfileTabContent(this.currentProfileTab)}
-                    </div>
+                <div class="flex flex-wrap gap-3">
+                    ${user.is_creator ? `
+                        <button onclick="app.navigateTo('creator')" class="flex-1 bg-purple-500 hover:bg-purple-600 text-white px-4 py-3 rounded-lg font-bold">
+                            🎨 Кабінет творця
+                        </button>
+                    ` : ''}
+                    ${user.is_admin ? `
+                        <button onclick="app.navigateTo('admin')" class="flex-1 bg-red-500 hover:bg-red-600 text-white px-4 py-3 rounded-lg font-bold">
+                            👑 Адмін панель
+                        </button>
+                    ` : ''}
                 </div>
             </div>
         `;
@@ -836,8 +831,35 @@ class App {
      * Показати колесо фортуни
      */
     showWheelOfFortune() {
-        // TODO: Реалізувати колесо фортуни
-        Utils.showNotification(this.t('notifications.comingSoon'), 'info');
+        // Створюємо модальне вікно
+        const modal = document.createElement('div');
+        modal.id = 'wheel-modal';
+        modal.className = 'fixed inset-0 bg-black bg-opacity-75 z-50 flex items-center justify-center p-4';
+
+        // Додаємо контент модального вікна
+        modal.innerHTML = `
+            <div class="bg-gray-100 dark:bg-gray-900 rounded-2xl p-6 max-w-lg w-full max-h-[90vh] overflow-y-auto relative">
+                <button onclick="document.getElementById('wheel-modal').remove()"
+                        class="absolute top-4 right-4 text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-white text-2xl z-20">
+                    &times;
+                </button>
+                <div id="wheel-container">
+                    <div class="text-center p-8">Завантаження колеса...</div>
+                </div>
+            </div>
+        `;
+
+        // Додаємо модальне вікно на сторінку
+        document.body.appendChild(modal);
+
+        // Ініціалізуємо компонент колеса всередині модального вікна
+        // Ця функція визначена в /js/components/wheel-of-fortune.js
+        if (typeof initWheelOfFortune === 'function') {
+            initWheelOfFortune('wheel-container');
+        } else {
+            console.error('Функція initWheelOfFortune не знайдена!');
+            document.getElementById('wheel-container').innerHTML = '<div class="text-center text-red-500 p-8">Помилка завантаження компонента.</div>';
+        }
     }
 
     /**
@@ -870,6 +892,83 @@ class App {
         }, 100);
     }
 }
+
+// ========== PROFILE PAGES ==========
+
+    async renderReferralsPage() {
+        const referralInfo = await api.get('/referrals/info');
+        // ... (тут буде повний рендер сторінки рефералів)
+        return `
+        <div class="max-w-4xl mx-auto">
+            <h1 class="text-3xl font-bold mb-6 dark:text-white">🤝 ${this.t('profile.referrals.title')}</h1>
+            <div class="bg-white dark:bg-gray-800 rounded-lg p-6">
+                <p class="mb-4">${this.t('profile.referrals.yourCode')}:</p>
+                <div class="flex gap-2 mb-6">
+                    <input type="text" value="${referralInfo.referral_link}" readonly class="flex-1 px-4 py-2 border rounded-lg dark:bg-gray-700">
+                    <button onclick="Utils.copyToClipboard('${referralInfo.referral_link}')" class="bg-blue-500 text-white px-4 py-2 rounded-lg">${this.t('profile.referrals.copy')}</button>
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="text-center p-4 bg-gray-100 dark:bg-gray-700 rounded-lg">
+                        <div class="text-2xl font-bold">${referralInfo.total_referrals}</div>
+                        <div>${this.t('profile.referrals.invited')}</div>
+                    </div>
+                    <div class="text-center p-4 bg-gray-100 dark:bg-gray-700 rounded-lg">
+                        <div class="text-2xl font-bold">${referralInfo.total_earned} 🎁</div>
+                        <div>${this.t('profile.referrals.earned')}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        `;
+    }
+
+    renderSettingsPage() {
+        const user = auth.user;
+        return `
+        <div class="max-w-4xl mx-auto">
+            <h1 class="text-3xl font-bold mb-6 dark:text-white">⚙️ ${this.t('profile.tabs.settings')}</h1>
+            <div class="bg-white dark:bg-gray-800 rounded-lg p-6 space-y-6">
+                <div>
+                    <label for="language-select" class="block text-sm font-medium dark:text-gray-300">${this.t('profile.settings.language')}</label>
+                    <select id="language-select" class="mt-1 block w-full pl-3 pr-10 py-2 border-gray-300 dark:bg-gray-700 dark:border-gray-600 rounded-md">
+                        <option value="ua" ${user.language === 'ua' ? 'selected' : ''}>Українська</option>
+                        <option value="en" ${user.language === 'en' ? 'selected' : ''}>English</option>
+                        <option value="ru" ${user.language === 'ru' ? 'selected' : ''}>Русский</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="theme-select" class="block text-sm font-medium dark:text-gray-300">${this.t('profile.settings.theme')}</label>
+                    <select id="theme-select" class="mt-1 block w-full pl-3 pr-10 py-2 border-gray-300 dark:bg-gray-700 dark:border-gray-600 rounded-md">
+                        <option value="light" ${user.theme === 'light' ? 'selected' : ''}>${this.t('profile.settings.light')}</option>
+                        <option value="dark" ${user.theme === 'dark' ? 'selected' : ''}>${this.t('profile.settings.dark')}</option>
+                    </select>
+                </div>
+                <button onclick="app.saveSettings()" class="bg-blue-500 text-white px-6 py-2 rounded-lg">${this.t('buttons.save')}</button>
+            </div>
+        </div>
+        `;
+    }
+
+    async saveSettings() {
+        const lang = document.getElementById('language-select').value;
+        const theme = document.getElementById('theme-select').value;
+        await auth.updateProfile({ language: lang, theme: theme });
+    }
+
+    renderPlaceholderPage(titleKey, icon) {
+        return `
+            <div class="text-center py-16">
+                <div class="text-6xl mb-4">${icon}</div>
+                <h1 class="text-3xl font-bold mb-4 dark:text-white">${this.t(titleKey)}</h1>
+                <p class="text-gray-600 dark:text-gray-400">${this.t('notifications.comingSoon')}</p>
+            </div>
+        `;
+    }
+
+    renderDownloadsPage() { return this.renderPlaceholderPage('profile.tabs.downloads', '📥'); }
+    renderOrdersPage() { return this.renderPlaceholderPage('profile.tabs.orders', '📋'); }
+    renderSupportPage() { return this.renderPlaceholderPage('profile.tabs.support', '💬'); }
+    renderFaqPage() { return this.renderPlaceholderPage('profile.tabs.faq', '❓'); }
 
 // Створюємо та запускаємо додаток
 const app = new App();
