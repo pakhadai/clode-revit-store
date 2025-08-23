@@ -470,7 +470,12 @@ class AdminModule {
                                     <td class="py-3 px-4">
                                         <div class="flex gap-1">
                                             ${user.is_admin ? '<span class="badge bg-red-100 text-red-700 px-2 py-1 rounded text-xs">Admin</span>' : ''}
-                                            ${user.is_creator ? '<span class="badge bg-purple-100 text-purple-700 px-2 py-1 rounded text-xs">Creator</span>' : ''}
+                                            <button onclick="admin.toggleCreatorStatus(${user.id}, ${!user.is_creator})"
+                                                    class="badge ${user.is_creator ? 'bg-purple-100 text-purple-700' : 'bg-gray-100 text-gray-700'}
+                                                           px-2 py-1 rounded text-xs hover:opacity-80"
+                                                    title="Змінити статус творця">
+                                                ${user.is_creator ? '🎨 Creator' : '👤 User'}
+                                            </button>
                                         </div>
                                     </td>
                                     <td class="py-3 px-4">
@@ -480,7 +485,7 @@ class AdminModule {
                                         }
                                     </td>
                                     <td class="py-3 px-4">
-                                        <div class="flex gap-2">
+                                        <div class="flex gap-2 text-xl">
                                             <button onclick="admin.saveUserChanges(${user.id})"
                                                     class="text-blue-500 hover:text-blue-600" title="Зберегти">
                                                 💾
@@ -492,6 +497,10 @@ class AdminModule {
                                             <button onclick="admin.grantSubscription(${user.id})"
                                                     class="text-purple-500" title="Видати підписку">
                                                 ⭐
+                                            </button>
+                                            <button onclick="admin.deleteUser(${user.id})"
+                                                    class="text-red-600 hover:text-red-800" title="Видалити з БД">
+                                                🗑️
                                             </button>
                                         </div>
                                     </td>
@@ -962,6 +971,33 @@ class AdminModule {
         } catch (error) {
             console.error('Grant subscription error:', error);
             Utils.showNotification('Помилка видачі підписки', 'error');
+        }
+    }
+
+    /**
+     * Змінити статус творця
+     */
+    async toggleCreatorStatus(userId, isCreator) {
+        if (!confirm(`Ви впевнені, що хочете ${isCreator ? 'надати' : 'забрати'} статус творця?`)) return;
+        await this.updateUser(userId, { is_creator: isCreator });
+    }
+
+    /**
+     * Видалити користувача
+     */
+    async deleteUser(userId) {
+        if (!confirm('УВАГА! Ця дія повністю видалить користувача та всі пов\'язані дані без можливості відновлення. Продовжити?')) return;
+
+        try {
+            Utils.showLoader(true);
+            const response = await api.delete(`/admin/users/${userId}`);
+            Utils.showNotification(response.message, 'success');
+            await this.loadUsers(); // Перезавантажуємо список
+        } catch (error) {
+            console.error('Delete user error:', error);
+            Utils.showNotification('Помилка видалення користувача', 'error');
+        } finally {
+            Utils.showLoader(false);
         }
     }
 

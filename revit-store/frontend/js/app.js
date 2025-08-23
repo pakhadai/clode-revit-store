@@ -6,6 +6,7 @@ class App {
     constructor() {
         this.currentPage = 'home';
         this.translations = {};
+        this.onboarding = window.onboarding;
         this.init();
     }
 
@@ -41,6 +42,9 @@ class App {
 
         // Завантажуємо початкову сторінку
         const urlParams = Utils.getUrlParams();
+        if (this.onboarding.shouldShow()) {
+            this.onboarding.start();
+        }
         const page = urlParams.page || 'home';
         this.navigateTo(page);
 

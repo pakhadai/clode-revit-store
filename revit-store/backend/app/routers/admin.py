@@ -363,6 +363,32 @@ async def grant_subscription(
     }
 
 
+@router.delete("/users/{user_id}")
+async def delete_user(
+    user_id: int,
+    admin: User = Depends(get_admin_user),
+    db: Session = Depends(get_db)
+) -> Dict:
+    """
+    Повністю видалити користувача з бази даних.
+    """
+    user_to_delete = db.query(User).filter(User.id == user_id).first()
+
+    if not user_to_delete:
+        raise HTTPException(status_code=404, detail="Користувача не знайдено")
+
+    if user_to_delete.is_admin:
+        raise HTTPException(status_code=403, detail="Неможливо видалити іншого адміністратора")
+
+    # Тут можна додати додаткову логіку, наприклад,
+    # перепризначення його товарів або анонімізацію даних.
+    # Для простоти - просто видаляємо.
+
+    db.delete(user_to_delete)
+    db.commit()
+
+    return {"success": True, "message": f"Користувач ID:{user_id} був повністю видалений з БД."}
+
 # ====== МОДЕРАЦІЯ ТОВАРІВ ======
 
 @router.get("/moderation")

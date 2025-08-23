@@ -132,11 +132,15 @@ class CreatorApplication(Base):
     __tablename__ = "creator_applications"
 
     id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, ForeignKey('users.id'), nullable=False, unique=True)
+    user_id = Column(Integer, ForeignKey('users.id', ondelete='CASCADE'), nullable=False, unique=True)
     portfolio_url = Column(Text, nullable=True)
     about_me = Column(Text, nullable=False)
     status = Column(String(50), default='pending')  # pending, approved, rejected
     review_notes = Column(Text, nullable=True) # Коментар адміна
     created_at = Column(DateTime, default=datetime.utcnow)
 
-    user = relationship("User")
+    user = relationship("User", back_populates="creator_applications")
+
+
+# Тепер потрібно додати зворотній зв'язок в основну модель User
+User.creator_applications = relationship("CreatorApplication", back_populates="user", cascade="all, delete-orphan")
