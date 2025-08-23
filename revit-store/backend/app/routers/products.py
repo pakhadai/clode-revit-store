@@ -429,39 +429,44 @@ async def get_user_downloads(
 @router.get("/{product_id}/download")
 async def download_product_archive(
     product_id: int,
+    via_bot: bool = False, # Новий параметр для вибору методу
     language: str = Query("uk"),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user_from_token)
 ):
     """
-    Відправляє архів користувачу в особисті повідомлення через бота.
+    Надає файл архіву для завантаження або відправляє його через бота.
     """
     product = db.query(Product).filter(Product.id == product_id).first()
-
     if not product:
         raise HTTPException(status_code=404, detail="Товар не знайдено")
 
-    # TODO: Додайте логіку перевірки, чи користувач купив цей товар
+    # TODO: Додайте тут логіку перевірки, чи користувач купив цей товар
 
     file_path = os.path.join("/app", product.file_url.lstrip('/'))
-
     if not os.path.exists(file_path):
         raise HTTPException(status_code=404, detail="Файл архіву не знайдено на сервері")
 
-    # Відправляємо архів через бота
-    success = await bot_service.send_archive_message(
-        telegram_id=current_user.telegram_id,
-        product=product,
-        file_path=file_path,
-        language=language
-    )
+    # Якщо фронтенд повідомив, що пряме завантаження не вдалося,
+    # відправляємо архів через бота як запасний варіант.
+    if via_bot:
+        success = await bot_service.send_archive_message(
+            telegram_id=current_user.telegram_id,
+            product=product,
+            file_path=file_path,
+            language=language
+        )
+        if success:
+            product.downloads_count += 1
+            db.commit()
+            return {"success": True, "message": f"Архів '{product.get_title(language)}' було відправлено вам в особисті повідомлення."}
+        else:
+            raise HTTPException(status_code=500, detail="Не вдалося відправити архів. Можливо, ви не запустили бота або заблокували його.")
 
-    if success:
-        product.downloads_count += 1
-        db.commit()
-        return {
-            "success": True,
-            "message": f"Архів '{product.get_title(language)}' було відправлено вам в особисті повідомлення."
-        }
-    else:
-        raise HTTPException(status_code=500, detail="Не вдалося відправити архів. Можливо, ви не запустили бота.")
+    # Стандартна логіка для прямого завантаження,
+    # яка спрацює для більшості браузерів.
+    product.downloads_count += 1
+    db.commit()
+    filename = os.path.basename(file_path)
+    headers = {"Content-Disposition": f"attachment; filename=\"{filename}\""}
+    return FileResponse(path=file_path, media_type='application/octet-stream', headers=headers)

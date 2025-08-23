@@ -330,31 +330,28 @@ class ProductsModule {
                             }
                         </div>
 
-                        <div class="actions flex gap-4 mb-6">
+                        <div class="actions flex flex-col gap-3 mb-6">
                             ${product.can_download ?
-                                `<button class="flex-1 bg-green-500 hover:bg-green-600 text-white px-6 py-3 rounded-lg
-                                               font-bold transition-colors flex items-center justify-center gap-2"
-                                        onclick="products.downloadProduct(${product.id})">
-                                    <span>📥</span> ${window.app.t('buttons.download')}
-                                </button>` :
-                                `<button class="flex-1 bg-blue-500 hover:bg-blue-600 text-white px-6 py-3 rounded-lg
+                                `
+                                <div class="flex gap-3">
+                                    <button class="flex-1 bg-green-500 hover:bg-green-600 text-white px-6 py-3 rounded-lg
+                                                   font-bold transition-colors flex items-center justify-center gap-2"
+                                            onclick="products.downloadProduct(${product.id}, 'direct')">
+                                        <span>📥</span> ${window.app.t('buttons.download')}
+                                    </button>
+                                    <button class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-3 rounded-lg
+                                                   font-bold transition-colors"
+                                            onclick="products.downloadProduct(${product.id}, 'bot')" title="Надіслати в Telegram">
+                                        ✈️
+                                    </button>
+                                </div>
+                                ` :
+                                `<button class="w-full bg-blue-500 hover:bg-blue-600 text-white px-6 py-3 rounded-lg
                                                font-bold transition-colors flex items-center justify-center gap-2"
                                         onclick="cart.addToCart(${product.id})">
                                     <span>🛒</span> ${window.app.t('product.addToCart')}
                                 </button>`
                             }
-
-                            <button class="px-6 py-3 border-2 border-gray-300 dark:border-gray-600 rounded-lg
-                                         hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-                                    onclick="products.toggleFavorite(${product.id})">
-                                <span class="text-2xl">❤️</span>
-                            </button>
-
-                            <button class="px-6 py-3 border-2 border-gray-300 dark:border-gray-600 rounded-lg
-                                         hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-                                    onclick="products.shareProduct(${product.id})">
-                                <span class="text-2xl">📤</span>
-                            </button>
                         </div>
 
                         <div class="description mb-6">
@@ -453,19 +450,28 @@ class ProductsModule {
     /**
      * Завантажити продукт
      */
-    async downloadProduct(productId) {
+    async downloadProduct(productId, method = 'direct') {
+        Utils.showLoader(true);
         try {
-            Utils.showLoader(true);
-            const response = await api.get(`/products/${productId}/download`, {
-                language: Utils.getCurrentLanguage()
-            });
+            if (method === 'bot') {
+                // --- ЛОГІКА ДЛЯ КНОПКИ "НАДІСЛАТИ В TELEGRAM" ---
+                const response = await api.get(`/products/${productId}/download`, {
+                    language: Utils.getCurrentLanguage(),
+                    via_bot: true
+                });
+                Utils.showNotification(response.message, 'success');
+            } else {
+                // --- СТАНДАРТНА ЛОГІКА ДЛЯ КНОПКИ "ЗАВАНТАЖИТИ" ---
+                const product = this.currentProduct || this.products.find(p => p.id === productId) || {};
+                const filename = `${product.sku || 'archive'}.zip`;
+                const downloadUrl = `${api.baseURL}/products/${productId}/download?token=${api.token}`;
 
-            // Показуємо повідомлення про успіх, яке прийшло з бекенду
-            Utils.showNotification(response.message, 'success');
-
+                // Найнадійніший спосіб для завантаження - відкрити посилання в новій вкладці
+                window.open(downloadUrl, '_blank');
+                Utils.showNotification(window.app.t('notifications.downloadStarted'), 'info');
+            }
         } catch (error) {
             console.error('Download error:', error);
-            // Показуємо помилку з бекенду (напр., "Не вдалося відправити архів...")
             Utils.showNotification(error.message, 'error');
         } finally {
             Utils.showLoader(false);

@@ -4,12 +4,13 @@
 """
 
 import os
+import json
 from typing import Optional, List, Dict
 import httpx
 from dotenv import load_dotenv
 
+# Завантажуємо змінні оточення
 load_dotenv()
-
 
 class TelegramBotService:
     """
@@ -19,19 +20,32 @@ class TelegramBotService:
     def __init__(self):
         self.bot_token = os.getenv("TELEGRAM_BOT_TOKEN")
         if not self.bot_token or self.bot_token == "your_telegram_bot_token":
-            print("⚠️ TELEGRAM_BOT_TOKEN не встановлений або має значення за замовчуванням. Сервіс буде працювати в режимі логування.")
+            print("⚠️ TELEGRAM_BOT_TOKEN не встановлений. Сервіс буде працювати в режимі логування.")
             self.bot_token = None
         self.api_url = f"https://api.telegram.org/bot{self.bot_token}"
 
-    async def _make_request(self, method: str, data: Dict) -> Optional[Dict]:
-        """Універсальний метод для відправки запитів до Telegram API."""
+    async def _make_request(self, method: str, data: Dict, files: Optional[Dict] = None) -> Optional[Dict]:
+        """
+        Універсальний метод для відправки запитів до Telegram API.
+        Підтримує відправку як JSON-даних, так і файлів.
+        """
         if not self.bot_token:
-            print(f"📦 TELEGRAM API CALL (DRY RUN): Метод={method}, Дані={data}")
+            print(f"📦 TELEGRAM API CALL (DRY RUN): Метод={method}, Дані={data}, Файли={'Так' if files else 'Ні'}")
             return {"ok": True, "result": "Dry run success"}
+
+        # Для запитів без файлів використовуємо json, для запитів з файлами - data.
+        # Це дозволяє httpx автоматично встановлювати правильний Content-Type.
+        is_multipart = files is not None
+        request_kwargs = {
+            "timeout": 60.0 if is_multipart else 15.0,
+            "files": files,
+            "data": data if is_multipart else None,
+            "json": data if not is_multipart else None,
+        }
 
         async with httpx.AsyncClient() as client:
             try:
-                response = await client.post(f"{self.api_url}/{method}", json=data, timeout=10.0)
+                response = await client.post(f"{self.api_url}/{method}", **request_kwargs)
                 response.raise_for_status()
                 return response.json()
             except httpx.HTTPStatusError as e:
@@ -50,7 +64,7 @@ class TelegramBotService:
             reply_markup: Optional[Dict] = None
     ) -> bool:
         """
-        Відправити повідомлення користувачу.
+        Відправити текстове повідомлення користувачу.
         """
         payload = {
             "chat_id": telegram_id,
@@ -58,65 +72,79 @@ class TelegramBotService:
             "parse_mode": parse_mode
         }
         if reply_markup:
-            payload["reply_markup"] = reply_markup
+            # Використовуємо json.dumps для коректної серіалізації клавіатури
+            payload["reply_markup"] = json.dumps(reply_markup)
 
-        response = await self._make_request("sendMessage", payload)
+        response = await self._make_request("sendMessage", data=payload)
         return response and response.get("ok", False)
 
     async def send_photo(
             self,
             telegram_id: int,
-            photo_url: str,
+            photo_path_or_url: str,
             caption: Optional[str] = None,
             parse_mode: str = "HTML"
     ) -> bool:
         """
-        Відправити фото користувачу.
+        Відправити фото користувачу з локального файлу або URL.
         """
         payload = {
             "chat_id": telegram_id,
-            "photo": photo_url,
             "caption": caption,
             "parse_mode": parse_mode
         }
-        response = await self._make_request("sendPhoto", payload)
-        return response and response.get("ok", False)
+        files = None
+
+        if os.path.exists(photo_path_or_url):
+            try:
+                photo_file = open(photo_path_or_url, 'rb')
+                files = {'photo': photo_file}
+                response = await self._make_request("sendPhoto", data=payload, files=files)
+                photo_file.close()
+                return response and response.get("ok", False)
+            except IOError as e:
+                print(f"❌ Не вдалося відкрити файл фото: {e}")
+                return False
+        else:
+            payload['photo'] = photo_path_or_url
+            response = await self._make_request("sendPhoto", data=payload)
+            return response and response.get("ok", False)
 
     async def send_document(
-            self,
-            telegram_id: int,
-            document_url: str,
-            caption: Optional[str] = None,
-            parse_mode: str = "HTML"
+        self,
+        telegram_id: int,
+        file_path: str,
+        caption: Optional[str] = None,
+        parse_mode: str = "HTML"
     ) -> bool:
         """
-        Відправити документ користувачу.
+        Відправити документ користувачу з локального файлу.
         """
         payload = {
             "chat_id": telegram_id,
-            "document": document_url,
             "caption": caption,
             "parse_mode": parse_mode
         }
-        response = await self._make_request("sendDocument", payload)
-        return response and response.get("ok", False)
+
+        try:
+            with open(file_path, "rb") as doc_file:
+                files_to_send = {"document": (os.path.basename(file_path), doc_file)}
+                response = await self._make_request("sendDocument", data=payload, files=files_to_send)
+            return response and response.get("ok", False)
+        except IOError as e:
+            print(f"❌ Не вдалося відкрити файл документа: {e}")
+            return False
 
     async def send_archive_message(
-            self,
-            telegram_id: int,
-            product: "Product",  # Використовуємо модель продукту
-            file_path: str,  # Абсолютний шлях до файлу на диску
-            language: str = "uk"
+        self,
+        telegram_id: int,
+        product: "Product",
+        file_path: str,
+        language: str = "uk"
     ) -> bool:
         """
         Відправляє повідомлення з архівом, фото та описом.
         """
-        if not self.bot_token:
-            print(
-                f"📦 TELEGRAM BOT (DRY RUN): Відправка архіву '{product.get_title(language)}' користувачу {telegram_id}")
-            return True
-
-        # Формуємо підпис до повідомлення
         caption = (
             f"<b>{product.get_title(language)}</b>\n\n"
             f"<i>{product.get_description(language)}</i>\n\n"
@@ -124,37 +152,21 @@ class TelegramBotService:
             f"<b>Категорія:</b> {product.category}"
         )
 
-        # Відкриваємо файл для відправки
         try:
-            with open(file_path, "rb") as archive_file:
-                files = {"document": (os.path.basename(file_path), archive_file)}
+            if product.preview_images:
+                preview_path = os.path.join("/app", product.preview_images[0].lstrip('/'))
+                if os.path.exists(preview_path):
+                    await self.send_photo(telegram_id, photo_path_or_url=preview_path)
 
-                params = {
-                    "chat_id": telegram_id,
-                    "caption": caption,
-                    "parse_mode": "HTML"
-                }
-
-                # Якщо є прев'ю, додаємо його
-                if product.preview_images:
-                    params["photo"] = product.preview_images[0]
-                    # Якщо є фото, відправляємо його окремо, а потім документ
-                    await self.send_photo(telegram_id, product.preview_images[0], caption=caption)
-                    await self.send_document(telegram_id, document_url=None,
-                                             files={"document": (os.path.basename(file_path), archive_file)})
-                    return True
-
-                # Якщо фото немає, відправляємо тільки документ з підписом
-                async with httpx.AsyncClient() as client:
-                    response = await client.post(f"{self.api_url}/sendDocument", params=params, files=files,
-                                                 timeout=60.0)
-
-                response_data = response.json()
-                return response_data.get("ok", False)
+            success = await self.send_document(
+                telegram_id,
+                file_path=file_path,
+                caption=caption
+            )
+            return success
         except Exception as e:
             print(f"❌ Помилка відправки архіву через бота: {e}")
             return False
-
 
     async def send_invoice(
             self,
@@ -176,9 +188,10 @@ class TelegramBotService:
             "payload": payload,
             "provider_token": provider_token,
             "currency": currency,
-            "prices": prices
+            # Використовуємо json.dumps для коректної серіалізації цін
+            "prices": json.dumps(prices)
         }
-        response = await self._make_request("sendInvoice", payload_data)
+        response = await self._make_request("sendInvoice", data=payload_data)
         return response and response.get("ok", False)
 
     async def broadcast(
@@ -192,26 +205,19 @@ class TelegramBotService:
         """
         sent = 0
         failed = 0
-
         for telegram_id in telegram_ids:
             if await self.send_message(telegram_id, message, parse_mode):
                 sent += 1
             else:
                 failed += 1
-
-        print(f"📊 Результат розсилки: Успішно - {sent}, Невдало - {failed}")
-        return {
-            "total": len(telegram_ids),
-            "sent": sent,
-            "failed": failed
-        }
+        return {"total": len(telegram_ids), "sent": sent, "failed": failed}
 
     async def set_webhook(self, webhook_url: str) -> bool:
         """
         Встановити webhook для бота.
         """
         payload = {"url": webhook_url}
-        response = await self._make_request("setWebhook", payload)
+        response = await self._make_request("setWebhook", data=payload)
         if response and response.get("ok"):
             print(f"✅ Webhook успішно встановлено на: {webhook_url}")
             return True
@@ -222,7 +228,7 @@ class TelegramBotService:
         """
         Видалити webhook.
         """
-        response = await self._make_request("deleteWebhook", {})
+        response = await self._make_request("deleteWebhook", data={})
         if response and response.get("ok"):
             print("✅ Webhook успішно видалено.")
             return True
@@ -233,7 +239,7 @@ class TelegramBotService:
         """
         Отримати інформацію про бота.
         """
-        response = await self._make_request("getMe", {})
+        response = await self._make_request("getMe", data={})
         if response and response.get("ok"):
             return response.get("result")
         return None
