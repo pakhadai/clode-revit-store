@@ -173,25 +173,22 @@ class DailyBonus(Base):
 
 
 class WheelSpin(Base):
-    """Модель прокруток колеса фортуни"""
+
     __tablename__ = "wheel_spins"
 
     id = Column(Integer, primary_key=True, index=True)
 
     user_id = Column(Integer, ForeignKey('users.id'), nullable=False)
 
-    # Результат
-    sector = Column(Integer, nullable=False)  # Номер сектора (0-9)
-    prize = Column(Integer, nullable=False)  # Виграш в бонусах
-    is_jackpot = Column(Boolean, default=False)  # Чи це джекпот
+    sector = Column(Integer, nullable=False)
+    prize = Column(Integer, nullable=False)
+    is_jackpot = Column(Boolean, default=False)
 
-    # Тип спіна
-    is_free = Column(Boolean, default=True)  # Безкоштовний чи платний
-    cost = Column(Integer, default=0)  # Вартість в бонусах
+    is_free = Column(Boolean, default=True)
+    cost = Column(Integer, default=0)
 
     spun_at = Column(DateTime, default=datetime.utcnow)
 
-    # Відносини
     user = relationship("User", back_populates="wheel_spins")
 
     def __repr__(self):
