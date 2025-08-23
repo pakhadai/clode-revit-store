@@ -6,6 +6,7 @@ import random
 from datetime import datetime, timedelta
 from typing import Dict, Tuple, Optional
 from sqlalchemy.orm import Session
+from sqlalchemy import func
 
 from app.models.user import User
 from app.models.subscription import DailyBonus, WheelSpin
@@ -250,7 +251,7 @@ class BonusService:
         ).count()
 
         # Загальний виграш
-        total_won = db.query(db.func.sum(WheelSpin.prize)).filter(
+        total_won = db.query(func.sum(WheelSpin.prize)).filter(
             WheelSpin.user_id == user_id
         ).scalar() or 0
 
@@ -297,8 +298,8 @@ class BonusService:
         # Запит з групуванням по користувачах
         leaderboard = db.query(
             WheelSpin.user_id,
-            db.func.sum(WheelSpin.prize).label('total_won'),
-            db.func.count(WheelSpin.id).label('total_spins')
+            func.sum(WheelSpin.prize).label('total_won'),
+            func.count(WheelSpin.id).label('total_spins')
         ).filter(
             WheelSpin.prize > 0
         ).group_by(

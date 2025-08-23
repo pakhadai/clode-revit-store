@@ -4,7 +4,7 @@
 """
 
 import os
-from sqlalchemy import text, create_engine
+from sqlalchemy import text, create_engine, func
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
 from dotenv import load_dotenv
@@ -21,6 +21,9 @@ engine = create_engine(DATABASE_URL)
 
 # Створюємо фабрику сесій
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+
+# Додаємо атрибут func до сесії, щоб виправити помилки в інших файлах
+SessionLocal.func = func
 
 # Базовий клас для моделей
 Base = declarative_base()

@@ -4,6 +4,7 @@
 
 from fastapi import APIRouter, HTTPException, Depends
 from sqlalchemy.orm import Session
+from sqlalchemy import func
 from typing import Dict, List
 from datetime import datetime
 
@@ -264,7 +265,7 @@ async def get_bonus_statistics(
     ).count()
 
     total_daily_bonuses = db.query(
-        db.func.sum(DailyBonus.bonus_amount)
+        func.sum(DailyBonus.bonus_amount)
     ).filter(
         DailyBonus.user_id == current_user.id
     ).scalar() or 0
