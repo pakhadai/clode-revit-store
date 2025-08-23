@@ -19,7 +19,7 @@ const urlsToCache = [
   '/js/modules/subscriptions.js',
   '/js/components/wheel-of-fortune.js',
   '/assets/locales/en.json',
-  '/assets/locales/ua.json',
+  '/assets/locales/uk.json',
   '/assets/locales/ru.json'
   // Рядки з іконками видалено, щоб уникнути помилки 404
   // '/assets/icons/icon-192x192.png',
@@ -253,7 +253,7 @@ async function updateContent() {
     const updates = [
       '/api/products/featured/home',
       '/api/bonuses/available',
-      '/assets/locales/ua.json',
+      '/assets/locales/uk.json',
       '/assets/locales/en.json',
       '/assets/locales/ru.json'
     ];

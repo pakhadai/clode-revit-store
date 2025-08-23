@@ -165,14 +165,14 @@ class ApiClient {
     /**
      * Отримати продукт за ID
      */
-    async getProduct(productId, language = 'ua') {
+    async getProduct(productId, language = 'uk') {
         return this.get(`/products/${productId}`, { language });
     }
 
     /**
      * Отримати продукти для головної сторінки
      */
-    async getFeaturedProducts(language = 'ua') {
+    async getFeaturedProducts(language = 'uk') {
         return this.get('/products/featured/home', { language });
     }
 
@@ -186,7 +186,7 @@ class ApiClient {
     /**
      * Отримати обрані товари
      */
-    async getFavorites(language = 'ua') {
+    async getFavorites(language = 'uk') {
         return this.get('/products/user/favorites', { language });
     }
 

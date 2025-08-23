@@ -1246,7 +1246,7 @@ class App {
                                 class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg
                                        dark:bg-gray-700 dark:text-white"
                                 onchange="app.updateSetting('language', this.value)">
-                            <option value="ua" ${user?.language === 'ua' ? 'selected' : ''}>🇺🇦 Українська</option>
+                            <option value="uk" ${user?.language === 'uk' ? 'selected' : ''}>🇺🇦 Українська</option>
                             <option value="en" ${user?.language === 'en' ? 'selected' : ''}>🇬🇧 English</option>
                             <option value="ru" ${user?.language === 'ru' ? 'selected' : ''}>⚪ Русский</option>
                         </select>
@@ -1763,15 +1763,15 @@ class App {
                 <h3 class="text-xl font-bold mb-4 dark:text-white">🌐 ${this.t('profile.settings.language')}</h3>
 
                 <div class="space-y-2">
-                    <button onclick="app.selectLanguage('ua')"
+                    <button onclick="app.selectLanguage('uk')"
                             class="w-full text-left px-4 py-3 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700
-                                   ${currentLang === 'ua' ? 'bg-blue-100 dark:bg-blue-900' : ''}
+                                   ${currentLang === 'uk' ? 'bg-blue-100 dark:bg-blue-900' : ''}
                                    flex items-center justify-between">
                         <div class="flex items-center gap-3">
                             <span class="text-2xl">🇺🇦</span>
                             <span class="dark:text-white">Українська</span>
                         </div>
-                        ${currentLang === 'ua' ? '<span class="text-blue-500">✓</span>' : ''}
+                        ${currentLang === 'uk' ? '<span class="text-blue-500">✓</span>' : ''}
                     </button>
 
                     <button onclick="app.selectLanguage('en')"
@@ -2052,7 +2052,7 @@ class App {
                 <div>
                     <label for="language-select" class="block text-sm font-medium dark:text-gray-300">${this.t('profile.settings.language')}</label>
                     <select id="language-select" class="mt-1 block w-full pl-3 pr-10 py-2 border-gray-300 dark:bg-gray-700 dark:border-gray-600 rounded-md">
-                        <option value="ua" ${user.language === 'ua' ? 'selected' : ''}>Українська</option>
+                        <option value="uk" ${user.language === 'uk' ? 'selected' : ''}>Українська</option>
                         <option value="en" ${user.language === 'en' ? 'selected' : ''}>English</option>
                         <option value="ru" ${user.language === 'ru' ? 'selected' : ''}>Русский</option>
                     </select>

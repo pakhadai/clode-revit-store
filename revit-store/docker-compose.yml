@@ -58,6 +58,7 @@ services:
       CRYPTOMUS_MERCHANT_ID: ${CRYPTOMUS_MERCHANT_ID}
     volumes:
       - ./backend:/app
+      - revit_media:/app/media
     ports:
       - "8000:8000"
     depends_on:
@@ -101,6 +102,7 @@ services:
 volumes:
   postgres_data:
   redis_data:
+  revit_media: {}
 
 networks:
   revit_network:

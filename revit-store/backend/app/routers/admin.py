@@ -3,7 +3,7 @@
 Повний контроль над системою
 """
 
-from fastapi import APIRouter, HTTPException, Depends, Query, Body
+from fastapi import APIRouter, HTTPException, Depends, Query, Body, UploadFile, File, Form
 from sqlalchemy.orm import Session
 from sqlalchemy import func, desc, and_, or_, cast, String
 from typing import List, Optional, Dict
@@ -17,6 +17,7 @@ from app.models.order import Order, PromoCode, OrderItem
 from app.models.subscription import Subscription
 from app.routers.auth import get_current_user_from_token
 from app.services.telegram_bot import bot_service
+from app.services.local_file_service import local_file_service as file_service
 
 # Створюємо роутер
 router = APIRouter(
@@ -689,3 +690,182 @@ async def send_broadcast(
         "message": "Broadcast sent",
         "stats": stats
     }
+
+
+# ====== УПРАВЛІННЯ ТОВАРАМИ (АДМІН) ======
+
+@router.get("/products", response_model=Dict)
+async def admin_get_products(
+        page: int = Query(1, ge=1),
+        limit: int = Query(20, ge=1, le=100),
+        search: Optional[str] = None,
+        admin: User = Depends(get_admin_user),
+        db: Session = Depends(get_db)
+):
+    """
+    Отримати список всіх товарів для адмін-панелі.
+    """
+    query = db.query(Product)
+    if search:
+        search_term = f"%{search.lower()}%"
+        query = query.filter(
+            or_(
+                Product.title.cast(String).ilike(search_term),
+                Product.sku.ilike(search_term)
+            )
+        )
+
+    total = query.count()
+    products = query.order_by(desc(Product.created_at)).offset((page - 1) * limit).limit(limit).all()
+
+    return {
+        "products": [
+            {
+                "id": p.id,
+                "sku": p.sku,
+                "title": p.get_title('en'),
+                "price": p.price,
+                "is_active": p.is_active,
+                "is_approved": p.is_approved,
+                "creator_id": p.creator_id
+            } for p in products
+        ],
+        "pagination": {
+            "page": page,
+            "limit": limit,
+            "total": total,
+            "total_pages": (total + limit - 1) // limit
+        }
+    }
+
+
+@router.put("/products/{product_id}")
+async def admin_update_product(
+        product_id: int,
+        data: Dict = Body(...),
+        admin: User = Depends(get_admin_user),
+        db: Session = Depends(get_db)
+):
+    """
+    Оновити дані товару адміном.
+    """
+    product = db.query(Product).filter(Product.id == product_id).first()
+    if not product:
+        raise HTTPException(status_code=404, detail="Товар не знайдено")
+
+    # Оновлюємо поля, які були передані
+    for key, value in data.items():
+        if hasattr(product, key):
+            setattr(product, key, value)
+
+    product.updated_at = datetime.utcnow()
+    db.commit()
+    db.refresh(product)
+
+    return {"success": True, "message": "Товар успішно оновлено"}
+
+
+@router.delete("/products/{product_id}")
+async def admin_delete_product(
+        product_id: int,
+        admin: User = Depends(get_admin_user),
+        db: Session = Depends(get_db)
+):
+    """
+    Видалити товар адміном.
+    """
+    product = db.query(Product).filter(Product.id == product_id).first()
+    if not product:
+        raise HTTPException(status_code=404, detail="Товар не знайдено")
+
+    # Тут можна додати логіку видалення файлів з S3/локального сховища
+    # Наприклад: file_service.delete_file(product.file_url)
+
+    db.delete(product)
+    db.commit()
+
+    return {"success": True, "message": "Товар успішно видалено"}
+
+
+@router.get("/products/{product_id}", response_model=Dict)
+async def admin_get_product_details(
+        product_id: int,
+        admin: User = Depends(get_admin_user),
+        db: Session = Depends(get_db)
+):
+    """
+    Отримати повну інформацію про товар для редагування.
+    """
+    product = db.query(Product).filter(Product.id == product_id).first()
+    if not product:
+        raise HTTPException(status_code=404, detail="Товар не знайдено")
+
+    return {
+        "id": product.id,
+        "sku": product.sku,
+        "title": product.title,
+        "description": product.description,
+        "category": product.category,
+        "product_type": product.product_type,
+        "price": product.price,
+        "tags": product.tags,
+        "is_active": product.is_active,
+        "is_approved": product.is_approved,
+        "preview_images": product.preview_images,
+        "creator_id": product.creator_id
+    }
+
+
+@router.post("/products")
+async def admin_create_product(
+        title_en: str = Form(...),
+        description_en: str = Form(...),
+        price: int = Form(...),
+        category: str = Form(...),
+        product_type: str = Form(...),
+        tags: Optional[str] = Form(None),
+        archive_file: UploadFile = File(...),
+        preview_images: List[UploadFile] = File(...),
+        admin: User = Depends(get_admin_user),
+        db: Session = Depends(get_db)
+):
+    """
+    Створити новий товар з адмін-панелі.
+    """
+    try:
+        archive_result = await file_service.upload_file(archive_file, 'archives')
+
+        preview_urls = []
+        for image_file in preview_images:
+            image_result = await file_service.upload_file(image_file, 'previews')
+            if image_result['success']:
+                preview_urls.append(image_result['file_url'])
+
+        title_json = {"en": title_en, "ua": title_en, "ru": title_en}
+        description_json = {"en": description_en, "ua": description_en, "ru": description_en}
+        tags_list = [tag.strip() for tag in tags.split(',')] if tags else []
+
+        product = Product(
+            sku=f"ADM{admin.id}_{datetime.utcnow().strftime('%Y%m%d%H%M%S')}",
+            title=title_json,
+            description=description_json,
+            category=category,
+            product_type=product_type,
+            price=price,
+            file_url=archive_result['s3_key'],
+            file_size=archive_result['file_size'],
+            preview_images=preview_urls,
+            tags=tags_list,
+            is_active=True,
+            is_approved=True,  # Адмінські товари одразу схвалені
+            creator_id=None  # Можна додати логіку вибору творця
+        )
+
+        db.add(product)
+        db.commit()
+
+        return {"success": True, "message": "Товар успішно створено"}
+    except Exception as e:
+        print(f"!!! CRITICAL ERROR while creating product: {e}")  # Додаємо логування
+        # Тут можна додати логіку видалення файлів у разі помилки
+        raise HTTPException(status_code=500, detail=f"Помилка створення товару: {str(e)}")

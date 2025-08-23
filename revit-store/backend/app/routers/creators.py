@@ -16,7 +16,8 @@ from app.models.user import User
 from app.models.product import Product
 from app.models.order import Order, OrderItem
 from app.routers.auth import get_current_user_from_token
-from app.services.s3_service import s3_service
+#from app.services.s3_service import s3_service
+from app.services.local_file_service import local_file_service as file_service
 from app.utils.security import generate_order_number
 
 # Створюємо роутер
@@ -178,14 +179,14 @@ async def create_product(
             )
 
         # Завантажуємо архів на S3
-        archive_result = await s3_service.upload_file(
+        archive_result = await file_service.upload_file(
             archive_file,
-            folder_type='archives',
-            public=False,
-            metadata={
-                'creator_id': creator.id,
-                'product_type': product_type
-            }
+            folder_type='archives'
+            #public=False,
+            #metadata={
+            #    'creator_id': creator.id,
+            #    'product_type': product_type
+            #}
         )
 
         if not archive_result['success']:
@@ -197,14 +198,14 @@ async def create_product(
         # Завантажуємо превʼю зображення
         preview_urls = []
         for idx, image_file in enumerate(preview_images):
-            image_result = await s3_service.upload_file(
+            image_result = await file_service.upload_file(
                 image_file,
-                folder_type='previews',
-                public=True,  # Превʼю публічні
-                metadata={
-                    'creator_id': creator.id,
-                    'preview_index': idx
-                }
+                folder_type='previews'
+                #public=True,  # Превʼю публічні
+                #metadata={
+                #    'creator_id': creator.id,
+                #    'preview_index': idx
+                #}
             )
 
             if image_result['success']:
@@ -265,7 +266,7 @@ async def create_product(
         print(f"Error creating product: {e}")
         # Видаляємо завантажені файли якщо щось пішло не так
         if 'archive_result' in locals():
-            s3_service.delete_file(archive_result['s3_key'])
+            file_service.delete_file(archive_result['s3_key'])
         if 'preview_urls' in locals():
             for url in preview_urls:
                 # Видаляємо превʼю
@@ -383,7 +384,7 @@ async def delete_product(
 
     # Видаляємо файли з S3
     if product.file_url:
-        s3_service.delete_file(product.file_url)
+        file_service.delete_file(product.file_url)
 
     # Видаляємо продукт
     db.delete(product)

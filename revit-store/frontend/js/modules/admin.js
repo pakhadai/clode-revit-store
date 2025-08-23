@@ -9,6 +9,7 @@ class AdminModule {
         this.users = [];
         this.moderation = [];
         this.promocodes = [];
+        this.products = [];
         this.currentTab = 'dashboard';
         this.userFilters = {};
     }
@@ -153,6 +154,11 @@ class AdminModule {
                                 data-tab="users">
                             👥 Користувачі
                         </button>
+                        <button onclick="admin.showTab('products')"
+                                class="tab-btn px-6 py-3 font-medium ${this.currentTab === 'products' ? 'border-b-2 border-red-500 text-red-600' : ''}"
+                                data-tab="products">
+                            🛍️ Товари
+                        </button>
                         <button onclick="admin.showTab('moderation')"
                                 class="tab-btn px-6 py-3 font-medium ${this.currentTab === 'moderation' ? 'border-b-2 border-red-500 text-red-600' : ''}"
                                 data-tab="moderation">
@@ -200,6 +206,7 @@ class AdminModule {
         switch(tab) {
             case 'dashboard': await this.loadDashboard(); break;
             case 'users': await this.loadUsers(); break;
+            case 'products': await this.loadAdminProducts(); break;
             case 'moderation': await this.loadModeration(); break;
             case 'promocodes': await this.loadPromocodes(); break;
             case 'broadcast': this.updateBroadcastUI(); break;
@@ -225,6 +232,8 @@ class AdminModule {
                 return this.renderDashboard();
             case 'users':
                 return this.renderUsers();
+            case 'products':
+                return this.renderAdminProducts();
             case 'moderation':
                 return this.renderModeration();
             case 'promocodes':
@@ -1089,6 +1098,247 @@ class AdminModule {
         const content = document.getElementById('admin-tab-content');
         if (content && this.currentTab === 'users') {
             content.innerHTML = this.renderUsers();
+        }
+    }
+
+    /**
+     * Завантажити список всіх товарів
+     */
+    async loadAdminProducts(page = 1, search = '') {
+        try {
+            Utils.showLoader(true);
+            const response = await api.get('/admin/products', { page, search });
+            this.products = response.products;
+            // Поки що не реалізовано пагінацію, але API її підтримує
+            this.updateProductsUI();
+        } catch (error) {
+            console.error('Load admin products error:', error);
+            Utils.showNotification('Помилка завантаження товарів', 'error');
+        } finally {
+            Utils.showLoader(false);
+        }
+    }
+
+    /**
+     * Оновити UI для вкладки товарів
+     */
+    updateProductsUI() {
+        const content = document.getElementById('admin-tab-content');
+        if (content && this.currentTab === 'products') {
+            content.innerHTML = this.renderAdminProducts();
+        }
+    }
+
+    /**
+     * Рендер вкладки "Товари"
+     */
+    renderAdminProducts() {
+        return `
+            <div class="admin-products-management">
+                <h3 class="text-2xl font-bold mb-4 dark:text-white">Керування товарами</h3>
+                <button onclick="admin.showProductFormModal()" class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg font-bold">
+                    ➕ Додати товар
+                </button>
+                <div class="overflow-x-auto">
+                    <table class="w-full">
+                        <thead>
+                            <tr class="border-b dark:border-gray-700">
+                                <th class="text-left py-3 px-4">ID</th>
+                                <th class="text-left py-3 px-4">Назва</th>
+                                <th class="text-left py-3 px-4">Ціна</th>
+                                <th class="text-left py-3 px-4">Статус</th>
+                                <th class="text-left py-3 px-4">Дії</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${this.products.map(product => `
+                                <tr class="border-b dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700">
+                                    <td class="py-3 px-4">${product.id}</td>
+                                    <td class="py-3 px-4 font-medium dark:text-white">${product.title}</td>
+                                    <td class="py-3 px-4">${Utils.formatPrice(product.price)}</td>
+                                    <td class="py-3 px-4">
+                                        <span class="px-2 py-1 rounded text-xs ${product.is_active ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-700'}">
+                                            ${product.is_active ? 'Активний' : 'Неактивний'}
+                                        </span>
+                                        <span class="px-2 py-1 rounded text-xs ${product.is_approved ? 'bg-blue-100 text-blue-700' : 'bg-yellow-100 text-yellow-700'}">
+                                            ${product.is_approved ? 'Схвалено' : 'На модерації'}
+                                        </span>
+                                    </td>
+                                    <td class="py-3 px-4">
+                                        <div class="flex gap-2">
+                                            <button onclick="admin.showEditProductDialog(${product.id})" class="text-blue-500 hover:text-blue-600" title="Редагувати">✏️</button>
+                                            <button onclick="admin.deleteAdminProduct(${product.id})" class="text-red-500 hover:text-red-600" title="Видалити">🗑️</button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        `;
+    }
+
+    /**
+     * Показати діалог редагування товару
+     */
+    async showEditProductDialog(productId) {
+        try {
+            const product = await api.get(`/admin/products/${productId}`);
+            this.showProductFormModal(product);
+        } catch (error) {
+            Utils.showNotification('Не вдалося завантажити дані товару', 'error');
+        }
+    }
+
+    /**
+     * Видалити товар з адмін-панелі
+     */
+    async deleteAdminProduct(productId) {
+        if (!confirm('Ви впевнені, що хочете видалити цей товар? Цю дію неможливо скасувати.')) {
+            return;
+        }
+
+        try {
+            await api.delete(`/admin/products/${productId}`);
+            Utils.showNotification('Товар видалено', 'success');
+            await this.loadAdminProducts();
+        } catch(error) {
+            Utils.showNotification('Помилка видалення', 'error');
+        }
+    }
+
+    /**
+     * Показати модальне вікно форми товару (для створення/редагування)
+     */
+    showProductFormModal(product = null) {
+        const isEdit = product !== null;
+        const modalTitle = isEdit ? 'Редагувати товар' : 'Створити новий товар';
+        const submitButtonText = isEdit ? 'Зберегти зміни' : 'Створити товар';
+
+        const modal = document.createElement('div');
+        modal.id = 'product-form-modal';
+        modal.className = 'fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4';
+        modal.innerHTML = `
+        <div class="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div class="flex justify-between items-center mb-6">
+                <h3 class="text-xl font-bold dark:text-white">${modalTitle}</h3>
+                <button onclick="document.getElementById('product-form-modal').remove()" class="text-2xl">&times;</button>
+            </div>
+
+            <form id="admin-product-form">
+                <input type="hidden" name="product_id" value="${isEdit ? product.id : ''}">
+
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium mb-1">Назва (EN)</label>
+                        <input type="text" name="title_en" required class="w-full p-2 border rounded dark:bg-gray-700" value="${isEdit ? (product.title.en || '') : ''}">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-1">Опис (EN)</label>
+                        <textarea name="description_en" required rows="3" class="w-full p-2 border rounded dark:bg-gray-700">${isEdit ? (product.description.en || '') : ''}</textarea>
+                    </div>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium mb-1">Ціна (в центах)</label>
+                            <input type="number" name="price" required class="w-full p-2 border rounded dark:bg-gray-700" value="${isEdit ? product.price : '0'}">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium mb-1">Категорія</label>
+                            <select name="category" required class="w-full p-2 border rounded dark:bg-gray-700">
+                                <option value="creator" ${isEdit && product.category === 'creator' ? 'selected' : ''}>Від творця</option>
+                                <option value="premium" ${isEdit && product.category === 'premium' ? 'selected' : ''}>Преміум</option>
+                                <option value="free" ${isEdit && product.category === 'free' ? 'selected' : ''}>Безкоштовно</option>
+                            </select>
+                        </div>
+                    </div>
+                     <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium mb-1">Тип товару</label>
+                            <select name="product_type" required class="w-full p-2 border rounded dark:bg-gray-700">
+                                <option value="furniture" ${isEdit && product.product_type === 'furniture' ? 'selected' : ''}>Меблі</option>
+                                <option value="textures" ${isEdit && product.product_type === 'textures' ? 'selected' : ''}>Текстури</option>
+                                <option value="components" ${isEdit && product.product_type === 'components' ? 'selected' : ''}>Компоненти</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium mb-1">Теги (через кому)</label>
+                            <input type="text" name="tags" class="w-full p-2 border rounded dark:bg-gray-700" value="${isEdit ? (product.tags || []).join(', ') : ''}">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-1">Файл архіву ${isEdit ? '(залиште пустим, щоб не змінювати)' : ''}</label>
+                        <input type="file" name="archive_file" ${!isEdit ? 'required' : ''} class="w-full p-2 border rounded dark:bg-gray-700">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-1">Прев'ю зображення ${isEdit ? '(залиште пустим, щоб не змінювати)' : ''}</label>
+                        <input type="file" name="preview_images" ${!isEdit ? 'required' : ''} multiple class="w-full p-2 border rounded dark:bg-gray-700">
+                    </div>
+                </div>
+
+                <div class="mt-6 flex justify-end gap-3">
+                    <button type="button" onclick="document.getElementById('product-form-modal').remove()" class="bg-gray-200 dark:bg-gray-600 px-4 py-2 rounded-lg">Скасувати</button>
+                    <button type="submit" class="bg-blue-500 text-white px-4 py-2 rounded-lg font-bold">${submitButtonText}</button>
+                </div>
+            </form>
+        </div>
+        `;
+        document.body.appendChild(modal);
+
+        // Додаємо обробник відправки форми
+        document.getElementById('admin-product-form').addEventListener('submit', (e) => {
+            e.preventDefault();
+            this.handleProductFormSubmit(e.target);
+        });
+    }
+
+    /**
+     * Обробка відправки форми товару
+     */
+    async handleProductFormSubmit(form) {
+        const formData = new FormData(form);
+        const productId = formData.get('product_id');
+
+        // Видаляємо пусті файлові інпути, щоб не надсилати їх
+        if (formData.get('archive_file') && formData.get('archive_file').size === 0) {
+            formData.delete('archive_file');
+        }
+        if (formData.get('preview_images') && formData.get('preview_images').size === 0) {
+            formData.delete('preview_images');
+        }
+
+        try {
+            Utils.showLoader(true);
+            if (productId) {
+                // Редагування
+                // API для оновлення з файлами - складніше, поки що оновимо тільки дані
+                const dataToUpdate = {};
+                for (let [key, value] of formData.entries()) {
+                    if (key !== 'product_id' && key !== 'archive_file' && key !== 'preview_images') {
+                       if (key === 'title_en') dataToUpdate['title'] = { en: value, ua: value, ru: value };
+                       else if (key === 'description_en') dataToUpdate['description'] = { en: value, ua: value, ru: value };
+                       else if (key === 'tags') dataToUpdate['tags'] = value.split(',').map(t => t.trim());
+                       else dataToUpdate[key] = value;
+                    }
+                }
+                await api.put(`/admin/products/${productId}`, dataToUpdate);
+                Utils.showNotification('Товар оновлено', 'success');
+            } else {
+                // Створення
+                await api.request('/admin/products', {
+                    method: 'POST',
+                    body: formData,
+                    headers: {} // Скидаємо Content-Type для FormData
+                });
+                Utils.showNotification('Товар створено', 'success');
+            }
+            document.getElementById('product-form-modal').remove();
+            await this.loadAdminProducts();
+        } catch (error) {
+            console.error('Product form submit error:', error);
+            Utils.showNotification('Помилка збереження товару', 'error');
+        } finally {
+            Utils.showLoader(false);
         }
     }
 }

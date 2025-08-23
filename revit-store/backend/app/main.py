@@ -5,6 +5,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from fastapi.staticfiles import StaticFiles
 from contextlib import asynccontextmanager
 from dotenv import load_dotenv
 import os
@@ -51,6 +52,7 @@ app = FastAPI(
     lifespan=lifespan
 )
 
+app.mount("/media", StaticFiles(directory="/app/media"), name="media")
 # Налаштування CORS (дозволяє запити з фронтенду)
 origins = os.getenv("CORS_ORIGINS", "http://localhost:3000,http://localhost").split(",")
 

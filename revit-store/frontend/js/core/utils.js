@@ -180,7 +180,7 @@ const Utils = {
      * Отримати поточну мову
      */
     getCurrentLanguage() {
-        return this.storage.get('language', 'ua');
+        return this.storage.get('language', 'uk');
     },
 
     /**
