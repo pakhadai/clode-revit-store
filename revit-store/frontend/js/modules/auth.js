@@ -239,6 +239,12 @@ class AuthModule {
                 window.dispatchEvent(new CustomEvent('auth:success', { detail: this.user }));
 
                 Utils.showNotification(`${window.app.t('auth.welcome')}, ${this.user.first_name}!`, 'success');
+                // Показуємо онбординг для нових користувачів
+                setTimeout(() => {
+                    if (window.onboarding) {
+                        window.onboarding.start();
+                    }
+                }, 500);
 
                 return true;
             }

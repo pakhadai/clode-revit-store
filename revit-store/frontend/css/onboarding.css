@@ -1,175 +1,199 @@
-.onboarding-backdrop {
+.onboarding-overlay {
     position: fixed;
     inset: 0;
-    z-index: 1000;
-    background-color: rgba(0, 0, 0, 0.5);
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
-    animation: fadeIn 0.3s ease;
+    z-index: 9999;
+    background: rgba(0, 0, 0, 0.8);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
     display: flex;
-    justify-content: center;
     align-items: center;
+    justify-content: center;
+    animation: fadeIn 0.4s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.onboarding-backdrop.fade-out {
-    animation: fadeOut 0.3s ease forwards;
+.onboarding-overlay.closing {
+    animation: fadeOut 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes fadeOut {
+    from { opacity: 1; }
+    to { opacity: 0; }
+}
+
+.onboarding-container {
+    width: 100%;
+    max-width: 420px;
+    height: 85vh;
+    max-height: 700px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 32px;
+    position: relative;
+    overflow: hidden;
+    transform: scale(0.9);
+    animation: scaleIn 0.4s cubic-bezier(0.4, 0, 0.2, 1) 0.2s forwards;
+}
+
+@keyframes scaleIn {
+    to { transform: scale(1); }
+}
+
+.onboarding-slide {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    padding: 48px 32px 32px;
+    opacity: 0;
+    transform: translateX(100%);
+    transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.onboarding-slide.active {
+    opacity: 1;
+    transform: translateX(0);
+}
+
+.onboarding-slide.prev {
+    transform: translateX(-100%);
+}
+
+.onboarding-icon {
+    width: 120px;
+    height: 120px;
+    margin: 0 auto 32px;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 64px;
+    backdrop-filter: blur(10px);
+    animation: float 3s ease-in-out infinite;
+}
+
+@keyframes float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-10px); }
 }
 
 .onboarding-content {
-    width: 100%;
-    height: 100%;
-    max-width: 450px; /* Обмеження ширини на десктопі */
-    max-height: 800px; /* Обмеження висоти на десктопі */
-    display: flex;
-    flex-direction: column;
-    background-color: #ffffff;
-    color: #111827;
-    overflow: hidden;
-    position: relative;
-    box-shadow: 0 25px 50px -12px rgb(0 0 0 / 0.25);
-}
-
-/* На великих екранах робимо картку з рамкою та заокругленнями */
-@media (min-width: 768px) {
-    .onboarding-content {
-        height: 90vh;
-        border-radius: 24px;
-    }
-}
-
-
-.dark .onboarding-content {
-    background-color: #1f2937;
-    color: #f9fafb;
-}
-
-.onboarding-steps {
-    flex-grow: 1;
-    position: relative;
-    display: flex;
-    flex-direction: column;
-}
-
-.onboarding-step {
-    width: 100%;
-    height: 100%;
-    display: flex;
-    flex-direction: column;
-    flex-grow: 1;
-}
-
-.onboarding-image {
-    width: 100%;
-    height: 55%; /* Збільшуємо висоту зображення */
-    background-size: cover;
-    background-position: center;
-}
-
-.onboarding-text {
-    padding: 24px 32px;
-    text-align: center;
-    flex-grow: 1;
+    flex: 1;
     display: flex;
     flex-direction: column;
     justify-content: center;
+    text-align: center;
+    color: white;
 }
 
 .onboarding-title {
-    font-size: 1.75rem; /* Збільшуємо шрифт заголовка */
-    font-weight: 800; /* Робимо жирнішим */
+    font-size: 32px;
+    font-weight: 800;
     margin-bottom: 16px;
+    line-height: 1.2;
 }
 
-.onboarding-description {
-    font-size: 1rem;
-    color: #4b5563;
+.onboarding-text {
+    font-size: 16px;
     line-height: 1.6;
+    opacity: 0.95;
+    margin-bottom: 32px;
 }
 
-.dark .onboarding-description {
-    color: #d1d5db;
+.onboarding-progress {
+    position: absolute;
+    top: 24px;
+    left: 32px;
+    right: 32px;
+    height: 4px;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 2px;
+    overflow: hidden;
 }
 
-.onboarding-footer {
-    padding: 24px;
-    padding-bottom: max(24px, env(safe-area-inset-bottom)); /* Безпечна зона на iPhone */
-    width: 100%;
-    background-color: #ffffff;
-    border-top: 1px solid #e5e7eb;
+.onboarding-progress-bar {
+    height: 100%;
+    background: white;
+    border-radius: 2px;
+    transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.dark .onboarding-footer {
-    background-color: #1f2937;
-    border-color: #374151;
+.onboarding-actions {
+    display: flex;
+    gap: 12px;
+    margin-top: auto;
+    padding-top: 32px;
+}
+
+.onboarding-btn {
+    flex: 1;
+    padding: 16px;
+    border-radius: 16px;
+    border: none;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.onboarding-btn-skip {
+    background: rgba(255, 255, 255, 0.2);
+    color: white;
+    backdrop-filter: blur(10px);
+}
+
+.onboarding-btn-skip:hover {
+    background: rgba(255, 255, 255, 0.3);
+    transform: translateY(-2px);
+}
+
+.onboarding-btn-next {
+    background: white;
+    color: #667eea;
+}
+
+.onboarding-btn-next:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
 }
 
 .onboarding-dots {
+    position: absolute;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%);
     display: flex;
-    justify-content: center;
-    gap: 10px; /* Збільшуємо відстань */
-    margin-bottom: 20px;
+    gap: 8px;
 }
 
 .onboarding-dot {
-    width: 10px; /* Збільшуємо розмір */
-    height: 10px;
+    width: 8px;
+    height: 8px;
     border-radius: 50%;
-    background-color: #d1d5db;
-    transition: all 0.3s ease;
+    background: rgba(255, 255, 255, 0.3);
+    transition: all 0.3s;
+    cursor: pointer;
 }
 
 .onboarding-dot.active {
-    background-color: #3b82f6;
-    transform: scale(1.2); /* Ефект для активної точки */
+    width: 24px;
+    border-radius: 4px;
+    background: white;
 }
 
-.onboarding-nav {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 16px;
-}
+/* Мобільна адаптація */
+@media (max-width: 480px) {
+    .onboarding-container {
+        height: 100vh;
+        max-height: none;
+        border-radius: 0;
+    }
 
-.onboarding-btn-primary, .onboarding-btn-secondary, .onboarding-btn-special {
-    border: none;
-    padding: 14px 24px; /* Збільшуємо кнопки */
-    border-radius: 12px;
-    font-weight: 700; /* Робимо жирнішим */
-    font-size: 1rem;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    flex-grow: 1;
-    text-align: center;
-}
-
-.onboarding-btn-primary {
-    background-color: #3b82f6;
-    color: white;
-}
-.onboarding-btn-primary:hover {
-    background-color: #2563eb;
-    transform: translateY(-2px);
-}
-
-.onboarding-btn-secondary {
-    background-color: #e5e7eb;
-    color: #374151;
-}
-.dark .onboarding-btn-secondary {
-    background-color: #374151;
-    color: #d1d5db;
-}
-.onboarding-btn-secondary:hover {
-    background-color: #d1d5db;
-    transform: translateY(-2px);
-}
-
-.onboarding-btn-special {
-    background-color: #10b981;
-    color: white;
-    flex-grow: 1.5; /* Робимо спеціальну кнопку більшою */
-}
-.onboarding-btn-special:hover {
-    background-color: #059669;
-    transform: translateY(-2px);
+    .onboarding-slide {
+        padding: 60px 24px 100px;
+    }
 }

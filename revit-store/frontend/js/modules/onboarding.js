@@ -1,161 +1,140 @@
-/**
- * Модуль онбордингу для нових користувачів
- */
 class OnboardingModule {
     constructor() {
-        this.steps = [
-            'step1', 'step2', 'step3', 'step4', 'step5'
+        this.currentStep = 0;
+        this.slides = [
+            {
+                icon: '🏛️',
+                title: 'Ласкаво просимо!',
+                text: 'OhMyRevit - маркетплейс унікальних архівів для Revit. Знаходьте готові рішення та діліться своїми.'
+            },
+            {
+                icon: '✨',
+                title: 'Преміум контент',
+                text: 'Тисячі архівів від безкоштовних моделей до ексклюзивних преміум-сімейств.'
+            },
+            {
+                icon: '🎯',
+                title: 'Підписка та бонуси',
+                text: 'Отримайте доступ до всіх нових архівів, 5% кешбек та щоденні бонуси!'
+            },
+            {
+                icon: '🎨',
+                title: 'Станьте творцем',
+                text: 'Монетизуйте свої Revit-сімейства через наш маркетплейс.'
+            },
+            {
+                icon: '🎁',
+                title: 'Почнімо!',
+                text: 'Колесо фортуни, щоденні бонуси та багато іншого чекає на вас!'
+            }
         ];
-        this.currentStepIndex = 0;
     }
 
-    /**
-     * Перевірка, чи потрібно показувати онбординг
-     */
     shouldShow() {
-        // Показуємо, якщо користувач ще не бачив онбординг
-        return !Utils.storage.get('onboarding_completed', false);
+        // Показуємо тільки новим користувачам
+        const user = Utils.storage.get('user');
+        if (!user) return false;
+
+        const onboardingKey = `onboarding_shown_${user.telegram_id}`;
+        return !Utils.storage.get(onboardingKey, false);
     }
 
-    /**
-     * Запустити онбординг
-     */
     start() {
         if (!this.shouldShow()) return;
         this.render();
+
+        // Відмічаємо як показаний
+        const user = Utils.storage.get('user');
+        if (user) {
+            Utils.storage.set(`onboarding_shown_${user.telegram_id}`, true);
+        }
     }
 
-    /**
-     * Рендер модального вікна онбордингу
-     */
     render() {
-        const modal = document.createElement('div');
-        modal.id = 'onboarding-modal';
-        modal.className = 'onboarding-backdrop';
-        // Нова, простіша структура
-        modal.innerHTML = `
-            <div class="onboarding-content">
-                <div class="onboarding-steps"></div>
-                <div class="onboarding-footer">
-                    <div class="onboarding-dots"></div>
-                    <div class="onboarding-nav"></div>
+        const overlay = document.createElement('div');
+        overlay.className = 'onboarding-overlay';
+        overlay.innerHTML = `
+            <div class="onboarding-container">
+                <div class="onboarding-progress">
+                    <div class="onboarding-progress-bar" style="width: 20%"></div>
+                </div>
+
+                ${this.slides.map((slide, index) => `
+                    <div class="onboarding-slide ${index === 0 ? 'active' : ''}">
+                        <div class="onboarding-icon">${slide.icon}</div>
+                        <div class="onboarding-content">
+                            <h2 class="onboarding-title">${slide.title}</h2>
+                            <p class="onboarding-text">${slide.text}</p>
+                        </div>
+                        <div class="onboarding-actions">
+                            ${index < this.slides.length - 1 ?
+                                `<button class="onboarding-btn onboarding-btn-skip" onclick="onboarding.finish()">Пропустити</button>` :
+                                ''
+                            }
+                            <button class="onboarding-btn onboarding-btn-next" onclick="onboarding.${index < this.slides.length - 1 ? 'next' : 'finish'}()">
+                                ${index < this.slides.length - 1 ? 'Далі' : 'Розпочати'}
+                            </button>
+                        </div>
+                    </div>
+                `).join('')}
+
+                <div class="onboarding-dots">
+                    ${this.slides.map((_, i) =>
+                        `<div class="onboarding-dot ${i === 0 ? 'active' : ''}" onclick="onboarding.goToStep(${i})"></div>`
+                    ).join('')}
                 </div>
             </div>
         `;
-        document.body.appendChild(modal);
 
-        this.updateStepContent();
-        this.updateDots();
-        this.updateNav();
+        document.body.appendChild(overlay);
     }
 
-    /**
-     * Оновити контент поточного кроку
-     */
-    updateStepContent() {
-        const stepsContainer = document.querySelector('.onboarding-steps');
-        if (!stepsContainer) return;
-
-        const stepKey = this.steps[this.currentStepIndex];
-        const step = {
-            title: window.app.t(`onboarding.${stepKey}.title`),
-            description: window.app.t(`onboarding.${stepKey}.description`),
-            button_text: window.app.t(`onboarding.${stepKey}.button_text`, null)
-        };
-
-        // Використовуємо надані зображення
-        const images = ['outboard.png', 'outboard2.png'];
-        const image = this.currentStepIndex % 2 === 0 ? images[0] : images[1];
-
-        stepsContainer.innerHTML = `
-            <div class="onboarding-step active">
-                <div class="onboarding-image" style="background-image: url('/assets/images/${image}')"></div>
-                <div class="onboarding-text">
-                    <h2 class="onboarding-title">${step.title}</h2>
-                    <p class="onboarding-description">${step.description}</p>
-                </div>
-            </div>
-        `;
-    }
-
-    /**
-     * Оновити індикатори (крапки)
-     */
-    updateDots() {
-        const dotsContainer = document.querySelector('.onboarding-dots');
-        if (!dotsContainer) return;
-
-        dotsContainer.innerHTML = this.steps.map((_, index) =>
-            `<div class="onboarding-dot ${index === this.currentStepIndex ? 'active' : ''}"></div>`
-        ).join('');
-    }
-
-    /**
-     * Оновити кнопки навігації
-     */
-    updateNav() {
-        const navContainer = document.querySelector('.onboarding-nav');
-        if (!navContainer) return;
-
-        const isLastStep = this.currentStepIndex === this.steps.length - 1;
-        const stepKey = this.steps[this.currentStepIndex];
-        const specialButtonText = window.app.t(`onboarding.${stepKey}.button_text`, null);
-
-        let specialButton = '';
-        if (specialButtonText) {
-            let action = '';
-            if (stepKey === 'step3') action = `window.app.navigateTo('subscriptions')`; // Приклад дії
-            if (stepKey === 'step4') action = `admin.showCreatorApplicationModal()`; // Приклад дії
-            specialButton = `<button onclick="${action}" class="onboarding-btn-special">${specialButtonText}</button>`;
-        }
-
-
-        navContainer.innerHTML = `
-            ${this.currentStepIndex > 0 ? `<button onclick="onboarding.prevStep()" class="onboarding-btn-secondary">Назад</button>` : '<div></div>'}
-            ${specialButton}
-            <button onclick="${isLastStep ? 'onboarding.finish()' : 'onboarding.nextStep()'}" class="onboarding-btn-primary">
-                ${isLastStep ? window.app.t('onboarding.step5.button_text') : 'Далі'}
-            </button>
-        `;
-    }
-
-    /**
-     * Наступний крок
-     */
-    nextStep() {
-        if (this.currentStepIndex < this.steps.length - 1) {
-            this.currentStepIndex++;
-            this.updateStepContent();
-            this.updateDots();
-            this.updateNav();
+    next() {
+        if (this.currentStep < this.slides.length - 1) {
+            this.goToStep(this.currentStep + 1);
         }
     }
 
-    /**
-     * Попередній крок
-     */
-    prevStep() {
-        if (this.currentStepIndex > 0) {
-            this.currentStepIndex--;
-            this.updateStepContent();
-            this.updateDots();
-            this.updateNav();
+    goToStep(index) {
+        const slides = document.querySelectorAll('.onboarding-slide');
+        const dots = document.querySelectorAll('.onboarding-dot');
+        const progressBar = document.querySelector('.onboarding-progress-bar');
+
+        // Оновлюємо слайди
+        slides[this.currentStep].classList.remove('active');
+        slides[this.currentStep].classList.add('prev');
+
+        slides[index].classList.remove('prev');
+        slides[index].classList.add('active');
+
+        // Оновлюємо точки
+        dots[this.currentStep].classList.remove('active');
+        dots[index].classList.add('active');
+
+        // Оновлюємо прогрес
+        const progress = ((index + 1) / this.slides.length) * 100;
+        progressBar.style.width = `${progress}%`;
+
+        this.currentStep = index;
+
+        // Вібрація на мобільних
+        if (window.auth?.hapticFeedback) {
+            window.auth.hapticFeedback('selection');
         }
     }
 
-    /**
-     * Завершити онбординг
-     */
     finish() {
-        Utils.storage.set('onboarding_completed', true);
-        const modal = document.getElementById('onboarding-modal');
-        if (modal) {
-            modal.classList.add('fade-out');
-            setTimeout(() => modal.remove(), 300);
+        const overlay = document.querySelector('.onboarding-overlay');
+        if (overlay) {
+            overlay.classList.add('closing');
+            setTimeout(() => overlay.remove(), 300);
+        }
+
+        // Вібрація завершення
+        if (window.auth?.hapticFeedback) {
+            window.auth.hapticFeedback('impact', 'medium');
         }
     }
 }
 
-// Створюємо та експортуємо єдиний екземпляр
-const onboarding = new OnboardingModule();
-window.onboarding = onboarding;
+window.onboarding = new OnboardingModule();
