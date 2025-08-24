@@ -6,14 +6,7 @@ from datetime import datetime
 from sqlalchemy import Column, Integer, String, DateTime, Text, Boolean, ForeignKey, Float, JSON, Table
 from sqlalchemy.orm import relationship
 from app.database import Base
-
-# Таблиця для зв'язку many-to-many між користувачами та улюбленими товарами
-user_favorites = Table(
-    'user_favorites',
-    Base.metadata,
-    Column('user_id', Integer, ForeignKey('users.id', ondelete='CASCADE')),
-    Column('product_id', Integer, ForeignKey('products.id', ondelete='CASCADE'))
-)
+from app.models.collection import collection_products
 
 # Таблиця для зв'язку many-to-many між продуктами та тегами
 product_tags = Table(
@@ -78,7 +71,7 @@ class Product(Base):
 
     # Відносини
     creator = relationship("User", back_populates="products")
-    favorited_by = relationship("User", secondary=user_favorites, back_populates="favorites")
+    collections = relationship("Collection", secondary="collection_products", back_populates="products")
     order_items = relationship("OrderItem", back_populates="product")
     cart_items = relationship("CartItem", back_populates="product")
     #reviews = relationship("Review", back_populates="product", cascade="all, delete-orphan")

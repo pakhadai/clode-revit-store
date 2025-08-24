@@ -32,11 +32,14 @@ class OnboardingModule {
         const modal = document.createElement('div');
         modal.id = 'onboarding-modal';
         modal.className = 'onboarding-backdrop';
+        // Нова, простіша структура
         modal.innerHTML = `
             <div class="onboarding-content">
                 <div class="onboarding-steps"></div>
-                <div class="onboarding-dots"></div>
-                <div class="onboarding-nav"></div>
+                <div class="onboarding-footer">
+                    <div class="onboarding-dots"></div>
+                    <div class="onboarding-nav"></div>
+                </div>
             </div>
         `;
         document.body.appendChild(modal);

@@ -67,9 +67,10 @@ class User(Base):
     orders = relationship("Order", back_populates="user", cascade="all, delete-orphan")
     subscriptions = relationship("Subscription", back_populates="user", cascade="all, delete-orphan")
     products = relationship("Product", back_populates="creator")  # Продукти створені користувачем
-    favorites = relationship("Product", secondary="user_favorites", back_populates="favorited_by")
+    collections = relationship("Collection", back_populates="user", cascade="all, delete-orphan")
     cart_items = relationship("CartItem", back_populates="user", cascade="all, delete-orphan")
-    #notifications = relationship("Notification", back_populates="user", cascade="all, delete-orphan")
+
+    # notifications = relationship("Notification", back_populates="user", cascade="all, delete-orphan")
 
     def __repr__(self):
         return f"<User {self.username or self.first_name} (TG: {self.telegram_id})>"

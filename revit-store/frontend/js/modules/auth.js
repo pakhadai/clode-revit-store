@@ -324,7 +324,7 @@ class AuthModule {
      */
     async updateProfile(data) {
         try {
-            const response = await api.put('/users/me', data);
+            const response = await api.put('/auth/me', data);
             this.user = response;
             Utils.storage.set('user', this.user);
 

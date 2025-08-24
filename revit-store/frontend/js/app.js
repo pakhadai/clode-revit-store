@@ -452,16 +452,16 @@ class App {
                     html = await this.renderProductPage(productId);
                     break;
 
+                case 'collections':
+                    html = await this.renderCollectionsPage();
+                    break;
+
                 case 'downloads':
                     html = await this.renderDownloadsTab();
                     break;
 
                 case 'orders':
                     html = this.renderOrdersTab();
-                    break;
-
-                case 'favorites':
-                    html = await favorites.createFavoritesPage();
                     break;
 
                 case 'referrals':
@@ -621,9 +621,11 @@ class App {
      * Рендер сторінки маркету
      */
     async renderMarketPage() {
+        // Спочатку завантажуємо товари, щоб отримати актуальні дані для рендеру
         await products.loadProducts();
 
-        return `
+        // Тепер генеруємо повний HTML сторінки
+        const html = `
             <div class="market-page">
                 <h1 class="text-3xl font-bold mb-6 dark:text-white">🛍️ ${this.t('market.title')}</h1>
 
@@ -716,6 +718,54 @@ class App {
                 ` : ''}
             </div>
         `;
+
+        // ПІСЛЯ того як згенерували HTML, запускаємо оновлення іконок.
+        // Невелика затримка потрібна, щоб DOM встиг оновитися перед тим, як ми почнемо шукати елементи.
+        setTimeout(() => products.updateCollectionIcons(), 100);
+
+        return html;
+    }
+
+    /**
+     * Рендер сторінки управління колекціями
+     */
+    async renderCollectionsPage() {
+        if (!auth.isAuthenticated()) return this.renderAuthRequiredPage();
+
+        try {
+            const collectionsList = await api.get('/collections/');
+
+            if (collectionsList.length === 0) {
+                 return `
+                    <div class="text-center py-16">
+                        <div class="text-6xl mb-4">📚</div>
+                        <h3 class="text-xl font-bold mb-2 dark:text-white">Створіть свою першу колекцію</h3>
+                        <p class="text-gray-600 dark:text-gray-400">Зберігайте товари, щоб не загубити їх.</p>
+                    </div>
+                `;
+            }
+
+            return `
+                <div class="max-w-4xl mx-auto">
+                    <h1 class="text-3xl font-bold mb-6 dark:text-white">📚 Мої Колекції</h1>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        ${collectionsList.map(c => `
+                            <div class="bg-white dark:bg-gray-800 rounded-lg p-4 flex items-center gap-4 shadow hover:shadow-lg transition-shadow cursor-pointer">
+                                <div class="text-4xl">${c.icon}</div>
+                                <div class="flex-grow">
+                                    <h4 class="font-bold dark:text-white">${c.name}</h4>
+                                    <p class="text-sm text-gray-600 dark:text-gray-400">${c.product_count} товарів</p>
+                                </div>
+                                <button class="text-gray-400 hover:text-gray-600">⚙️</button>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `;
+
+        } catch (error) {
+            return this.renderErrorPage(error);
+        }
     }
 
     /**
@@ -777,7 +827,7 @@ class App {
                 <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
                     ${createTile('downloads', '📥', 'profile.tabs.downloads')}
                     ${createTile('orders', '📋', 'profile.tabs.orders')}
-                    ${createTile('favorites', '❤️', 'profile.tabs.favorites')}
+                    ${createTile('collections', '📚', 'profile.tabs.collections')}
                     ${createTile('referrals', '🤝', 'profile.tabs.referrals')}
                     ${createTile('settings', '⚙️', 'profile.tabs.settings')}
                     ${createTile('support', '💬', 'profile.tabs.support')}

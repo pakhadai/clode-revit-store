@@ -338,35 +338,63 @@ async def get_current_user(
 
 @router.put("/me")
 async def update_current_user(
-        data: Dict,
+        update_data: Dict,
         current_user: User = Depends(get_current_user_from_token),
         db: Session = Depends(get_db)
 ):
     """
-    Оновити дані поточного користувача (мова, тема, тощо).
+    Оновити дані поточного користувача
     """
-    updated = False
-    if "language" in data and data["language"] in ["en", "ua", "ru"]:
-        current_user.language = data["language"]
-        updated = True
+    if not current_user:
+        raise HTTPException(status_code=404, detail="Користувача не знайдено")
 
-    if "theme" in data and data["theme"] in ["light", "dark"]:
-        current_user.theme = data["theme"]
-        updated = True
+    # Оновлюємо поля, які дозволено змінювати
+    allowed_fields = ['language', 'theme', 'notifications_enabled']
+    for field, value in update_data.items():
+        if field in allowed_fields:
+            setattr(current_user, field, value)
 
-    if "notifications_enabled" in data:
-        current_user.notifications_enabled = bool(data["notifications_enabled"])
-        updated = True
+    current_user.updated_at = datetime.utcnow()
+    db.commit()
+    db.refresh(current_user)
 
-    if updated:
-        db.commit()
-        db.refresh(current_user)
+    # Повертаємо оновлені дані, аналогічно до get_current_user
+    # Це потрібно, щоб фронтенд оновив локальні дані
+    active_subscription = None
+    for sub in current_user.subscriptions:
+        if sub.is_valid():
+            active_subscription = {
+                "plan_type": sub.plan_type,
+                "expires_at": sub.expires_at.isoformat(),
+                "days_remaining": sub.days_remaining(),
+                "auto_renew": sub.auto_renew
+            }
+            break
 
     return {
         "id": current_user.id,
+        "telegram_id": current_user.telegram_id,
+        "username": current_user.username,
+        "first_name": current_user.first_name,
+        "last_name": current_user.last_name,
+        "full_name": current_user.get_full_name(),
         "language": current_user.language,
         "theme": current_user.theme,
-        "notifications_enabled": current_user.notifications_enabled
+        "balance": current_user.balance,
+        "vip_level": current_user.vip_level,
+        "vip_level_name": current_user.get_vip_level_name(),
+        "cashback_percent": current_user.get_cashback_percent(),
+        "is_creator": current_user.is_creator,
+        "is_admin": current_user.is_admin,
+        "is_blocked": current_user.is_blocked,
+        "daily_streak": current_user.daily_streak,
+        "free_spins_today": current_user.free_spins_today,
+        "referral_code": current_user.referral_code,
+        "referral_earnings": current_user.referral_earnings,
+        "total_spent": current_user.total_spent,
+        "subscription": active_subscription,
+        "created_at": current_user.created_at.isoformat(),
+        "photo_url": current_user.photo_url
     }
 
 
