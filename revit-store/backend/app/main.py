@@ -80,7 +80,6 @@ async def root():
 
 @app.get("/api/health")
 async def health_check():
-    """Перевірка стану сервера"""
     from app.database import check_db_connection
 
     db_status = "healthy" if check_db_connection() else "unhealthy"

@@ -406,3 +406,16 @@ select:focus {
     transform: translateY(-2px);
     box-shadow: 0 4px 10px rgba(0,0,0,0.08);
 }
+
+/* ========== Анімації для модальних вікон Колекцій ========== */
+.animate-modal-in {
+    transform: scale(0.95);
+    opacity: 0;
+    transition: transform 0.2s ease-out, opacity 0.2s ease-out;
+}
+.animate-modal-in.scale-100 {
+    transform: scale(1);
+}
+.animate-modal-in.opacity-100 {
+    opacity: 1;
+}

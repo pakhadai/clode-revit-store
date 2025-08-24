@@ -71,27 +71,6 @@ class ProductsModule {
     }
 
     /**
-     * Оновити іконки колекцій для завантажених продуктів
-     */
-    async updateCollectionIcons() {
-        if (!auth.isAuthenticated()) return;
-
-        for (const product of this.products) {
-            const cardBtn = document.querySelector(`.collection-btn[data-product-id="${product.id}"] span`);
-            if (cardBtn) {
-                try {
-                    const status = await api.get(`/collections/product-status/${product.id}`);
-                    cardBtn.textContent = status.icon;
-                    // Зберігаємо для майбутніх рендерів
-                    product.collection_icon = status.icon;
-                } catch {
-                    product.collection_icon = '🤍';
-                }
-            }
-        }
-    }
-
-    /**
      * Завантажити один продукт
      */
     async loadProduct(productId) {

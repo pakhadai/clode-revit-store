@@ -456,6 +456,11 @@ class App {
                     html = await this.renderCollectionsPage();
                     break;
 
+                case 'collection-detail':
+                    const collectionId = Utils.getUrlParams().id;
+                    html = await this.renderCollectionDetailPage(collectionId);
+                    break;
+
                 case 'downloads':
                     html = await this.renderDownloadsTab();
                     break;
@@ -718,11 +723,7 @@ class App {
                 ` : ''}
             </div>
         `;
-
-        // ПІСЛЯ того як згенерували HTML, запускаємо оновлення іконок.
-        // Невелика затримка потрібна, щоб DOM встиг оновитися перед тим, як ми почнемо шукати елементи.
-        setTimeout(() => products.updateCollectionIcons(), 100);
-
+        // Більше не потрібен setTimeout, бо дані приходять одразу
         return html;
     }
 
@@ -750,19 +751,60 @@ class App {
                     <h1 class="text-3xl font-bold mb-6 dark:text-white">📚 Мої Колекції</h1>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         ${collectionsList.map(c => `
-                            <div class="bg-white dark:bg-gray-800 rounded-lg p-4 flex items-center gap-4 shadow hover:shadow-lg transition-shadow cursor-pointer">
+                            <div onclick="app.navigateTo('collection-detail', true, { id: ${c.id} })"
+                                 class="bg-white dark:bg-gray-800 rounded-lg p-4 flex items-center gap-4 shadow hover:shadow-lg hover:-translate-y-1 transition-all cursor-pointer">
                                 <div class="text-4xl">${c.icon}</div>
-                                <div class="flex-grow">
+                                <div class="flex-grow" onclick="app.navigateTo('collection-detail', true, { id: ${c.id} })">
                                     <h4 class="font-bold dark:text-white">${c.name}</h4>
                                     <p class="text-sm text-gray-600 dark:text-gray-400">${c.product_count} товарів</p>
                                 </div>
-                                <button class="text-gray-400 hover:text-gray-600">⚙️</button>
+                                <button onclick="event.stopPropagation(); collections.showEditCollectionModal(${c.id}, '${c.name}', '${c.icon}')"
+                                        class="text-2xl p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700">
+                                    ⚙️
+                                </button>
+                                <span class="text-gray-400 text-2xl">></span>
                             </div>
                         `).join('')}
                     </div>
                 </div>
             `;
 
+        } catch (error) {
+            return this.renderErrorPage(error);
+        }
+    }
+
+    /**
+     * Рендер сторінки з вмістом конкретної колекції
+     */
+    async renderCollectionDetailPage(collectionId) {
+        if (!auth.isAuthenticated()) return this.renderAuthRequiredPage();
+
+        try {
+            const collection = await api.get(`/collections/${collectionId}`);
+
+            return `
+                <div class="max-w-4xl mx-auto">
+                    <div class="flex items-center gap-4 mb-6">
+                        <button onclick="app.navigateTo('collections')" class="text-2xl p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700">←</button>
+                        <h1 class="text-3xl font-bold dark:text-white flex items-center gap-3">
+                           <span class="text-4xl">${collection.icon}</span> ${collection.name}
+                        </h1>
+                    </div>
+
+                    ${collection.products.length === 0 ? `
+                        <div class="text-center py-16">
+                            <div class="text-6xl mb-4">📂</div>
+                            <h3 class="text-xl font-bold mb-2 dark:text-white">Ця колекція порожня</h3>
+                            <p class="text-gray-600 dark:text-gray-400">Додайте товари з маркету, натискаючи на сердечко.</p>
+                        </div>
+                    ` : `
+                        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                            ${collection.products.map(p => products.createProductCard(p)).join('')}
+                        </div>
+                    `}
+                </div>
+            `;
         } catch (error) {
             return this.renderErrorPage(error);
         }

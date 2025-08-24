@@ -12,6 +12,7 @@ from datetime import datetime
 from app.database import get_db
 from app.models.product import Product
 from app.models.user import User
+from app.models.collection import Collection
 from app.routers.auth import get_current_user_from_token
 from app.services.telegram_bot import bot_service
 
@@ -49,10 +50,13 @@ async def get_products(
         sort_order: str = Query("desc", description="Порядок: asc або desc"),
 
         # Мова
-        language: str = Query("en", description="Мова для назв: en, ua, ru"),
+        language: str = Query("en", description="Мова для назв: en, uk, ru"),
 
-        db: Session = Depends(get_db)
+        db: Session = Depends(get_db),
+
+        current_user: Optional[User] = Depends(get_current_user_from_token)
 ):
+
     """
     Отримати список продуктів з фільтрацією та пагінацією
 
@@ -160,6 +164,15 @@ async def get_products(
 
     # === ФОРМУВАННЯ ВІДПОВІДІ ===
 
+    user_collections_products = {}
+    if current_user:
+        # Один раз отримуємо всі ID товарів, які є в колекціях користувача
+        user_collections = db.query(Collection).filter(Collection.user_id == current_user.id).all()
+        for coll in user_collections:
+            for prod in coll.products:
+                if prod.id not in user_collections_products:
+                    user_collections_products[prod.id] = coll.icon
+
     products_data = []
     for product in products:
         # Отримуємо поточну ціну з урахуванням знижки
@@ -186,7 +199,9 @@ async def get_products(
             "tags": product.tags or [],
             "requires_subscription": product.requires_subscription,
             "file_size": product.file_size,
-            "created_at": product.created_at.isoformat()
+            "created_at": product.created_at.isoformat(),
+            # Додаємо іконку, якщо товар є в одній з колекцій
+            "collection_icon": user_collections_products.get(product.id, "🤍")
         }
 
         products_data.append(product_data)

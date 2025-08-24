@@ -102,7 +102,10 @@ class CollectionsModule {
             const response = await api.post('/collections/products/toggle', { collection_id: collectionId, product_id: productId });
             if (response.action === 'added') {
                 element.classList.add('bg-gray-100', 'dark:bg-gray-700');
-                element.innerHTML += '<span class="text-green-500 font-bold">✓</span>';
+                const checkmark = document.createElement('span');
+                checkmark.className = 'text-green-500 font-bold';
+                checkmark.textContent = '✓';
+                element.appendChild(checkmark);
                 this.updateProductCardIcon(productId);
             } else {
                 element.classList.remove('bg-gray-100', 'dark:bg-gray-700');
@@ -159,6 +162,114 @@ class CollectionsModule {
             cardBtn.textContent = status.icon;
         } catch {
             cardBtn.textContent = '🤍';
+        }
+    }
+
+    /**
+     * Показати модальне вікно для редагування колекції
+     */
+    showEditCollectionModal(collectionId, currentName, currentIcon) {
+        const modal = document.createElement('div');
+        modal.id = 'edit-collection-modal';
+        modal.className = 'fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4';
+
+        modal.innerHTML = `
+            <div class="bg-white dark:bg-gray-800 rounded-2xl max-w-sm w-full p-6 transform transition-transform scale-95 opacity-0 animate-modal-in">
+                <h3 class="text-xl font-bold mb-6 dark:text-white">Налаштування колекції</h3>
+
+                <div class="mb-4">
+                    <label for="edit-collection-name" class="block text-sm font-medium mb-1 dark:text-gray-300">Назва</label>
+                    <input type="text" id="edit-collection-name" class="w-full p-2 border rounded dark:bg-gray-700" value="${currentName}">
+                </div>
+
+                <div class="mb-6">
+                    <label class="block text-sm font-medium mb-2 dark:text-gray-300">Іконка</label>
+                    <div id="edit-emoji-palette" class="flex flex-wrap gap-2">
+                        ${this.emojiPalette.map(emoji => `
+                            <button class="p-2 rounded-full text-2xl hover:bg-gray-200 dark:hover:bg-gray-600 ${emoji === currentIcon ? 'bg-blue-200 dark:bg-blue-800' : ''}" data-emoji="${emoji}">
+                                ${emoji}
+                            </button>
+                        `).join('')}
+                    </div>
+                </div>
+
+                <div class="flex justify-between items-center gap-3">
+                    <button onclick="collections.deleteCollection(${collectionId}, this)" class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg font-bold">
+                        Видалити
+                    </button>
+                    <div class="flex gap-3">
+                        <button onclick="this.closest('#edit-collection-modal').remove()" class="bg-gray-200 dark:bg-gray-600 px-4 py-2 rounded-lg">
+                            Скасувати
+                        </button>
+                        <button onclick="collections.updateCollection(${collectionId})" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg font-bold">
+                            Зберегти
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(modal);
+
+        // Обробник для вибору емодзі
+        modal.querySelector('#edit-emoji-palette').addEventListener('click', e => {
+            if (e.target.tagName === 'BUTTON') {
+                modal.querySelectorAll('#edit-emoji-palette button').forEach(btn => btn.classList.remove('bg-blue-200', 'dark:bg-blue-800'));
+                e.target.classList.add('bg-blue-200', 'dark:bg-blue-800');
+            }
+        });
+
+        // Анімація появи
+        setTimeout(() => {
+            modal.querySelector('.animate-modal-in').classList.add('scale-100', 'opacity-100');
+        }, 10);
+    }
+
+    /**
+     * Оновити назву та іконку колекції
+     */
+    async updateCollection(collectionId) {
+        const nameInput = document.getElementById('edit-collection-name');
+        const name = nameInput.value.trim();
+        const selectedEmojiEl = document.querySelector('#edit-emoji-palette .bg-blue-200');
+        const icon = selectedEmojiEl ? selectedEmojiEl.dataset.emoji : '🤍';
+
+        if (!name) {
+            Utils.showNotification('Введіть назву колекції', 'warning');
+            return;
+        }
+
+        try {
+            await api.put(`/collections/${collectionId}`, { name, icon });
+            Utils.showNotification('Колекцію оновлено!', 'success');
+            document.getElementById('edit-collection-modal').remove();
+            app.render(); // Перерендеримо всю сторінку, щоб оновити список
+        } catch (error) {
+            Utils.showNotification('Помилка оновлення', 'error');
+        }
+    }
+
+    /**
+     * Видалити колекцію
+     */
+    async deleteCollection(collectionId, buttonElement) {
+        const confirmed = await new Promise(resolve => {
+            auth.showConfirm('Ви впевнені, що хочете видалити цю колекцію? Товари залишаться, але колекція зникне назавжди.', resolve);
+        });
+
+        if (!confirmed) return;
+
+        buttonElement.textContent = 'Видалення...';
+        buttonElement.disabled = true;
+
+        try {
+            await api.delete(`/collections/${collectionId}`);
+            Utils.showNotification('Колекцію видалено', 'success');
+            document.getElementById('edit-collection-modal').remove();
+            app.render(); // Перерендеримо всю сторінку
+        } catch (error) {
+            Utils.showNotification('Помилка видалення', 'error');
+            buttonElement.textContent = 'Видалити';
+            buttonElement.disabled = false;
         }
     }
 }
