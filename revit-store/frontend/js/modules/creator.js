@@ -798,5 +798,3 @@ class CreatorModule {
 // Створюємо та експортуємо єдиний екземпляр
 const creator = new CreatorModule();
 window.creator = creator;
-
-export default creator;

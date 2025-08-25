@@ -497,5 +497,3 @@ const cart = new CartModule();
 
 // Експортуємо для використання в інших модулях
 window.cart = cart;
-
-export default cart;

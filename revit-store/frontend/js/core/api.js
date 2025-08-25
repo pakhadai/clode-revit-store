@@ -312,6 +312,3 @@ const api = new ApiClient();
 
 // Експортуємо для використання в інших модулях
 window.api = api;
-
-// Також експортуємо клас для тестування
-export default ApiClient;

@@ -6,7 +6,36 @@ class App {
     constructor() {
         this.currentPage = 'home';
         this.translations = {};
+        this.utils = window.Utils;
+        this.api = window.api;
+        this.auth = window.auth;
+        this.products = window.products;
+        this.cart = window.cart;
+        this.bonuses = window.bonuses;
+        this.subscriptions = window.subscriptions;
         this.onboarding = window.onboarding;
+
+        // UI модулі
+        this.navigation = null;
+        this.header = null;
+
+        // Ініціалізуємо сторінки
+        this.pages = {
+            home: new HomePage(this),
+            market: null, // TODO: MarketPage
+            cart: null,   // TODO: CartPage
+            profile: null, // TODO: ProfilePage
+            admin: null   // TODO: AdminPage
+        };
+        window.homePage = this.pages.home; // Для доступу з onclick
+
+        // UI модулі (будуть ініціалізовані пізніше)
+        this.navigation = null;
+        this.header = null;
+
+        // Сторінки (будуть ініціалізовані пізніше)
+        this.pages = {};
+
         this.init();
     }
 
@@ -22,17 +51,19 @@ class App {
         // Завантажуємо переклади
         await this.loadTranslations();
 
+        // Ініціалізуємо UI модулі
+        this.initUIModules();
+
+        // Ініціалізуємо сторінки
+        this.initPages();
+
         // Автентифікація
-        if (auth.tg && auth.tg.initData) {
-            await auth.authenticate();
+        if (this.auth.tg && this.auth.tg.initData) {
+            await this.auth.authenticate();
         }
 
-        // Ініціалізуємо модуль бонусів ПІСЛЯ автентифікації
-        // щоб він міг завантажити статуси для авторизованого користувача
-        await bonuses.init();
-
-        // Ініціалізуємо навігацію
-        this.initNavigation();
+        // Ініціалізуємо модуль бонусів
+        await this.bonuses.init();
 
         // Ініціалізуємо обробники подій
         this.initEventHandlers();
@@ -41,7 +72,7 @@ class App {
         this.updateUI();
 
         // Завантажуємо початкову сторінку
-        const urlParams = Utils.getUrlParams();
+        const urlParams = this.utils.getUrlParams();
         if (this.onboarding.shouldShow()) {
             this.onboarding.start();
         }
@@ -49,20 +80,67 @@ class App {
         this.navigateTo(page);
 
         // Оновлюємо бейдж кошика
-        cart.updateCartBadge();
+        this.cart.updateCartBadge();
 
         console.log('✅ Додаток готовий!');
+    }
+
+    /**
+     * Ініціалізація UI модулів
+     */
+    initUIModules() {
+        // Навігація
+        this.navigation = new NavigationModule(this);
+        this.navigation.init();
+
+        // Верхня панель
+        this.header = new HeaderModule(this);
+        this.header.init();
+        window.headerModule = this.header; // Для доступу з модалок
+    }
+
+    /**
+     * Ініціалізація сторінок
+     */
+    initPages() {
+        // Ініціалізуємо тільки ті сторінки, класи яких завантажені
+        if (window.HomePage) {
+            this.pages.home = new HomePage(this);
+            window.homePage = this.pages.home;
+        }
+
+        if (window.MarketPage) {
+            this.pages.market = new MarketPage(this);
+        }
+
+        if (window.CartPage) {
+            this.pages.cart = new CartPage(this);
+        }
+
+        if (window.ProfilePage) {
+            this.pages.profile = new ProfilePage(this);
+        }
+
+        if (window.AdminPage) {
+            this.pages.admin = new AdminPage(this);
+        }
     }
 
     /**
      * Завантажити переклади
      */
     async loadTranslations() {
-        const lang = Utils.getCurrentLanguage();
+        const lang = this.utils.getCurrentLanguage();
         try {
             const response = await fetch(`/assets/locales/${lang}.json`);
             if (response.ok) {
                 this.translations = await response.json();
+            } else {
+                // Завантажуємо англійську як fallback
+                const fallbackResponse = await fetch('/assets/locales/en.json');
+                if (fallbackResponse.ok) {
+                    this.translations = await fallbackResponse.json();
+                }
             }
         } catch (error) {
             console.error('Failed to load translations:', error);
@@ -98,113 +176,92 @@ class App {
     }
 
     /**
-     * Ініціалізація навігації
-     */
-    initNavigation() {
-        // Навігаційні кнопки
-        document.querySelectorAll('[data-page]').forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                e.preventDefault();
-                const page = btn.dataset.page;
-                this.navigateTo(page);
-            });
-        });
-
-        // Обробка кнопки "Назад" браузера
-        window.addEventListener('popstate', (e) => {
-            if (e.state && e.state.page) {
-                this.navigateTo(e.state.page, false);
-            }
-        });
-    }
-
-    /**
-     * Ініціалізація обробників подій
-     */
-    initEventHandlers() {
-        // Зміна теми
-        document.getElementById('theme-toggle')?.addEventListener('click', () => {
-            const currentTheme = Utils.getCurrentTheme();
-            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
-            Utils.setTheme(newTheme);
-            this.applyTheme();
-            this.updateThemeButton();
-        });
-
-        // Зміна мови
-        document.getElementById('language-toggle')?.addEventListener('click', () => {
-            this.showLanguageMenu();
-        });
-
-        // Профіль
-        document.getElementById('profile-btn')?.addEventListener('click', () => {
-            this.navigateTo('profile');
-        });
-
-        // Сповіщення
-        document.getElementById('notifications-btn')?.addEventListener('click', () => {
-            this.showNotifications();
-        });
-
-        // Пошук
-        document.getElementById('search-btn')?.addEventListener('click', () => {
-            this.showSearch();
-        });
-
-        // Кастомні події
-        window.addEventListener('auth:success', (e) => {
-            this.updateUI();
-            Utils.showNotification(`${this.t('auth.welcome')}, ${e.detail.first_name}!`, 'success');
-        });
-
-        window.addEventListener('auth:logout', () => {
-            this.updateUI();
-            this.navigateTo('home');
-        });
-
-        window.addEventListener('navigate', (e) => {
-            this.navigateTo(e.detail.page, true, e.detail.params);
-        });
-
-        window.addEventListener('language:change', async () => {
-            await this.loadTranslations();
-            this.render();
-            this.updateNavigationText(); // Оновлюємо текст навігації
-        });
-    }
-
-    /**
      * Навігація до сторінки
      */
-    navigateTo(page, pushState = true, params = {}) {
-        this.currentPage = page;
-
+    async navigateTo(page, params = {}, updateHistory = true) {
         // Оновлюємо URL
-        if (pushState) {
+        if (updateHistory) {
             const url = new URL(window.location);
             url.searchParams.set('page', page);
-            Object.keys(params).forEach(key => {
-                url.searchParams.set(key, params[key]);
-            });
             window.history.pushState({ page }, '', url);
         }
 
-        // Оновлюємо активну кнопку навігації
-        document.querySelectorAll('[data-page]').forEach(btn => {
-            if (btn.dataset.page === page) {
-                btn.classList.add('text-blue-600', 'dark:text-blue-400');
-                btn.classList.remove('text-gray-600', 'dark:text-gray-400');
-            } else {
-                btn.classList.remove('text-blue-600', 'dark:text-blue-400');
-                btn.classList.add('text-gray-600', 'dark:text-gray-400');
-            }
-        });
+        // Оновлюємо активну сторінку
+        this.currentPage = page;
+
+        // Оновлюємо навігацію
+        if (this.navigation) {
+            this.navigation.setActivePage(page);
+        }
+
+        // Показуємо індикатор завантаження
+        const content = document.getElementById('page-content');
+        content.innerHTML = `
+            <div class="flex items-center justify-center py-20">
+                <div class="loader"></div>
+            </div>
+        `;
 
         // Рендеримо сторінку
-        this.render();
+        try {
+            switch (page) {
+                case 'home':
+                    await this.pages.home.render();
+                    break;
 
-        // Скролимо вгору
-        window.scrollTo(0, 0);
+                case 'market':
+                    if (!this.pages.market) {
+                        // Тимчасова заглушка
+                        content.innerHTML = this.renderPlaceholderPage('nav.market', '🛍️');
+                    } else {
+                        await this.pages.market.render(params);
+                    }
+                    break;
+
+                case 'cart':
+                    if (!this.pages.cart) {
+                        // Показуємо базовий кошик
+                        content.innerHTML = await this.cart.renderCartPage();
+                    } else {
+                        await this.pages.cart.render();
+                    }
+                    break;
+
+                case 'profile':
+                    if (!this.pages.profile) {
+                        // Показуємо базовий профіль
+                        content.innerHTML = this.renderProfilePage();
+                    } else {
+                        await this.pages.profile.render();
+                    }
+                    break;
+
+                case 'admin':
+                    if (this.auth.currentUser?.is_admin) {
+                        if (!this.pages.admin) {
+                            content.innerHTML = this.renderPlaceholderPage('nav.admin', '⚙️');
+                        } else {
+                            await this.pages.admin.render();
+                        }
+                    } else {
+                        this.navigateTo('home');
+                    }
+                    break;
+
+                default:
+                    this.navigateTo('home');
+            }
+        } catch (error) {
+            console.error('Error rendering page:', error);
+            content.innerHTML = `
+                <div class="text-center py-20">
+                    <p class="text-red-500">${this.t('errors.general')}</p>
+                    <button onclick="window.location.reload()" class="btn-primary mt-4">
+                        ${this.t('buttons.refresh')}
+                    </button>
+                </div>
+            `;
+        }
     }
 
     /**
@@ -1002,6 +1059,44 @@ class App {
         this.updateNavigationText();
         cart.updateCartBadge();
     }
+
+    /**
+     * Оновлення інтерфейсу після зміни стану
+     */
+    updateUI() {
+        const user = this.auth.currentUser;
+
+        // Оновлюємо аватар
+        if (this.header) {
+            this.header.updateUserAvatar(user);
+        }
+
+        // Оновлюємо видимість адмін-кнопки
+        if (this.navigation) {
+            this.navigation.render(); // Перерендер для показу/приховування адмін кнопки
+        }
+
+        // Оновлюємо бейджі
+        this.updateBadges();
+    }
+
+    /**
+     * Оновлення бейджів
+     */
+    updateBadges() {
+        // Кошик
+        const cartCount = this.cart.getCartItems().length;
+        if (this.navigation) {
+            this.navigation.updateCartBadge(cartCount);
+        }
+
+        // Сповіщення
+        // TODO: отримати кількість непрочитаних сповіщень з API
+        if (this.header) {
+            this.header.updateNotificationBadge(0);
+        }
+    }
+
 
     /**
      * Оновити текст у навігації

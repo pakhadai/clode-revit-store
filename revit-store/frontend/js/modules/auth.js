@@ -392,5 +392,3 @@ const auth = new AuthModule();
 
 // Експортуємо для використання в інших модулях
 window.auth = auth;
-
-export default auth;

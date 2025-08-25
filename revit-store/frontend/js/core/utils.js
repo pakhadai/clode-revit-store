@@ -356,4 +356,3 @@ const Utils = {
 
 // Експортуємо для використання
 window.Utils = Utils;
-export default Utils;

@@ -608,5 +608,3 @@ const search = new SearchModule();
 
 // Експортуємо для використання в інших модулях
 window.search = search;
-
-export default search;

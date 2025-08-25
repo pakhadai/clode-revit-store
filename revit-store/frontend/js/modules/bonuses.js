@@ -373,5 +373,3 @@ const bonuses = new BonusesModule();
 
 // Експортуємо для використання в інших модулях
 window.bonuses = bonuses;
-
-export default bonuses;

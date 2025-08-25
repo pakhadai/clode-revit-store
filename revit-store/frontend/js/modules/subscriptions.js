@@ -348,5 +348,3 @@ const subscriptions = new SubscriptionsModule();
 
 // Експортуємо для використання в інших модулях
 window.subscriptions = subscriptions;
-
-export default subscriptions;

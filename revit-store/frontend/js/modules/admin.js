@@ -1791,5 +1791,3 @@ class AdminModule {
 // Створюємо та експортуємо єдиний екземпляр
 const admin = new AdminModule();
 window.admin = admin;
-
-export default admin;

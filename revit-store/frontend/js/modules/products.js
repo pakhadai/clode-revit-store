@@ -492,5 +492,3 @@ const products = new ProductsModule();
 
 // Експортуємо для використання в інших модулях
 window.products = products;
-
-export default products;
