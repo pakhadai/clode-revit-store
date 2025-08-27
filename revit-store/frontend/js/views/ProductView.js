@@ -3,11 +3,8 @@ import { BaseView } from './BaseView.js';
 import products from '../modules/products.js';
 
 export class ProductView extends BaseView {
-    async render() {
-        // --- ВИПРАВЛЕННЯ: завжди приводимо до простого значення ---
-        const params = Utils.getUrlParams();
-        const productId = typeof params.id === 'object' ? params.id.id : params.id;
-
+        async render(productId) {
+        // Просто використовуємо передане ID
         if (!productId) {
             return this.app.renderService.views.error.render404Page();
         }

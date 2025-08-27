@@ -27,31 +27,21 @@ export class RenderService {
 
     async renderPage(page, params = {}) {
         const view = this.views[page];
-        if (view) {
-            if (page === 'product' || page === 'collection-detail') {
-                // --- ВИПРАВЛЕННЯ: Більш надійно отримуємо ID ---
-                // Цей код перевіряє, чи є 'params' об'єктом з полем 'id',
-                // інакше використовує 'params' як є.
-                const id = (typeof params === 'object' && params !== null && params.id) ? params.id : params;
-                return await view.render(id);
-            }
-            return await view.render(params);
+        if (page === 'product' || page === 'collection-detail') {
+            const id = (typeof params === 'object' && params !== null) ? params.id : params;
+            return await view.render(id);
         }
 
-        // Логіка для сторінок, що не мають власних View (адмін, творець)
         switch (page) {
             case 'creator':
                 return auth.isCreator() ? creator.createCreatorPage() : this.views.error.render404Page();
             case 'admin':
                 return auth.isAdmin() ? admin.createAdminPage() : this.views.error.render404Page();
-            // Рендер вкладок профілю, які тепер є частиною ProfileView
             case 'orders':
             case 'referrals':
             case 'settings':
             case 'support':
             case 'faq':
-                // ProfileView сам обробляє свої вкладки, але ми можемо передати параметр
-                // для відкриття потрібної вкладки за замовчуванням
                 return await this.views.profile.render({ defaultTab: page });
             default:
                 return this.views.error.render404Page();

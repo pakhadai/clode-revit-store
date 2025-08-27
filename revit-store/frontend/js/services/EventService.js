@@ -71,7 +71,7 @@ export class EventService {
             card.addEventListener('click', (e) => {
                 if (!e.target.closest('.favorite-btn') && !e.target.closest('.add-to-cart-btn')) {
                     const productId = card.dataset.productId;
-                    this.app.navigateTo('product', true, { id: productId });
+                    this.app.navigateTo('product', true, productId);
                 }
             });
         });
