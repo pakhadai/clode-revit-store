@@ -14,11 +14,12 @@ import { cartHelpers } from '../utils/cartHelpers.js';
 
 class CartModule {
     constructor() {
-        // LEGACY: Original constructor preserved
+        // LEGACY: Original properties preserved
         this.items = [];
         this.total = 0;
         this.bonusesAvailable = 0;
         this.promoCode = null;
+        this.selectedPaymentMethod = null;
 
         // NEW: Modular services
         this.api = new CartAPI();
@@ -36,6 +37,51 @@ class CartModule {
 
         // LEGACY: Load from storage
         this.loadFromStorage();
+    }
+
+    /**
+     * Завантажити кошик з localStorage
+     */
+    loadFromStorage() {
+        const savedCart = Utils.storage.get('cart', []);
+        this.items = savedCart;
+        this.updateTotal();
+    }
+
+    /**
+     * Зберегти кошик в localStorage
+     */
+    saveToStorage() {
+        Utils.storage.set('cart', this.items);
+    }
+
+    /**
+     * Оновити загальну суму
+     */
+    updateTotal() {
+        this.total = this.items.reduce((sum, item) => {
+            return sum + (item.current_price || item.price);
+        }, 0);
+    }
+
+    /**
+     * Оновити кнопку додавання в кошик
+     */
+    updateAddToCartButton(productId, inCart) {
+        const buttons = document.querySelectorAll(`.add-to-cart-btn[data-product-id="${productId}"]`);
+        buttons.forEach(btn => {
+            if (inCart) {
+                btn.innerHTML = `<span>✓</span> ${window.app.t('product.inCart')}`;
+                btn.classList.remove('bg-blue-500', 'hover:bg-blue-600');
+                btn.classList.add('bg-green-500', 'hover:bg-green-600');
+                btn.disabled = true;
+            } else {
+                btn.innerHTML = `<span>🛒</span> ${window.app.t('product.addToCart')}`;
+                btn.classList.remove('bg-green-500', 'hover:bg-green-600');
+                btn.classList.add('bg-blue-500', 'hover:bg-blue-600');
+                btn.disabled = false;
+            }
+        });
     }
 
     // NEW: Handle service events
@@ -409,3 +455,12 @@ class CartModule {
             Utils.showLoader(false);
         }
     }
+}
+
+// Створюємо та експортуємо єдиний екземпляр
+const cart = new CartModule();
+
+// Експортуємо для використання в інших модулях
+window.cart = cart;
+
+export default cart;

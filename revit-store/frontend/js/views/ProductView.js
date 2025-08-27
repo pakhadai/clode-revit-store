@@ -1,6 +1,5 @@
 // js/views/ProductView.js
 import { BaseView } from './BaseView.js';
-import products from '../modules/products.js';
 
 export class ProductView extends BaseView {
     async render(productId) {

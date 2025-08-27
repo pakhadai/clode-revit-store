@@ -33,7 +33,27 @@ class ProductsModule {
     async loadProducts(page = 1, append = false) {
         try {
             Utils.showLoader(true);
-            if (this.service && !append) {
+
+            this.currentPage = page;
+            const params = {
+                page: this.currentPage,
+                ...this.filters
+            };
+
+            const response = await this.api.getProducts(params);
+
+            if (append) {
+                this.products.push(...response.products);
+            } else {
+                this.products = response.products;
+            }
+            this.totalPages = response.pagination.total_pages;
+
+        } catch (error) {
+            console.error('Load products error:', error);
+            Utils.showNotification(window.app.t('notifications.productsLoadError'), 'error');
+        } finally {
+            Utils.showLoader(false);
         }
     }
 
