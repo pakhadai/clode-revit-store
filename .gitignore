@@ -1,7 +1,16 @@
-echo "revit-store/venv/
-revit-store/__pycache__/
-revit-store/*.pyc
-revit-store/.env
-revit-store/.env.local
-revit-store/.idea/
-revit-store/*.zip" > .gitignore
+# Virtual environment
+venv/
+
+# Python cache
+__pycache__/
+*.pyc
+
+# Environment files
+.env
+.env.local
+
+# IDE settings
+.idea/
+
+# Archives
+*.zip
