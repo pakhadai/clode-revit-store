@@ -1,71 +1,47 @@
 /**
  * Модуль кошика
- * LEGACY: Refactored into modular architecture
  */
-
-// NEW MODULAR IMPORTS
-import { CartAPI } from '../api/CartAPI.js';
-import { CartService } from '../services/CartService.js';
-import { CartStore } from '../store/CartStore.js';
-import { CartItem } from '../components/CartItem.js';
-import { CartSummary } from '../components/CartSummary.js';
-import { CheckoutForm } from '../components/CheckoutForm.js';
-import { cartHelpers } from '../utils/cartHelpers.js';
 
 class CartModule {
     constructor() {
-        // LEGACY: Original constructor preserved
         this.items = [];
         this.total = 0;
         this.bonusesAvailable = 0;
         this.promoCode = null;
-
-        // NEW: Modular services
-        this.api = new CartAPI();
-        this.service = new CartService();
-        this.store = new CartStore();
-        this.helpers = cartHelpers;
-
-        // NEW: Initialize service
-        this.service.initialize();
-
-        // NEW: Subscribe to service events
-        this.service.subscribe((event, data) => {
-            this.handleServiceEvent(event, data);
-        });
-
-        // LEGACY: Load from storage
         this.loadFromStorage();
     }
 
-    // NEW: Handle service events
-    handleServiceEvent(event, data) {
-        switch(event) {
-            case 'cart:item-added':
-            case 'cart:item-removed':
-            case 'cart:cleared':
-            case 'cart:synced':
-                this.loadFromStorage();
-                this.updateCartBadge();
-                break;
-            case 'cart:promo-applied':
-                this.promoCode = data;
-                this.updateCheckoutSummary();
-                break;
-        }
+    /**
+     * Завантажити кошик з localStorage
+     */
+    loadFromStorage() {
+        const savedCart = Utils.storage.get('cart', []);
+        this.items = savedCart;
+        this.updateTotal();
     }
 
+    /**
+     * Зберегти кошик в localStorage
+     */
+    saveToStorage() {
+        Utils.storage.set('cart', this.items);
+    }
+
+    /**
+     * Додати товар в кошик
+     */
     async addToCart(productId) {
-        if (this.service) {
-            return await this.service.addItem(productId);
-        }
         try {
+            // Перевіряємо чи вже є в кошику
             if (this.items.find(item => item.id === productId)) {
                 Utils.showNotification(window.app.t('notifications.alreadyInCart'), 'warning');
                 return;
             }
 
+            // Отримуємо інформацію про товар
             const product = await api.getProduct(productId, Utils.getCurrentLanguage());
+
+            // Додаємо в кошик
             const cartItem = {
                 id: product.id,
                 sku: product.sku,
@@ -85,6 +61,7 @@ class CartModule {
             Utils.showNotification(window.app.t('notifications.addedToCart'), 'success');
             auth.hapticFeedback('impact', 'light');
 
+            // Оновлюємо кнопку якщо є на сторінці
             this.updateAddToCartButton(productId, true);
 
         } catch (error) {
@@ -93,44 +70,162 @@ class CartModule {
         }
     }
 
-    createCartPage() {
-        if (this.service) {
-            const items = this.service.getItems();
-            const user = auth.user;
-            const bonusesAvailable = user?.balance || 0;
+    /**
+     * Видалити з кошика
+     */
+    removeFromCart(productId) {
+        this.items = this.items.filter(item => item.id !== productId);
+        this.saveToStorage();
+        this.updateTotal();
+        this.updateCartBadge();
 
-            if (items.length === 0) {
-                return this.renderEmptyCart();
+        Utils.showNotification(window.app.t('notifications.removedFromCart'), 'info');
+        auth.hapticFeedback('impact', 'light');
+
+        // Оновлюємо кнопку якщо є на сторінці
+        this.updateAddToCartButton(productId, false);
+    }
+
+    /**
+     * Очистити кошик
+     */
+    clearCart() {
+        this.items = [];
+        this.saveToStorage();
+        this.updateTotal();
+        this.updateCartBadge();
+    }
+
+    /**
+     * Оновити загальну суму
+     */
+    updateTotal() {
+        this.total = this.items.reduce((sum, item) => {
+            return sum + (item.current_price || item.price);
+        }, 0);
+    }
+
+    /**
+     * Оновити бейдж кошика
+     */
+    updateCartBadge() {
+        const badge = document.querySelector('#cart-badge');
+        if (badge) {
+            const count = this.items.length;
+            if (count > 0) {
+                badge.textContent = count;
+                badge.classList.remove('hidden');
+            } else {
+                badge.classList.add('hidden');
             }
+        }
+    }
 
-            window.cartSummary = new CartSummary(items, this.promoCode, bonusesAvailable);
-            window.checkoutForm = new CheckoutForm(async (orderData) => {
-                await this.checkout();
-            });
+    /**
+     * Оновити кнопку додавання в кошик
+     */
+    updateAddToCartButton(productId, inCart) {
+        const buttons = document.querySelectorAll(`.add-to-cart-btn[data-product-id="${productId}"]`);
+        buttons.forEach(btn => {
+            if (inCart) {
+                btn.innerHTML = `<span>✓</span> ${window.app.t('product.inCart')}`;
+                btn.classList.remove('bg-blue-500', 'hover:bg-blue-600');
+                btn.classList.add('bg-green-500', 'hover:bg-green-600');
+                btn.disabled = true;
+            } else {
+                btn.innerHTML = `<span>🛒</span> ${window.app.t('product.addToCart')}`;
+                btn.classList.remove('bg-green-500', 'hover:bg-green-600');
+                btn.classList.add('bg-blue-500', 'hover:bg-blue-600');
+                btn.disabled = false;
+            }
+        });
+    }
 
+    /**
+     * Перевірити чи товар в кошику
+     */
+    isInCart(productId) {
+        return this.items.some(item => item.id === productId);
+    }
+
+    /**
+     * Отримати кількість товарів
+     */
+    getItemsCount() {
+        return this.items.length;
+    }
+
+    /**
+     * Застосувати промокод
+     */
+    async applyPromoCode(code) {
+        try {
+            const response = await api.post('/promo/validate', { code });
+
+            if (response.valid) {
+                this.promoCode = response;
+                Utils.showNotification(`${window.app.t('cart.payment.promoApplied')}: -${response.discount_value}${response.discount_type === 'percent' ? '%' : ''}`, 'success');
+                return true;
+            } else {
+                Utils.showNotification(window.app.t('notifications.invalidPromo'), 'error');
+                return false;
+            }
+        } catch (error) {
+            console.error('Promo code error:', error);
+            Utils.showNotification(window.app.t('notifications.promoError'), 'error');
+            return false;
+        }
+    }
+
+    /**
+     * Розрахувати фінальну суму
+     */
+    calculateFinalAmount(useBonuses = 0) {
+        let amount = this.total;
+
+        // Застосовуємо промокод
+        if (this.promoCode) {
+            if (this.promoCode.discount_type === 'percent') {
+                amount = amount * (1 - this.promoCode.discount_value / 100);
+            } else {
+                amount = amount - this.promoCode.discount_value;
+            }
+        }
+
+        // Віднімаємо бонуси (макс 70% від суми)
+        const maxBonuses = Math.floor(amount * 0.7);
+        const bonusesToUse = Math.min(useBonuses, maxBonuses);
+        amount = amount - bonusesToUse;
+
+        return {
+            subtotal: this.total,
+            discount: this.total - amount + bonusesToUse,
+            bonusesUsed: bonusesToUse,
+            total: Math.max(0, amount)
+        };
+    }
+
+
+    /**
+     * Створити HTML сторінки кошика
+     */
+    createCartPage() {
+        if (this.items.length === 0) {
             return `
-                <div class="cart-page max-w-4xl mx-auto">
-                    <h1 class="text-3xl font-bold mb-6 dark:text-white">${window.app.t('cart.title')}</h1>
-
-                    <div class="cart-items space-y-4 mb-8">
-                        ${items.map(item => {
-                            const cartItem = new CartItem(item,
-                                (id) => this.removeFromCart(id),
-                                (id, qty) => this.updateQuantity(id, qty)
-                            );
-                            return cartItem.render();
-                        }).join('')}
-                    </div>
-
-                    ${window.checkoutForm.render(bonusesAvailable)}
-                    ${window.cartSummary.render()}
+                <div class="empty-cart text-center py-16">
+                    <div class="text-6xl mb-4">🛒</div>
+                    <h2 class="text-2xl font-bold mb-4 dark:text-white">${window.app.t('cart.empty')}</h2>
+                    <p class="text-gray-600 dark:text-gray-400 mb-8">${window.app.t('cart.emptyDesc')}</p>
+                    <button onclick="window.dispatchEvent(new CustomEvent('navigate', { detail: { page: 'market' } }))"
+                            class="bg-blue-500 hover:bg-blue-600 text-white px-6 py-3 rounded-lg font-bold">
+                        ${window.app.t('cart.goToMarket')}
+                    </button>
                 </div>
             `;
         }
 
-        if (this.items.length === 0) {
-            return this.renderEmptyCart();
-        }
+        const user = auth.user;
+        const bonusesAvailable = user?.balance || 0;
 
         return `
             <div class="cart-page max-w-4xl mx-auto">
@@ -284,87 +379,73 @@ class CartModule {
         `;
     }
 
-    renderEmptyCart() {
-        return `
-            <div class="empty-cart text-center py-16">
-                <div class="text-6xl mb-4">🛒</div>
-                <h2 class="text-2xl font-bold mb-4 dark:text-white">${window.app.t('cart.empty')}</h2>
-                <p class="text-gray-600 dark:text-gray-400 mb-8">${window.app.t('cart.emptyDesc')}</p>
-                <button onclick="window.dispatchEvent(new CustomEvent('navigate', { detail: { page: 'market' } }))"
-                        class="bg-blue-500 hover:bg-blue-600 text-white px-6 py-3 rounded-lg font-bold">
-                    ${window.app.t('cart.goToMarket')}
-                </button>
-            </div>
-        `;
-    }
-
-    removeFromCart(productId) {
-        if (this.service) {
-                return this.service.removeItem(productId);
-            }
-
-        this.items = this.items.filter(item => item.id !== productId);
-        this.saveToStorage();
-        this.updateTotal();
-        this.updateCartBadge();
-
-        Utils.showNotification(window.app.t('notifications.removedFromCart'), 'info');
-        auth.hapticFeedback('impact', 'light');
-
-        // Оновлюємо кнопку якщо є на сторінці
-        this.updateAddToCartButton(productId, false);
-    }
-
-    calculateFinalAmount(useBonuses = 0) {
-         if (this.store) {
-            return this.store.calculateFinalAmount(useBonuses);
-        }
-
-        let amount = this.total;
-
-        // Застосовуємо промокод
-        if (this.promoCode) {
-            if (this.promoCode.discount_type === 'percent') {
-                amount = amount * (1 - this.promoCode.discount_value / 100);
-            } else {
-                amount = amount - this.promoCode.discount_value;
-            }
-        }
-
-        // Віднімаємо бонуси (макс 70% від суми)
-        const maxBonuses = Math.floor(amount * 0.7);
-        const bonusesToUse = Math.min(useBonuses, maxBonuses);
-        amount = amount - bonusesToUse;
-
-        return {
-            subtotal: this.total,
-            discount: this.total - amount + bonusesToUse,
-            bonusesUsed: bonusesToUse,
-            total: Math.max(0, amount)
-        };
-    }
-
-    updateCartBadge() {
-        // NEW: Use service for count
-        const count = this.service ? this.service.getItemCount() : this.items.length;
-
-        const badge = document.querySelector('#cart-badge');
-        if (badge) {
-            // LEGACY: Rest of implementation preserved
-            if (count > 0) {
-                badge.textContent = count;
-                badge.classList.remove('hidden');
-            } else {
-                badge.classList.add('hidden');
-            }
+    /**
+     * Застосувати промокод з поля вводу
+     */
+    async applyPromoCodeFromInput() {
+        const input = document.getElementById('promo-input');
+        if (input && input.value) {
+            await this.applyPromoCode(input.value);
+            this.updateCheckoutSummary();
         }
     }
 
+    /**
+     * Оновити підсумок оплати
+     */
+    updateCheckoutSummary() {
+        const bonusesInput = document.getElementById('bonuses-input');
+        const bonusesToUse = bonusesInput ? parseInt(bonusesInput.value) || 0 : 0;
+
+        const calculation = this.calculateFinalAmount(bonusesToUse);
+
+        // Оновлюємо UI
+        const discountRow = document.getElementById('discount-row');
+        const bonusesRow = document.getElementById('bonuses-row');
+        const discountAmount = document.getElementById('discount-amount');
+        const bonusesAmount = document.getElementById('bonuses-amount');
+        const finalAmount = document.getElementById('final-amount');
+
+        if (this.promoCode && discountRow && discountAmount) {
+            const promoDiscount = this.promoCode.discount_type === 'percent'
+                ? this.total * this.promoCode.discount_value / 100
+                : this.promoCode.discount_value;
+            discountRow.style.display = 'flex';
+            discountAmount.textContent = `-${Utils.formatPrice(promoDiscount)}`;
+        }
+
+        if (bonusesToUse > 0 && bonusesRow && bonusesAmount) {
+            bonusesRow.style.display = 'flex';
+            bonusesAmount.textContent = `-${Utils.formatPrice(bonusesToUse)}`;
+        }
+
+        if (finalAmount) {
+            finalAmount.textContent = Utils.formatPrice(calculation.total);
+        }
+    }
+
+    /**
+     * Вибрати метод оплати
+     */
+    selectPaymentMethod(method) {
+        // Знімаємо виділення з усіх кнопок
+        document.querySelectorAll('.payment-method-btn').forEach(btn => {
+            btn.classList.remove('border-blue-500', 'bg-blue-50', 'dark:border-blue-400', 'dark:bg-blue-900');
+        });
+
+        // Виділяємо вибрану кнопку
+        const selectedBtn = document.querySelector(`.payment-method-btn[data-method="${method}"]`);
+        if (selectedBtn) {
+            selectedBtn.classList.add('border-blue-500', 'bg-blue-50', 'dark:border-blue-400', 'dark:bg-blue-900');
+        }
+
+        this.selectedPaymentMethod = method;
+    }
+
+    /**
+     * Оформити замовлення
+     */
     async checkout() {
-        if (window.checkoutForm && window.checkoutForm.selectedPaymentMethod) {
-            return await window.checkoutForm.submit();
-        }
-
         if (!this.selectedPaymentMethod) {
             Utils.showNotification(window.app.t('notifications.selectPaymentMethod'), 'warning');
             return;
@@ -409,3 +490,12 @@ class CartModule {
             Utils.showLoader(false);
         }
     }
+}
+
+// Створюємо та експортуємо єдиний екземпляр
+const cart = new CartModule();
+
+// Експортуємо для використання в інших модулях
+window.cart = cart;
+
+export default cart;

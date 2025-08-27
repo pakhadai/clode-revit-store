@@ -1,5 +1,6 @@
 // js/views/CollectionDetailView.js
 import { BaseView } from './BaseView.js';
+import products from '../modules/products.js';
 
 export class CollectionDetailView extends BaseView {
     async render(collectionId) {

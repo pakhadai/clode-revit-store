@@ -1,5 +1,6 @@
 // js/views/HomeView.js
 import { BaseView } from './BaseView.js';
+import products from '../modules/products.js';
 
 export class HomeView extends BaseView {
     async render() {

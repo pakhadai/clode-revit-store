@@ -28,6 +28,7 @@ class ProductsModule {
             this.filters = filters;
             this.loadProducts();
         });
+    }
 
     async loadProducts(page = 1, append = false) {
         try {

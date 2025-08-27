@@ -1,5 +1,6 @@
 // js/views/MarketView.js
 import { BaseView } from './BaseView.js';
+import products from '../modules/products.js';
 
 export class MarketView extends BaseView {
     async render() {

@@ -1,5 +1,6 @@
 // js/views/DownloadsView.js
 import { BaseView } from './BaseView.js';
+import products from '../modules/products.js';
 
 export class DownloadsView extends BaseView {
     async render() {

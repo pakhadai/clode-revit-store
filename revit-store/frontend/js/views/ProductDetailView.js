@@ -1,4 +1,6 @@
 // js/views/ProductDetailView.js
+import products from '../modules/products.js';
+
 export class ProductDetailView {
     constructor(product) {
         this.product = product;
