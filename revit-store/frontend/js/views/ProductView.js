@@ -4,6 +4,7 @@ import products from '../modules/products.js';
 
 export class ProductView extends BaseView {
         async render(productId) {
+        console.log('ProductView.render received:', productId, typeof productId);
         // Просто використовуємо передане ID
         if (!productId) {
             return this.app.renderService.views.error.render404Page();

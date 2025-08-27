@@ -29,6 +29,7 @@ export class RenderService {
         const view = this.views[page];
         if (page === 'product' || page === 'collection-detail') {
             const id = (typeof params === 'object' && params !== null) ? params.id : params;
+            console.log('RenderService passing to ProductView:', id, typeof id, 'from params:', params);
             return await view.render(id);
         }
 

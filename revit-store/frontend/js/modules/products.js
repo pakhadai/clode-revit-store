@@ -11,6 +11,7 @@ import { ProductFilters } from '../components/ProductFilters.js';
 import { ProductDetailView } from '../views/ProductDetailView.js';
 import { productHelpers } from '../utils/productHelpers.js';
 
+console.log('🔥🔥🔥 PRODUCTS.JS LOADED');
 class ProductsModule {
     constructor() {
         // LEGACY: Original constructor preserved
@@ -62,13 +63,20 @@ class ProductsModule {
      */
     async loadProduct(productId) {
         try {
-            Utils.showLoader(true);
+            // Додаємо перевірку типу
+            if (typeof productId === 'object' && productId !== null) {
+                productId = productId.id || productId.productId;
+            }
 
+            // Перевіряємо валідність ID
+            if (!productId || productId === 'undefined' || productId === 'null') {
+                throw new Error('Invalid product ID');
+            }
+
+            Utils.showLoader(true);
             const product = await api.getProduct(productId, Utils.getCurrentLanguage());
             this.currentProduct = product;
-
             return product;
-
         } catch (error) {
             console.error('Load product error:', error);
             Utils.showNotification(window.app.t('notifications.productLoadError'), 'error');

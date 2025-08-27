@@ -128,7 +128,8 @@ export class Application {
         Utils.showLoader(true);
 
         try {
-            const html = await this.renderService.renderPage(this.currentPage);
+            console.log('Application.render - page:', this.currentPage, 'params:', this.currentPageParams);
+            const html = await this.renderService.renderPage(this.currentPage, this.currentPageParams);
             content.innerHTML = html;
             this.initPageHandlers();
         } catch (error) {
