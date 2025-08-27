@@ -200,7 +200,7 @@ async def get_products(
             "requires_subscription": product.requires_subscription,
             "file_size": product.file_size,
             "created_at": product.created_at.isoformat(),
-            # Додаємо іконку, якщо товар є в одній з колекцій
+            # --- ВИПРАВЛЕННЯ: Додаємо іконку, якщо товар є в одній з колекцій ---
             "collection_icon": user_collections_products.get(product.id, "🤍")
         }
 

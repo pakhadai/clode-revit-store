@@ -7,6 +7,7 @@ import { ModalService } from '../services/ModalService.js';
 export class Application {
     constructor() {
         this.currentPage = 'home';
+        this.currentPageParams = {};
         this.translations = {};
         this.selectedSubscriptionPlan = null;
 
@@ -36,13 +37,19 @@ export class Application {
         this.eventService.initEventHandlers();
         this.updateUI();
 
+        // --- ВИПРАВЛЕННЯ: Повністю зчитуємо всі параметри з URL ---
         const urlParams = Utils.getUrlParams();
         if (this.onboarding && this.onboarding.shouldShow()) {
             this.onboarding.start();
         }
 
         const page = urlParams.page || 'home';
-        this.navigateTo(page);
+        // Видаляємо 'page', щоб залишити тільки параметри для сторінки (наприклад, 'id')
+        delete urlParams.page;
+
+        // Передаємо і сторінку, і її параметри
+        this.navigateTo(page, true, urlParams);
+
         cart.updateCartBadge();
 
         console.log('✅ Додаток готовий!');
@@ -83,6 +90,7 @@ export class Application {
 
     navigateTo(page, pushState = true, params = {}) {
         this.currentPage = page;
+        this.currentPageParams = params;
 
         if (pushState) {
             const url = new URL(window.location);
@@ -117,7 +125,7 @@ export class Application {
         Utils.showLoader(true);
 
         try {
-            const html = await this.renderService.renderPage(this.currentPage);
+            const html = await this.renderService.renderPage(this.currentPage, this.currentPageParams);
             content.innerHTML = html;
             this.initPageHandlers();
         } catch (error) {

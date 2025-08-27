@@ -1,13 +1,22 @@
 // js/views/ProductView.js
 import { BaseView } from './BaseView.js';
+import products from '../modules/products.js';
 
 export class ProductView extends BaseView {
-    async render(productId) {
-        if (!productId) return this.app.renderService.views.error.render404Page();
+    async render() {
+        // --- ВИПРАВЛЕННЯ: завжди приводимо до простого значення ---
+        const params = Utils.getUrlParams();
+        const productId = typeof params.id === 'object' ? params.id.id : params.id;
+
+        if (!productId) {
+            return this.app.renderService.views.error.render404Page();
+        }
 
         await products.loadProduct(productId);
 
-        if (!products.currentProduct) return this.app.renderService.views.error.render404Page();
+        if (!products.currentProduct) {
+            return this.app.renderService.views.error.render404Page();
+        }
 
         return products.createProductPage(products.currentProduct);
     }

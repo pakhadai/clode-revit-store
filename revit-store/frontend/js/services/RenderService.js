@@ -28,6 +28,13 @@ export class RenderService {
     async renderPage(page, params = {}) {
         const view = this.views[page];
         if (view) {
+            if (page === 'product' || page === 'collection-detail') {
+                // --- ВИПРАВЛЕННЯ: Більш надійно отримуємо ID ---
+                // Цей код перевіряє, чи є 'params' об'єктом з полем 'id',
+                // інакше використовує 'params' як є.
+                const id = (typeof params === 'object' && params !== null && params.id) ? params.id : params;
+                return await view.render(id);
+            }
             return await view.render(params);
         }
 
