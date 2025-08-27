@@ -3,7 +3,7 @@ import { BaseView } from './BaseView.js';
 
 export class CollectionsView extends BaseView {
     async render() {
-        if (!auth.isAuthenticated()) return this.renderAuthRequiredPage();
+        if (!auth.isAuthenticated()) return this.app.renderService.views.error.renderAuthRequiredPage();
 
         try {
             const collectionsList = await api.get('/collections/');
@@ -42,7 +42,7 @@ export class CollectionsView extends BaseView {
                </div>
            `;
        } catch (error) {
-           return this.renderErrorPage(error);
+           return this.app.renderService.views.error.renderErrorPage(error);
        }
     }
 }

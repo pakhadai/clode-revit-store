@@ -122,7 +122,7 @@ export class Application {
             this.initPageHandlers();
         } catch (error) {
             console.error('Render error:', error);
-            content.innerHTML = this.renderService.renderErrorPage(error);
+            content.innerHTML = this.renderService.views.error.renderErrorPage(error);
         } finally {
             Utils.showLoader(false);
         }

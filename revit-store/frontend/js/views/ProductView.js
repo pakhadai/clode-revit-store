@@ -3,11 +3,11 @@ import { BaseView } from './BaseView.js';
 
 export class ProductView extends BaseView {
     async render(productId) {
-        if (!productId) return this.render404Page();
+        if (!productId) return this.app.renderService.views.error.render404Page();
 
         await products.loadProduct(productId);
 
-        if (!products.currentProduct) return this.render404Page();
+        if (!products.currentProduct) return this.app.renderService.views.error.render404Page();
 
         return products.createProductPage(products.currentProduct);
     }

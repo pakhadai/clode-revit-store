@@ -3,7 +3,7 @@ import { BaseView } from './BaseView.js';
 
 export class DownloadsView extends BaseView {
     async render() {
-        if (!auth.isAuthenticated()) return this.renderAuthRequiredPage();
+        if (!auth.isAuthenticated()) return this.app.renderService.views.error.renderAuthRequiredPage();
 
        try {
            Utils.showLoader(true);
@@ -51,7 +51,7 @@ export class DownloadsView extends BaseView {
            `;
        } catch (error) {
            console.error('Render downloads page error:', error);
-           return this.renderErrorPage(error);
+           return this.app.renderService.views.error.renderErrorPage(error);
        } finally {
            Utils.showLoader(false);
        }
