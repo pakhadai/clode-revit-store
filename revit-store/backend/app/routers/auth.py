@@ -99,6 +99,15 @@ class TelegramAuthRequest(BaseModel):
     """Запит на автентифікацію через Telegram"""
     init_data: str
 
+class TelegramWidgetUser(BaseModel):
+    id: int
+    first_name: str
+    last_name: Optional[str] = None
+    username: Optional[str] = None
+    photo_url: Optional[str] = None
+    auth_date: int
+    hash: str
+
 class AuthResponse:
     """Відповідь при успішній автентифікації"""
     access_token: str
@@ -236,6 +245,80 @@ async def telegram_login(
     )
 
     # Крок 6: Формуємо відповідь
+    return {
+        "access_token": access_token,
+        "token_type": "bearer",
+        "user": {
+            "id": user.id,
+            "telegram_id": user.telegram_id,
+            "username": user.username,
+            "first_name": user.first_name,
+            "last_name": user.last_name,
+            "full_name": user.get_full_name(),
+            "language": user.language,
+            "theme": user.theme,
+            "balance": user.balance,
+            "vip_level": user.vip_level,
+            "vip_level_name": user.get_vip_level_name(),
+            "is_creator": user.is_creator,
+            "is_admin": user.is_admin,
+            "daily_streak": user.daily_streak,
+            "referral_code": user.referral_code,
+            "has_subscription": user.has_active_subscription(db),
+            "photo_url": user.photo_url
+        }
+    }
+
+@router.post("/telegram-widget", response_model=Dict)
+async def telegram_widget_login(
+        widget_user: TelegramWidgetUser,
+        db: Session = Depends(get_db)
+):
+    """
+    Автентифікація через Telegram Login Widget на сайті
+    """
+    # Крок 1: Перевіряємо підпис від Telegram
+    # Конвертуємо Pydantic модель в словник для валідації
+    user_data_dict = widget_user.model_dump()
+
+    if not telegram_auth.validate_init_data(user_data_dict):
+        raise HTTPException(
+            status_code=401,
+            detail="Невалідні дані від Telegram Widget."
+        )
+
+    # Крок 2: Отримуємо або створюємо користувача
+    user = db.query(User).filter(User.telegram_id == widget_user.id).first()
+
+    if not user:
+        # Новий користувач - створюємо
+        user = User(
+            telegram_id=widget_user.id,
+            username=widget_user.username,
+            first_name=widget_user.first_name,
+            last_name=widget_user.last_name,
+            photo_url=widget_user.photo_url,
+            referral_code=generate_referral_code(widget_user.id),
+            last_login=datetime.utcnow()
+        )
+        db.add(user)
+        db.commit()
+        db.refresh(user)
+    else:
+        # Існуючий користувач - оновлюємо дані
+        user.last_login = datetime.utcnow()
+        user.username = widget_user.username
+        user.first_name = widget_user.first_name
+        user.last_name = widget_user.last_name
+        user.photo_url = widget_user.photo_url
+        db.commit()
+
+    # Крок 3: Створюємо JWT токен
+    access_token = create_access_token(
+        data={"sub": str(user.telegram_id)}
+    )
+
+    # Крок 4: Формуємо відповідь
     return {
         "access_token": access_token,
         "token_type": "bearer",

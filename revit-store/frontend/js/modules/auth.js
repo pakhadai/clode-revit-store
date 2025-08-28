@@ -16,7 +16,10 @@ const auth = {
 
     // Methods
     initTelegram: () => authService.telegramService.init(),
-    authenticate: () => authService.authenticate(),
+    // --- ЗМІНЕНО ТУТ ---
+    // Тепер обгортка приймає initData і передає її далі
+    authenticate: (initData) => authService.authenticate(initData),
+    requireAuthentication: () => authService.requireAuthentication(),
     getCurrentUser: () => authService.getCurrentUser(),
     isAuthenticated: () => authService.isAuthenticated(),
     logout: () => authService.logout(),

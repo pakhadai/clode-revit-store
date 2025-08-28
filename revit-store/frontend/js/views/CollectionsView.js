@@ -29,12 +29,11 @@ export class CollectionsView extends BaseView {
                             <div onclick="app.navigateTo('collection-detail', true, { id: ${c.id} })"
                                  class="bg-white dark:bg-gray-800 rounded-lg p-4 flex items-center gap-4 shadow hover:shadow-lg hover:-translate-y-1 transition-all cursor-pointer">
                                 <div class="text-4xl">${c.icon}</div>
-                                <div class="flex-grow" onclick="app.navigateTo('collection-detail', true, { id: ${c.id} })">
+                                <div class="flex-grow">
                                     <h4 class="font-bold dark:text-white">${c.name}</h4>
                                     <p class="text-sm text-gray-600 dark:text-gray-400">${c.product_count} товарів</p>
                                 </div>
                                 <button onclick="event.stopPropagation(); collections.showEditCollectionModal(${c.id}, '${c.name}', '${c.icon}')"
-                                        // js/services/RenderService.js (продовження)
                                        class="text-2xl p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700">
                                    ⚙️
                                </button>

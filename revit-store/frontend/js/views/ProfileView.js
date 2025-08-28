@@ -1,17 +1,32 @@
 // js/views/ProfileView.js
 import { BaseView } from './BaseView.js';
+import { LoginModal } from '../components/LoginModal.js';
 
 export class ProfileView extends BaseView {
-    if (!auth.requireAuthentication()) {
-            return '<div></div>';
+    async render() {
+        Utils.showLoader(true);
+        const user = await auth.getUser();
+        Utils.showLoader(false);
+
+        if (!user) {
+            // Якщо користувача немає і ми не в Telegram - показуємо модальне вікно
+            if (!auth.isTelegramWebApp()) {
+                LoginModal.show();
+            } else {
+                // Якщо ми в Telegram, але дані користувача не отримали - це помилка
+                return this.app.renderService.views.error.renderErrorPage({
+                    message: "Не вдалося отримати дані користувача з Telegram."
+                });
+            }
+            return '<div id="auth-placeholder"></div>'; // Повертаємо тимчасовий контейнер
         }
 
-        const user = auth.user;
+        // --- Якщо користувач є, рендеримо сторінку профілю ---
 
         const createTile = (page, icon, titleKey) => `
             <button onclick="app.navigateTo('${page}')" class="bg-white dark:bg-gray-800 rounded-xl p-4 shadow hover:shadow-lg transition-shadow text-center">
                 <div class="text-4xl mb-2">${icon}</div>
-                <div class="font-semibold dark:text-white">${this.app.t(titleKey)}</div>
+                <div class.font-semibold dark:text-white">${this.app.t(titleKey)}</div>
             </button>
         `;
 
