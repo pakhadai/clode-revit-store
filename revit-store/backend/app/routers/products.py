@@ -13,7 +13,9 @@ from app.database import get_db
 from app.models.product import Product
 from app.models.user import User
 from app.models.collection import Collection
-from app.routers.auth import get_current_user_from_token
+# --- ЗМІНЕНО ТУТ ---
+# Імпортуємо нові функції для опціональної та обов'язкової авторизації
+from app.routers.auth import get_optional_current_user, get_current_active_user
 from app.services.telegram_bot import bot_service
 
 # Створюємо роутер
@@ -54,30 +56,16 @@ async def get_products(
 
         db: Session = Depends(get_db),
 
-        current_user: Optional[User] = Depends(get_current_user_from_token)
+        # --- ВИПРАВЛЕНО ТУТ ---
+        # Використовуємо опціональну перевірку користувача.
+        # Якщо користувач не залогінений, current_user буде None, але помилки не виникне.
+        current_user: Optional[User] = Depends(get_optional_current_user)
 ):
-
     """
     Отримати список продуктів з фільтрацією та пагінацією
-
-    Фільтри:
-    - category: free, premium, creator
-    - product_type: furniture, textures, components
-    - min_price/max_price: ціновий діапазон
-    - is_free: тільки безкоштовні
-    - is_featured: популярні товари
-    - is_new: новинки
-    - has_discount: товари зі знижкою
-
-    Сортування:
-    - price: за ціною
-    - rating: за рейтингом
-    - downloads: за кількістю завантажень
-    - created_at: за датою додавання
     """
-
     # Базовий запит
-    query = db.query(Product).filter(Product.is_active == True)
+    query = db.query(Product).filter(Product.is_active == True, Product.is_approved == True)
 
     # === ФІЛЬТРИ ===
 
@@ -122,7 +110,6 @@ async def get_products(
     # Пошук по назві та опису
     if search:
         search_term = f"%{search.lower()}%"
-        # Шукаємо в JSON полях
         query = query.filter(
             or_(
                 Product.title.cast(db.String).ilike(search_term),
@@ -153,20 +140,13 @@ async def get_products(
 
     # === ПАГІНАЦІЯ ===
 
-    # Підрахунок загальної кількості
     total = query.count()
-
-    # Обчислення offset
     offset = (page - 1) * limit
-
-    # Отримання товарів для поточної сторінки
     products = query.offset(offset).limit(limit).all()
 
     # === ФОРМУВАННЯ ВІДПОВІДІ ===
-
     user_collections_products = {}
     if current_user:
-        # Один раз отримуємо всі ID товарів, які є в колекціях користувача
         user_collections = db.query(Collection).filter(Collection.user_id == current_user.id).all()
         for coll in user_collections:
             for prod in coll.products:
@@ -175,10 +155,6 @@ async def get_products(
 
     products_data = []
     for product in products:
-        # Отримуємо поточну ціну з урахуванням знижки
-        current_price = product.get_current_price()
-
-        # Формуємо дані продукту
         product_data = {
             "id": product.id,
             "sku": product.sku,
@@ -187,7 +163,7 @@ async def get_products(
             "category": product.category,
             "product_type": product.product_type,
             "price": product.price,
-            "current_price": current_price,
+            "current_price": product.get_current_price(),
             "discount_percent": product.discount_percent if product.discount_ends_at and product.discount_ends_at > datetime.utcnow() else 0,
             "is_free": product.is_free(),
             "is_featured": product.is_featured,
@@ -200,15 +176,11 @@ async def get_products(
             "requires_subscription": product.requires_subscription,
             "file_size": product.file_size,
             "created_at": product.created_at.isoformat(),
-            # --- ВИПРАВЛЕННЯ: Додаємо іконку, якщо товар є в одній з колекцій ---
             "collection_icon": user_collections_products.get(product.id, "🤍")
         }
-
         products_data.append(product_data)
 
-    # Метадані для пагінації
     total_pages = (total + limit - 1) // limit
-
     return {
         "products": products_data,
         "pagination": {
@@ -237,27 +209,21 @@ async def get_product(
     """
     Отримати детальну інформацію про продукт
     """
-    # Шукаємо продукт
     product = db.query(Product).filter(
         Product.id == product_id,
-        Product.is_active == True
+        Product.is_active == True,
+        Product.is_approved == True
     ).first()
 
     if not product:
-        raise HTTPException(
-            status_code=404,
-            detail="Продукт не знайдено"
-        )
+        raise HTTPException(status_code=404, detail="Продукт не знайдено")
 
-    # Збільшуємо лічильник переглядів
     product.views_count += 1
     db.commit()
 
-    # Тимчасово без перевірки користувача
     can_download = product.is_free()
-    is_purchased = False
+    is_purchased = False # Тут буде логіка перевірки покупок
 
-    # Інформація про творця
     creator_info = None
     if product.creator:
         creator_info = {
@@ -267,7 +233,6 @@ async def get_product(
             "verified": product.creator.creator_verified
         }
 
-    # Формуємо відповідь
     return {
         "id": product.id,
         "sku": product.sku,
@@ -305,32 +270,23 @@ async def get_home_products(
 ):
     """
     Отримати продукти для головної сторінки
-    - Новинки
-    - Популярні
-    - Товар тижня (з найбільшою знижкою)
     """
-
-    # Новинки (останні 8)
     new_products = db.query(Product).filter(
-        Product.is_active == True,
-        Product.is_new == True
+        Product.is_active == True, Product.is_approved == True, Product.is_new == True
     ).order_by(desc(Product.created_at)).limit(8).all()
 
-    # Популярні (топ 8 по завантаженнях)
     featured_products = db.query(Product).filter(
-        Product.is_active == True,
-        Product.is_featured == True
+        Product.is_active == True, Product.is_approved == True, Product.is_featured == True
     ).order_by(desc(Product.downloads_count)).limit(8).all()
 
-    # Товар тижня (найбільша знижка)
     product_of_week = db.query(Product).filter(
-        Product.is_active == True,
+        Product.is_active == True, Product.is_approved == True,
         Product.discount_percent > 0,
         Product.discount_ends_at > datetime.utcnow()
     ).order_by(desc(Product.discount_percent)).first()
 
-    # Форматуємо дані
     def format_product_short(p):
+        if not p: return None
         return {
             "id": p.id,
             "sku": p.sku,
@@ -346,7 +302,7 @@ async def get_home_products(
     return {
         "new_products": [format_product_short(p) for p in new_products],
         "featured_products": [format_product_short(p) for p in featured_products],
-        "product_of_week": format_product_short(product_of_week) if product_of_week else None
+        "product_of_week": format_product_short(product_of_week)
     }
 
 
@@ -354,13 +310,12 @@ async def get_home_products(
 async def toggle_favorite(
         product_id: int,
         db: Session = Depends(get_db),
-        current_user: User = Depends(get_current_user_from_token)
+        current_user: User = Depends(get_current_active_user)
 ):
     """
     Додати/видалити з обраного
     """
     product = db.query(Product).filter(Product.id == product_id).first()
-
     if not product:
         raise HTTPException(status_code=404, detail="Продукт не знайдено")
 
@@ -381,7 +336,7 @@ async def toggle_favorite(
 async def get_user_favorites(
         language: str = Query("en"),
         db: Session = Depends(get_db),
-        current_user: User = Depends(get_current_user_from_token)
+        current_user: User = Depends(get_current_active_user)
 ):
     """
     Отримати список обраних товарів користувача
@@ -398,14 +353,13 @@ async def get_user_favorites(
                 "preview_image": product.preview_images[0] if product.preview_images else None,
                 "rating": product.rating
             })
-
     return favorites
 
 
 @router.get("/user/downloads")
 async def get_user_downloads(
         language: str = Query("uk"),
-        current_user: User = Depends(get_current_user_from_token),
+        current_user: User = Depends(get_current_active_user),
         db: Session = Depends(get_db)
 ):
     """
@@ -428,15 +382,7 @@ async def get_user_downloads(
         })
 
     # 2. TODO: Знаходимо всі куплені товари
-    # Тут буде логіка пошуку товарів в успішних замовленнях користувача
-    # purchased_items = db.query(OrderItem).join(Order).filter(Order.user_id == current_user.id, Order.status == 'completed').all()
-    # for item in purchased_items: ...
-
     # 3. TODO: Знаходимо товари, доступні по підписці
-    # active_subscription = current_user.get_active_subscription(db)
-    # if active_subscription:
-    #     subscription_products = db.query(Product).filter(Product.requires_subscription == True, Product.released_at >= active_subscription.started_at).all()
-    #     for p in subscription_products: ...
 
     return downloads
 
@@ -444,10 +390,10 @@ async def get_user_downloads(
 @router.get("/{product_id}/download")
 async def download_product_archive(
     product_id: int,
-    via_bot: bool = False, # Новий параметр для вибору методу
+    via_bot: bool = False,
     language: str = Query("uk"),
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user_from_token)
+    current_user: User = Depends(get_current_active_user)
 ):
     """
     Надає файл архіву для завантаження або відправляє його через бота.
@@ -462,8 +408,6 @@ async def download_product_archive(
     if not os.path.exists(file_path):
         raise HTTPException(status_code=404, detail="Файл архіву не знайдено на сервері")
 
-    # Якщо фронтенд повідомив, що пряме завантаження не вдалося,
-    # відправляємо архів через бота як запасний варіант.
     if via_bot:
         success = await bot_service.send_archive_message(
             telegram_id=current_user.telegram_id,
@@ -478,8 +422,6 @@ async def download_product_archive(
         else:
             raise HTTPException(status_code=500, detail="Не вдалося відправити архів. Можливо, ви не запустили бота або заблокували його.")
 
-    # Стандартна логіка для прямого завантаження,
-    # яка спрацює для більшості браузерів.
     product.downloads_count += 1
     db.commit()
     filename = os.path.basename(file_path)

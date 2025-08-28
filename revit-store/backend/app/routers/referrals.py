@@ -10,7 +10,7 @@ from datetime import datetime, timedelta
 from app.database import get_db
 from app.models.user import User
 from app.models.order import Order
-from app.routers.auth import get_current_user_from_token
+from app.routers.auth import get_current_active_user
 
 # Створюємо роутер
 router = APIRouter(
@@ -25,7 +25,7 @@ REFERRAL_PURCHASE_PERCENT = 5  # Відсоток від покупок
 
 @router.get("/info")
 async def get_referral_info(
-        current_user: User = Depends(get_current_user_from_token),
+        current_user: User = Depends(get_current_active_user),
         db: Session = Depends(get_db)
 ) -> Dict:
     """
@@ -59,7 +59,7 @@ async def get_referral_info(
 async def get_referrals_list(
         page: int = 1,
         limit: int = 20,
-        current_user: User = Depends(get_current_user_from_token),
+        current_user: User = Depends(get_current_active_user),
         db: Session = Depends(get_db)
 ) -> Dict:
     """
@@ -115,7 +115,7 @@ async def get_referrals_list(
 @router.get("/earnings")
 async def get_referral_earnings(
         period: str = "all",  # all, month, week
-        current_user: User = Depends(get_current_user_from_token),
+        current_user: User = Depends(get_current_active_user),
         db: Session = Depends(get_db)
 ) -> Dict:
     """
@@ -218,7 +218,7 @@ async def get_referral_leaderboard(
 @router.post("/share")
 async def track_referral_share(
         platform: str,  # telegram, whatsapp, instagram, etc.
-        current_user: User = Depends(get_current_user_from_token),
+        current_user: User = Depends(get_current_active_user),
         db: Session = Depends(get_db)
 ) -> Dict:
     """

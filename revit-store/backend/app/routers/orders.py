@@ -14,7 +14,7 @@ from app.database import get_db
 from app.models.user import User
 from app.models.product import Product
 from app.models.order import Order, OrderItem, CartItem, PromoCode
-from app.routers.auth import get_current_user_from_token
+from app.routers.auth import get_current_active_user
 from app.services.payment_service import PaymentService, PromoCodeService
 from app.utils.security import generate_order_number
 
@@ -34,7 +34,7 @@ promo_service = PromoCodeService()
 @router.get("/cart")
 async def get_cart(
     language: str = "en",
-    current_user: User = Depends(get_current_user_from_token),
+    current_user: User = Depends(get_current_active_user),
     db: Session = Depends(get_db)
 ) -> Dict:
     """
@@ -87,7 +87,7 @@ async def get_cart(
 @router.post("/cart/add")
 async def add_to_cart(
     product_id: int,
-    current_user: User = Depends(get_current_user_from_token),
+    current_user: User = Depends(get_current_active_user),
     db: Session = Depends(get_db)
 ) -> Dict:
     """
@@ -129,7 +129,7 @@ async def add_to_cart(
 @router.delete("/cart/{item_id}")
 async def remove_from_cart(
     item_id: int,
-    current_user: User = Depends(get_current_user_from_token),
+    current_user: User = Depends(get_current_active_user),
     db: Session = Depends(get_db)
 ) -> Dict:
     """
@@ -155,7 +155,7 @@ async def remove_from_cart(
 
 @router.delete("/cart")
 async def clear_cart(
-    current_user: User = Depends(get_current_user_from_token),
+    current_user: User = Depends(get_current_active_user),
     db: Session = Depends(get_db)
 ) -> Dict:
     """
@@ -175,7 +175,7 @@ async def clear_cart(
 @router.post("/promo/validate")
 async def validate_promo_code(
     code: str,
-    current_user: User = Depends(get_current_user_from_token),
+    current_user: User = Depends(get_current_active_user),
     db: Session = Depends(get_db)
 ) -> Dict:
     """
@@ -201,7 +201,7 @@ async def validate_promo_code(
 async def create_order(
     order_data: Dict,
     background_tasks: BackgroundTasks,
-    current_user: User = Depends(get_current_user_from_token),
+    current_user: User = Depends(get_current_active_user),
     db: Session = Depends(get_db)
 ) -> Dict:
     """
@@ -457,7 +457,7 @@ async def create_order(
 async def get_orders(
     page: int = 1,
     limit: int = 20,
-    current_user: User = Depends(get_current_user_from_token),
+    current_user: User = Depends(get_current_active_user),
     db: Session = Depends(get_db)
 ) -> Dict:
     """
@@ -502,7 +502,7 @@ async def get_orders(
 async def get_order_details(
     order_id: int,
     language: str = "en",
-    current_user: User = Depends(get_current_user_from_token),
+    current_user: User = Depends(get_current_active_user),
     db: Session = Depends(get_db)
 ) -> Dict:
     """

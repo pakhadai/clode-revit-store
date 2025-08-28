@@ -4,7 +4,9 @@ import products from '../modules/products.js';
 
 export class CollectionDetailView extends BaseView {
     async render(collectionId) {
-        if (!auth.isAuthenticated()) return this.app.renderService.views.error.renderAuthRequiredPage();
+        if (!auth.requireAuthentication()) {
+            return '<div></div>';
+        }
 
        try {
            const collection = await api.get(`/collections/${collectionId}`);

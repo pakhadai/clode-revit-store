@@ -1,0 +1,9 @@
+tunnel: <2be39487-878c-4780-a32e-e55a82d8e335>
+credentials-file: /path/to/your/<2be39487-878c-4780-a32e-e55a82d8e335>.json
+
+ingress:
+  - hostname: dev.ohmyrevit.pp.ua/
+    service: http://localhost:3000
+  - hostname: api.ohmyrevit.pp.ua/
+    service: http://localhost:8000
+  - service: http_status:404

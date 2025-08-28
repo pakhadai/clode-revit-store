@@ -4,7 +4,9 @@ import products from '../modules/products.js';
 
 export class DownloadsView extends BaseView {
     async render() {
-        if (!auth.isAuthenticated()) return this.app.renderService.views.error.renderAuthRequiredPage();
+        if (!auth.requireAuthentication()) {
+            return '<div></div>';
+        }
 
        try {
            Utils.showLoader(true);

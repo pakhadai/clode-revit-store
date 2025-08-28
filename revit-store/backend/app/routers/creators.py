@@ -15,7 +15,7 @@ from app.database import get_db
 from app.models.user import User
 from app.models.product import Product
 from app.models.order import Order, OrderItem
-from app.routers.auth import get_current_user_from_token
+from app.routers.auth import get_current_active_user
 #from app.services.s3_service import s3_service
 from app.services.local_file_service import local_file_service as file_service
 from app.utils.security import generate_order_number
@@ -31,7 +31,7 @@ router = APIRouter(
 # ====== MIDDLEWARE ======
 
 async def get_creator_user(
-    current_user: User = Depends(get_current_user_from_token)
+    current_user: User = Depends(get_current_active_user)
 ) -> User:
     """
     Перевірка чи користувач є творцем
@@ -48,7 +48,7 @@ async def get_creator_user(
 async def apply_to_become_creator(
         about_me: str = Form(...),
         portfolio_url: Optional[str] = Form(None),
-        current_user: User = Depends(get_current_user_from_token),
+        current_user: User = Depends(get_current_active_user),
         db: Session = Depends(get_db)
 ):
     """Подача заявки на отримання статусу творця."""

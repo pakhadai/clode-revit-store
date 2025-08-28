@@ -9,6 +9,7 @@ export class Application {
         this.currentPage = 'home';
         this.translations = {};
         this.selectedSubscriptionPlan = null;
+        this.currentPageParams = {}; // Ініціалізуємо параметри
 
         // Services
         this.renderService = new RenderService(this);
@@ -38,16 +39,9 @@ export class Application {
 
         const urlParams = Utils.getUrlParams();
         const page = urlParams.page || 'home';
-        const pageId = urlParams.id;
-        delete urlParams.page;
-        delete urlParams.id;
+        delete urlParams.page; // Видаляємо page, щоб залишились тільки інші параметри
 
-        // Якщо є ID і це сторінка товару - передаємо тільки ID
-        if (page === 'product' && pageId) {
-            this.navigateTo(page, true, pageId);
-        } else {
-            this.navigateTo(page, true, urlParams);
-        }
+        this.navigateTo(page, true, urlParams);
         cart.updateCartBadge();
 
         console.log('✅ Додаток готовий!');
@@ -88,20 +82,31 @@ export class Application {
 
     navigateTo(page, pushState = true, params = {}) {
         this.currentPage = page;
-
-        if (page === 'product' && typeof params !== 'object') {
-            this.currentPageParams = { id: params };
-        } else {
-            this.currentPageParams = params;
-        }
+        this.currentPageParams = params;
 
         if (pushState) {
             const url = new URL(window.location);
             url.searchParams.set('page', page);
+
+            // --- ВИПРАВЛЕНО ТУТ ---
+            // Тепер логіка коректно обробляє об'єкт параметрів.
             Object.keys(params).forEach(key => {
-                url.searchParams.set(key, params[key]);
+                if (params[key] !== undefined && params[key] !== null) {
+                    url.searchParams.set(key, params[key]);
+                } else {
+                    url.searchParams.delete(key);
+                }
             });
-            window.history.pushState({ page }, '', url);
+
+            // Очищаємо старі параметри, яких немає в нових
+            const currentParams = new URLSearchParams(window.location.search);
+            currentParams.forEach((value, key) => {
+                if(key !== 'page' && !params.hasOwnProperty(key)) {
+                    url.searchParams.delete(key);
+                }
+            });
+
+            window.history.pushState({ page, params }, '', url);
         }
 
         this.updateActiveNavigation(page);

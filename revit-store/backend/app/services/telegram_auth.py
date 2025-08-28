@@ -8,7 +8,7 @@ import hmac
 import json
 import time
 from typing import Dict, Optional
-from urllib.parse import parse_qs
+from urllib.parse import unquote
 import os
 from dotenv import load_dotenv
 
@@ -48,16 +48,18 @@ class TelegramAuth:
         Документація: https://core.telegram.org/bots/webapps#validating-data-received-via-the-mini-app
         """
         try:
-            # Парсимо параметри
-            parsed = parse_qs(init_data)
-
+            # --- ВИПРАВЛЕНО ТУТ ---
             # Отримуємо hash з параметрів
-            received_hash = parsed.get('hash', [''])[0]
+            parsed_data = dict(item.split("=") for item in init_data.split("&"))
+            received_hash = parsed_data.pop("hash", None)
+
             if not received_hash:
                 return False
 
-            # Видаляємо hash з параметрів для перевірки
-            data_check_string = self._create_data_check_string(init_data)
+            # Створюємо рядок для перевірки
+            data_check_string = "\n".join(
+                f"{key}={unquote(value)}" for key, value in sorted(parsed_data.items())
+            )
 
             # Створюємо секретний ключ
             secret_key = hmac.new(
@@ -80,31 +82,6 @@ class TelegramAuth:
             print(f"Помилка валідації Telegram даних: {e}")
             return False
 
-    def _create_data_check_string(self, init_data: str) -> str:
-        """
-        Створює рядок для перевірки підпису
-
-        Args:
-            init_data: Рядок initData від Telegram
-
-        Returns:
-            Відсортований рядок параметрів без hash
-        """
-        # Парсимо параметри
-        parsed = parse_qs(init_data)
-
-        # Створюємо список пар ключ=значення
-        data_pairs = []
-        for key, values in parsed.items():
-            if key != 'hash':  # Пропускаємо hash
-                # Беремо перше значення (в query string може бути кілька)
-                value = values[0] if values else ''
-                data_pairs.append(f"{key}={value}")
-
-        # Сортуємо алфавітно та об'єднуємо через \n
-        data_pairs.sort()
-        return '\n'.join(data_pairs)
-
     def parse_user_data(self, init_data: str) -> Optional[Dict]:
         """
         Витягує дані користувача з initData
@@ -114,33 +91,23 @@ class TelegramAuth:
 
         Returns:
             Словник з даними користувача або None
-
-        Приклад повернення:
-        {
-            'id': 123456789,
-            'first_name': 'Іван',
-            'last_name': 'Петренко',
-            'username': 'ivan_petrenko',
-            'language_code': 'uk',
-            'photo_url': 'https://t.me/...'
-        }
         """
         try:
             # Парсимо параметри
-            parsed = parse_qs(init_data)
+            parsed = dict(item.split("=") for item in init_data.split("&"))
 
             # Отримуємо user JSON
-            user_json = parsed.get('user', [''])[0]
-            if not user_json:
+            user_json_str = parsed.get('user')
+            if not user_json_str:
                 return None
 
             # Декодуємо JSON
-            user_data = json.loads(user_json)
+            user_data = json.loads(unquote(user_json_str))
 
             # Додаємо додаткові параметри
-            user_data['auth_date'] = parsed.get('auth_date', [''])[0]
-            user_data['query_id'] = parsed.get('query_id', [''])[0]
-            user_data['start_param'] = parsed.get('start_param', [''])[0]  # Реферальний код
+            user_data['auth_date'] = parsed.get('auth_date')
+            user_data['query_id'] = parsed.get('query_id')
+            user_data['start_param'] = parsed.get('start_param')  # Реферальний код
 
             return user_data
 
@@ -168,28 +135,3 @@ class TelegramAuth:
 
         except (ValueError, TypeError):
             return False
-
-
-# Приклад використання в роутері:
-"""
-from app.services.telegram_auth import TelegramAuth
-
-telegram_auth = TelegramAuth()
-
-@app.post("/api/auth/telegram")
-async def telegram_login(init_data: str):
-    # Перевіряємо підпис
-    if not telegram_auth.validate_init_data(init_data):
-        raise HTTPException(status_code=401, detail="Invalid Telegram data")
-
-    # Отримуємо дані користувача
-    user_data = telegram_auth.parse_user_data(init_data)
-    if not user_data:
-        raise HTTPException(status_code=400, detail="Cannot parse user data")
-
-    # Перевіряємо дату
-    if not telegram_auth.check_auth_date(user_data.get('auth_date')):
-        raise HTTPException(status_code=401, detail="Auth data expired")
-
-    # Далі створюємо/оновлюємо користувача в БД...
-"""

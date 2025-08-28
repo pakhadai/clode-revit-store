@@ -12,9 +12,13 @@ from dotenv import load_dotenv
 # Завантажуємо змінні оточення
 load_dotenv()
 
-# Формуємо URL для підключення до PostgreSQL з .env файлу
-# Переконайтесь, що у вас є .env файл в папці backend/ з цим рядком
-DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://user:password@localhost:5432/db")
+# --- ВИПРАВЛЕНО ТУТ ---
+# Формуємо URL для підключення до PostgreSQL з .env файлу.
+# Тепер він буде використовувати правильний хост ('postgres') всередині Docker.
+DATABASE_URL = (
+    f"postgresql://{os.getenv('DB_USER')}:{os.getenv('DB_PASSWORD')}"
+    f"@{os.getenv('DB_HOST', 'postgres')}:{os.getenv('DB_PORT', '5432')}/{os.getenv('DB_NAME')}"
+)
 
 # Створюємо движок бази даних
 engine = create_engine(DATABASE_URL)
@@ -46,6 +50,6 @@ def check_db_connection():
         return False
 
 def init_db():
-    from app.models import user, product, order, subscription
+    from app.models import user, product, order, subscription, collection
     Base.metadata.create_all(bind=engine)
     print("✅ База даних ініціалізована (PostgreSQL)")

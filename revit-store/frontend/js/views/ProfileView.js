@@ -2,9 +2,8 @@
 import { BaseView } from './BaseView.js';
 
 export class ProfileView extends BaseView {
-    async render() {
-        if (!auth.isAuthenticated()) {
-            return this.app.renderService.views.error.renderAuthRequiredPage();
+    if (!auth.requireAuthentication()) {
+            return '<div></div>';
         }
 
         const user = auth.user;

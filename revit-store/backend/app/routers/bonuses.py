@@ -13,7 +13,7 @@ import json
 from app.database import get_db
 from app.models.user import User
 from app.models.subscription import DailyBonus, WheelSpin
-from app.routers.auth import get_current_user_from_token
+from app.routers.auth import get_current_active_user
 from app.services.bonus_service import BonusService
 
 router = APIRouter(
@@ -49,7 +49,7 @@ WHEEL_SECTORS = [
 
 @router.get("/daily/status")
 async def get_daily_bonus_status(
-    current_user: User = Depends(get_current_user_from_token),
+    current_user: User = Depends(get_current_active_user),
     db: Session = Depends(get_db)
 ) -> Dict:
     """Отримати статус щоденного бонусу"""
@@ -94,7 +94,7 @@ async def get_daily_bonus_status(
 
 @router.post("/daily/claim")
 async def claim_daily_bonus(
-    current_user: User = Depends(get_current_user_from_token),
+    current_user: User = Depends(get_current_active_user),
     db: Session = Depends(get_db)
 ) -> Dict:
     """Отримати щоденний бонус"""
@@ -150,7 +150,7 @@ async def get_wheel_config() -> Dict:
 
 @router.get("/wheel/status")
 async def get_wheel_status(
-    current_user: User = Depends(get_current_user_from_token),
+    current_user: User = Depends(get_current_active_user),
     db: Session = Depends(get_db)
 ) -> Dict:
 
@@ -175,7 +175,7 @@ async def get_wheel_status(
 @router.post("/wheel/spin")
 async def spin_wheel(
     use_bonus: bool = False,
-    current_user: User = Depends(get_current_user_from_token),
+    current_user: User = Depends(get_current_active_user),
     db: Session = Depends(get_db)
 ) -> Dict:
     """Крутити колесо фортуни"""
@@ -243,7 +243,7 @@ async def spin_wheel(
 
 @router.get("/statistics")
 async def get_user_statistics(
-    current_user: User = Depends(get_current_user_from_token),
+    current_user: User = Depends(get_current_active_user),
     db: Session = Depends(get_db)
 ):
     """Отримати статистику бонусів для користувача."""
@@ -262,7 +262,7 @@ async def get_user_statistics(
 @router.get("/wheel/history")
 async def get_wheel_history(
     limit: int = 10,
-    current_user: User = Depends(get_current_user_from_token),
+    current_user: User = Depends(get_current_active_user),
     db: Session = Depends(get_db)
 ):
     """Отримати історію обертань колеса."""

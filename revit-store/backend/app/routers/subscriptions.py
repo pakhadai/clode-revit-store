@@ -12,7 +12,7 @@ from dotenv import load_dotenv
 from app.database import get_db
 from app.models.user import User
 from app.models.subscription import Subscription, SubscriptionHistory
-from app.routers.auth import get_current_user_from_token
+from app.routers.auth import get_current_active_user
 from app.services.payment_service import PaymentService
 from app.utils.security import generate_order_number
 
@@ -66,7 +66,7 @@ SUBSCRIPTION_PLANS = {
 @router.get("/plans")
 async def get_subscription_plans(
     language: str = "en",
-    current_user: Optional[User] = Depends(get_current_user_from_token)
+    current_user: Optional[User] = Depends(get_current_active_user)
 ) -> Dict:
     """
     Отримати доступні плани підписок
@@ -120,7 +120,7 @@ async def create_subscription(
     payment_method: str = "crypto",
     currency: str = "USDT",
     background_tasks: BackgroundTasks = BackgroundTasks(),
-    current_user: User = Depends(get_current_user_from_token),
+    current_user: User = Depends(get_current_active_user),
     db: Session = Depends(get_db)
 ) -> Dict:
     """
@@ -237,7 +237,7 @@ async def create_subscription(
 @router.post("/cancel/{subscription_id}")
 async def cancel_subscription(
     subscription_id: int,
-    current_user: User = Depends(get_current_user_from_token),
+    current_user: User = Depends(get_current_active_user),
     db: Session = Depends(get_db)
 ) -> Dict:
     """
@@ -277,7 +277,7 @@ async def cancel_subscription(
 
 @router.get("/history")
 async def get_subscription_history(
-    current_user: User = Depends(get_current_user_from_token),
+    current_user: User = Depends(get_current_active_user),
     db: Session = Depends(get_db)
 ) -> Dict:
     """
@@ -383,7 +383,7 @@ async def check_payment_status(subscription_id: int, payment_id: str, db: Sessio
 
 @router.get("/benefits")
 async def get_subscription_benefits(
-    current_user: User = Depends(get_current_user_from_token),
+    current_user: User = Depends(get_current_active_user),
     db: Session = Depends(get_db)
 ) -> Dict:
     """

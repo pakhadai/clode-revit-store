@@ -15,7 +15,7 @@ from app.models.user import User, CreatorApplication
 from app.models.product import Product
 from app.models.order import Order, PromoCode, OrderItem
 from app.models.subscription import Subscription
-from app.routers.auth import get_current_user_from_token
+from app.routers.auth import get_current_active_user
 from app.services.telegram_bot import bot_service
 from app.services.local_file_service import local_file_service as file_service
 
@@ -29,7 +29,7 @@ router = APIRouter(
 # ====== MIDDLEWARE ======
 
 async def get_admin_user(
-    current_user: User = Depends(get_current_user_from_token)
+    current_user: User = Depends(get_current_active_user)
 ) -> User:
     """
     Перевірка чи користувач є адміністратором

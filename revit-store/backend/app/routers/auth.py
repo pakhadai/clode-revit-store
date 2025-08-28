@@ -7,6 +7,7 @@ from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from sqlalchemy.orm import Session
 from typing import Dict, Optional
 from datetime import datetime
+from pydantic import BaseModel
 
 from app.database import get_db
 from app.models.user import User
@@ -29,21 +30,19 @@ telegram_auth = TelegramAuth()
 # Security схема для Bearer токенів
 security = HTTPBearer(auto_error=False)
 
-# ====== HELPER ФУНКЦІЇ ======
 
-async def get_current_user_from_token(
+# ====== HELPER ФУНКЦІЇ (ВИПРАВЛЕНО) ======
+
+async def get_optional_current_user(
         request: Request,
         credentials: Optional[HTTPAuthorizationCredentials] = Depends(security),
         db: Session = Depends(get_db)
-) -> User:
+) -> Optional[User]:
     """
-    Допоміжна функція для отримання користувача з токена.
-    Читає токен з заголовка "Authorization: Bearer <token>" або з параметра URL "?token=<token>".
-    Використовується в інших роутерах як залежність.
-    Приклад:
-    @router.get("/protected")
-    async def protected_route(user: User = Depends(get_current_user_from_token)):
-        return {"message": f"Привіт, {user.first_name}!"}
+    Допоміжна функція для отримання користувача, ЯКЩО він авторизований.
+    Якщо токен відсутній або невалідний, функція просто поверне None, не викликаючи помилку.
+    Це дозволяє використовувати її для публічних сторінок (маркетплейс, сторінка товару),
+    які мають додатковий функціонал для залогінених користувачів (наприклад, кнопка "в обране").
     """
     token = None
     # Спочатку пробуємо отримати токен зі стандартного заголовка Authorization
@@ -52,49 +51,53 @@ async def get_current_user_from_token(
     # Якщо токена немає в заголовку, шукаємо його в параметрах URL (для завантаження файлів)
     if not token:
         token = request.query_params.get("token")
-    # Якщо токен так і не знайдено, повертаємо помилку
+
+    # Якщо токен так і не знайдено, повертаємо None (користувач - анонім)
     if not token:
-        raise HTTPException(
-            status_code=401,
-            detail="Токен авторизації не надано"
-        )
+        return None
+
     # Перевіряємо та декодуємо токен
     payload = verify_access_token(token)
     if not payload:
-        raise HTTPException(
-            status_code=401,
-            detail="Невалідний або прострочений токен"
-        )
+        return None # Невалідний токен, вважаємо користувача анонімом
+
     # Отримуємо telegram_id з токена
     telegram_id = payload.get("sub")
     if not telegram_id:
+        return None # Неправильний формат токена
+
+    # Шукаємо користувача в базі даних
+    user = db.query(User).filter(User.telegram_id == int(telegram_id)).first()
+
+    # Якщо користувача не знайдено або він заблокований, вважаємо його анонімом
+    if not user or user.is_blocked:
+        return None
+
+    return user
+
+
+async def get_current_active_user(
+    current_user: User = Depends(get_optional_current_user)
+) -> User:
+    """
+    Допоміжна функція для ЗАХИЩЕНИХ ендпоінтів.
+    Вона вимагає, щоб користувач був обов'язково авторизований.
+    Якщо get_optional_current_user повернув None, ця функція викличе помилку 401 Unauthorized.
+    Використовується для профілю, кошика, завантажень і т.д.
+    """
+    if not current_user:
         raise HTTPException(
             status_code=401,
-            detail="Невалідний формат токена"
+            detail="Необхідна авторизація для цієї дії"
         )
-    # Шукаємо користувача в базі даних
-    user = db.query(User).filter(
-        User.telegram_id == int(telegram_id)
-    ).first()
-    if not user:
-        raise HTTPException(
-            status_code=404,
-            detail="Користувача не знайдено"
-        )
-    # Перевіряємо, чи користувач не заблокований
-    if user.is_blocked:
-        raise HTTPException(
-            status_code=403,
-            detail="Користувач заблокований"
-        )
-    return user
+    return current_user
+
 
 # ====== СХЕМИ ДАНИХ (Pydantic моделі) ======
 
-class TelegramAuthRequest:
+class TelegramAuthRequest(BaseModel):
     """Запит на автентифікацію через Telegram"""
-    init_data: str  # Дані від Telegram Web App
-
+    init_data: str
 
 class AuthResponse:
     """Відповідь при успішній автентифікації"""
@@ -124,7 +127,7 @@ class UserResponse:
 
 @router.post("/telegram", response_model=Dict)
 async def telegram_login(
-        request_body: Dict = Body(...),
+        request_body: TelegramAuthRequest,
         db: Session = Depends(get_db)
 ):
     """
@@ -137,7 +140,7 @@ async def telegram_login(
     - access_token: JWT токен
     - user: дані користувача
     """
-    init_data = request_body.get("init_data", "")
+    init_data = request_body.init_data
 
     # Крок 1: Перевіряємо підпис від Telegram
     if not telegram_auth.validate_init_data(init_data):
@@ -252,7 +255,7 @@ async def telegram_login(
             "is_admin": user.is_admin,
             "daily_streak": user.daily_streak,
             "referral_code": user.referral_code,
-            "has_subscription": bool(user.subscriptions),  # Чи є активна підписка
+            "has_subscription": user.has_active_subscription(db),
             "photo_url": user.photo_url
         }
     }
@@ -260,7 +263,7 @@ async def telegram_login(
 
 @router.get("/me")
 async def get_current_user(
-        credentials: HTTPAuthorizationCredentials = Depends(security),
+        user: User = Depends(get_current_active_user),
         db: Session = Depends(get_db)
 ):
     """
@@ -268,36 +271,6 @@ async def get_current_user(
 
     Потрібен Bearer токен в заголовку Authorization
     """
-    # Перевіряємо токен
-    token = credentials.credentials
-    payload = verify_access_token(token)
-
-    if not payload:
-        raise HTTPException(
-            status_code=401,
-            detail="Невалідний або прострочений токен"
-        )
-
-    # Отримуємо telegram_id з токена
-    telegram_id = payload.get("sub")
-    if not telegram_id:
-        raise HTTPException(
-            status_code=401,
-            detail="Невалідний токен"
-        )
-
-    # Шукаємо користувача
-    user = db.query(User).filter(
-        User.telegram_id == int(telegram_id)
-    ).first()
-
-    if not user:
-        raise HTTPException(
-            status_code=404,
-            detail="Користувача не знайдено"
-        )
-
-    # Перевіряємо чи є активна підписка
     active_subscription = None
     for sub in user.subscriptions:
         if sub.is_valid():
@@ -339,7 +312,7 @@ async def get_current_user(
 @router.put("/me")
 async def update_current_user(
         update_data: Dict,
-        current_user: User = Depends(get_current_user_from_token),
+        current_user: User = Depends(get_current_active_user),
         db: Session = Depends(get_db)
 ):
     """
@@ -359,7 +332,6 @@ async def update_current_user(
     db.refresh(current_user)
 
     # Повертаємо оновлені дані, аналогічно до get_current_user
-    # Це потрібно, щоб фронтенд оновив локальні дані
     active_subscription = None
     for sub in current_user.subscriptions:
         if sub.is_valid():
@@ -391,10 +363,10 @@ async def update_current_user(
         "free_spins_today": current_user.free_spins_today,
         "referral_code": current_user.referral_code,
         "referral_earnings": current_user.referral_earnings,
-        "total_spent": current_user.total_spent,
+        "total_spent": user.total_spent,
         "subscription": active_subscription,
-        "created_at": current_user.created_at.isoformat(),
-        "photo_url": current_user.photo_url
+        "created_at": user.created_at.isoformat(),
+        "photo_url": user.photo_url
     }
 
 
@@ -406,5 +378,3 @@ async def logout():
     На фронтенді просто видаляємо токен з localStorage
     """
     return {"message": "Вихід виконано успішно"}
-
-

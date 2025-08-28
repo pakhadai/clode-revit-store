@@ -9,7 +9,7 @@ from app.database import get_db
 from app.models.user import User
 from app.models.product import Product
 from app.models.collection import Collection
-from app.routers.auth import get_current_user_from_token
+from app.routers.auth import get_current_active_user
 
 router = APIRouter(
     prefix="/api/collections",
@@ -19,7 +19,7 @@ router = APIRouter(
 
 @router.get("/")
 async def get_user_collections(
-    current_user: User = Depends(get_current_user_from_token),
+    current_user: User = Depends(get_current_active_user),
     db: Session = Depends(get_db)
 ):
     """Отримати всі колекції поточного користувача."""
@@ -36,7 +36,7 @@ async def get_user_collections(
 @router.post("/")
 async def create_collection(
     data: Dict,
-    current_user: User = Depends(get_current_user_from_token),
+    current_user: User = Depends(get_current_active_user),
     db: Session = Depends(get_db)
 ):
     """Створити нову колекцію."""
@@ -64,7 +64,7 @@ async def create_collection(
 @router.post("/products/toggle")
 async def toggle_product_in_collection(
         data: Dict,
-        current_user: User = Depends(get_current_user_from_token),
+        current_user: User = Depends(get_current_active_user),
         db: Session = Depends(get_db)
 ):
     """Додати або видалити продукт з колекції."""
@@ -93,7 +93,7 @@ async def toggle_product_in_collection(
 async def update_collection(
         collection_id: int,
         data: Dict,
-        current_user: User = Depends(get_current_user_from_token),
+        current_user: User = Depends(get_current_active_user),
         db: Session = Depends(get_db)
 ):
     """Оновити назву та іконку колекції."""
@@ -115,7 +115,7 @@ async def update_collection(
 @router.delete("/{collection_id}")
 async def delete_collection(
         collection_id: int,
-        current_user: User = Depends(get_current_user_from_token),
+        current_user: User = Depends(get_current_active_user),
         db: Session = Depends(get_db)
 ):
     """Видалити колекцію."""
@@ -132,7 +132,7 @@ async def delete_collection(
 @router.get("/product-status/{product_id}")
 async def get_product_collection_status(
         product_id: int,
-        current_user: User = Depends(get_current_user_from_token),
+        current_user: User = Depends(get_current_active_user),
         db: Session = Depends(get_db)
 ):
     """Перевірити, в яких колекціях знаходиться товар, і повернути іконку."""
@@ -156,7 +156,7 @@ async def get_product_collection_status(
 async def get_collection_details(
         collection_id: int,
         language: str = "en",
-        current_user: User = Depends(get_current_user_from_token),
+        current_user: User = Depends(get_current_active_user),
         db: Session = Depends(get_db)
 ):
     """Отримати детальний вміст колекції."""

@@ -27,10 +27,13 @@ export class RenderService {
 
     async renderPage(page, params = {}) {
         const view = this.views[page];
-        if (page === 'product' || page === 'collection-detail') {
-            const id = (typeof params === 'object' && params !== null) ? params.id : params;
-            console.log('RenderService passing to ProductView:', id, typeof id, 'from params:', params);
-            return await view.render(id);
+        if (view) {
+            if (page === 'product' || page === 'collection-detail') {
+                const id = (typeof params === 'object' && params !== null) ? params.id : params;
+                console.log('RenderService passing to ProductView:', id, typeof id, 'from params:', params);
+                return await view.render(id);
+            }
+            return await view.render(params);
         }
 
         switch (page) {
