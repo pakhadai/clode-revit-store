@@ -1,0 +1,216 @@
+/* css/bonuses.css */
+
+/* Daily Bonus Styles */
+.daily-bonus-container {
+    @apply bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-lg;
+}
+
+.streak-progress {
+    @apply relative;
+}
+
+.day-box {
+    @apply transition-all duration-300 cursor-pointer;
+}
+
+.day-box:hover {
+    @apply transform scale-105;
+}
+
+.day-box.completed {
+    @apply bg-gradient-to-br from-green-400 to-green-600;
+}
+
+.day-box.next {
+    @apply bg-gradient-to-br from-blue-400 to-blue-600;
+    animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+/* Bonus Animation */
+.bonus-animation {
+    animation: bonusAppear 0.5s ease-out;
+    z-index: 9999;
+}
+
+@keyframes bonusAppear {
+    0% {
+        transform: translate(-50%, -50%) scale(0) rotate(180deg);
+        opacity: 0;
+    }
+    50% {
+        transform: translate(-50%, -50%) scale(1.2) rotate(10deg);
+    }
+    100% {
+        transform: translate(-50%, -50%) scale(1) rotate(0deg);
+        opacity: 1;
+    }
+}
+
+/* Statistics Cards */
+.stat-card {
+    @apply transition-all duration-300;
+    background: linear-gradient(135deg, var(--tw-gradient-from) 0%, var(--tw-gradient-to) 100%);
+}
+
+.stat-card:hover {
+    @apply transform translateY(-4px) shadow-xl;
+}
+
+/* Bonus Streak Timeline */
+.streak-timeline {
+    position: relative;
+}
+
+.streak-timeline::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg,
+        #10b981 0%,
+        #3b82f6 50%,
+        #8b5cf6 100%);
+    border-radius: 2px;
+    transform: translateY(-50%);
+}
+
+.streak-milestone {
+    @apply relative bg-white dark:bg-gray-700 rounded-full shadow-lg;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1;
+}
+
+.streak-milestone.achieved {
+    @apply bg-green-500 text-white;
+    animation: achievementPop 0.5s ease-out;
+}
+
+@keyframes achievementPop {
+    0% {
+        transform: scale(0);
+    }
+    60% {
+        transform: scale(1.2);
+    }
+    100% {
+        transform: scale(1);
+    }
+}
+
+/* Bonus Counter */
+.bonus-counter {
+    @apply inline-flex items-center gap-2 px-4 py-2 rounded-full;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    font-weight: bold;
+    animation: float 3s ease-in-out infinite;
+}
+
+@keyframes float {
+    0%, 100% {
+        transform: translateY(0);
+    }
+    50% {
+        transform: translateY(-10px);
+    }
+}
+
+/* Bonus Notification */
+.bonus-notification {
+    @apply fixed top-20 right-4 bg-green-500 text-white px-6 py-4 rounded-lg shadow-2xl;
+    animation: slideInRight 0.5s ease-out;
+    z-index: 1000;
+}
+
+@keyframes slideInRight {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+/* Referral Code Display */
+.referral-code-display {
+    @apply bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-900 dark:to-purple-900;
+    @apply border-2 border-dashed border-blue-300 dark:border-blue-700;
+    @apply rounded-lg p-4 text-center;
+}
+
+.referral-code {
+    @apply text-3xl font-mono font-bold text-transparent bg-clip-text;
+    background-image: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    letter-spacing: 0.2em;
+}
+
+/* Bonus History */
+.bonus-history-item {
+    @apply flex items-center justify-between p-3 rounded-lg;
+    @apply bg-gray-50 dark:bg-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600;
+    @apply transition-colors duration-200;
+}
+
+.bonus-history-item.jackpot {
+    @apply bg-gradient-to-r from-yellow-50 to-orange-50;
+    @apply dark:from-yellow-900 dark:to-orange-900;
+    @apply border-2 border-yellow-400 dark:border-yellow-600;
+}
+
+/* Bonus Progress Bar */
+.bonus-progress-bar {
+    @apply relative h-8 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden;
+}
+
+.bonus-progress-fill {
+    @apply h-full bg-gradient-to-r from-green-400 to-blue-500;
+    @apply transition-all duration-500 ease-out;
+    position: relative;
+}
+
+.bonus-progress-fill::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(90deg,
+        transparent 0%,
+        rgba(255,255,255,0.3) 50%,
+        transparent 100%);
+    animation: shimmer 2s infinite;
+}
+
+@keyframes shimmer {
+    0% {
+        transform: translateX(-100%);
+    }
+    100% {
+        transform: translateX(100%);
+    }
+}
+
+/* Mobile Optimizations */
+@media (max-width: 640px) {
+    .day-box {
+        @apply text-xs p-1;
+    }
+
+    .streak-milestone {
+        width: 32px;
+        height: 32px;
+    }
+
+    .stat-card {
+        @apply p-3;
+    }
+}

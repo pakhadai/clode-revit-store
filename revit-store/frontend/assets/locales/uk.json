@@ -171,6 +171,40 @@
       "title": "Підсумок"
     }
   },
+  "bonuses": {
+    "daily": {
+      "title": "Щоденний бонус",
+      "day": "День",
+      "streak": "Стрік",
+      "claimButton": "Отримати {amount} бонусів",
+      "nextTomorrow": "Наступний бонус буде доступний завтра",
+      "lastClaimed": "Останній отриманий",
+      "tip": "Не пропускайте дні, щоб отримувати більше бонусів! Максимальний бонус на 10-й день - 10 бонусів щодня!"
+    },
+    "statistics": {
+      "title": "Статистика бонусів",
+      "currentBalance": "Поточний баланс",
+      "totalEarned": "Всього зароблено",
+      "currentStreak": "Поточний стрік",
+      "jackpots": "Джекпоти",
+      "claimedTimes": "Отримано разів",
+      "totalBonuses": "Всього бонусів",
+      "maxStreak": "Макс. стрік",
+      "spinsMade": "Прокручено",
+      "totalWon": "Виграно",
+      "winRate": "% виграшів",
+      "spent": "Витрачено"
+    },
+    "claimed": "Отримано {amount} бонусів!",
+    "claimError": "Помилка отримання бонуса",
+    "alreadyClaimed": "Ви вже отримали бонус сьогодні",
+    "available": "Доступно зараз!"
+  },
+  "referrals": {
+    "title": "Реферали",
+    "showCode": "Показати реф. код",
+    "earned": "Зароблено"
+  },
   "profile": {
     "balance": "бонусів",
     "noVip": "Без VIP",
@@ -306,6 +340,10 @@
   "buttons": {
     "save": "Зберегти",
     "cancel": "Скасувати",
+    "choose": "Вибрати",
+    "subscribe": "Підписатися",
+    "cancel_subscription": "Скасувати підписку",
+    "manage_subscription": "Керувати підпискою",
     "delete": "Видалити",
     "edit": "Редагувати",
     "close": "Закрити",
@@ -342,5 +380,69 @@
     "usd": "$",
     "uah": "₴",
     "bonuses": "бонусів"
-  }
+  },
+  "subscriptions": {
+   "modal": {
+     "title": "Преміум підписка",
+     "features": "Переваги підписки",
+     "activeUntil": "Активна до"
+   },
+   "badge": {
+     "best_value": "Найкраща пропозиція"
+   },
+   "features": {
+     "unlimited_downloads": "Необмежені завантаження всіх архівів",
+     "bonus_spins": "+2 безкоштовні прокрутки щодня",
+     "cashback": "5% кешбек з кожної покупки",
+     "priority_support": "Пріоритетна підтримка 24/7"
+   },
+   "duration": {
+     "monthly": "Місячна",
+     "yearly": "Річна",
+     "lifetime": "Довічна"
+   },
+   "benefits": {
+     "unlimited": "Необмежені завантаження",
+     "daily_spins": "+{count} прокруток щодня",
+     "cashback": "{percent}% кешбек"
+   },
+   "status": {
+     "none": "Немає підписки",
+     "active": "Активна",
+     "expiring": "Закінчується",
+     "expired": "Закінчилась",
+     "cancelled": "Скасована"
+   },
+   "renewal": {
+     "renews_on": "Поновиться {date}",
+     "expires_on": "Закінчується {date}"
+   },
+   "banner": {
+     "active_info": "Ваша підписка активна ще"
+   },
+   "errors": {
+     "no_plan_selected": "Спочатку виберіть план підписки",
+     "payment_failed": "Помилка оплати. Спробуйте ще раз",
+     "load_plans_failed": "Не вдалося завантажити плани підписок"
+   },
+   "discount": {
+     "save_20_percent": "Економія 20%",
+     "first_month_free": "Перший місяць безкоштовно",
+     "special_offer": "Спеціальна пропозиція"
+   }
+ },
+ "payment": {
+   "select_method": "Виберіть спосіб оплати",
+   "bonuses": "Бонуси",
+   "processing": "Обробка платежу...",
+   "success": "Оплата успішна!",
+   "cancelled": "Оплату скасовано"
+ },
+ "common": {
+   "days": "днів",
+   "available": "доступно",
+   "per_month": "на місяць",
+   "loading": "Завантаження...",
+   "per_year": "на рік"
+ }
 }

@@ -1,0 +1,190 @@
+/* css/subscriptions.css */
+
+/* Subscription Modal */
+.subscription-modal-overlay {
+    backdrop-filter: blur(4px);
+    animation: fadeIn 0.2s ease-in-out;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+/* Plan Cards */
+.plan-card {
+    position: relative;
+    transition: all 0.3s ease;
+}
+
+.plan-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+}
+
+.plan-card.selected {
+    ring: 2px solid #3B82F6;
+    background: linear-gradient(to bottom right, #EFF6FF, #DBEAFE);
+}
+
+.dark .plan-card.selected {
+    background: linear-gradient(to bottom right, #1E3A8A, #1E40AF);
+}
+
+/* Best Value Badge */
+.best-value-badge {
+    position: absolute;
+    top: -10px;
+    right: -10px;
+    background: linear-gradient(135deg, #667EEA 0%, #764BA2 100%);
+    color: white;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: bold;
+    box-shadow: 0 4px 10px rgba(102, 126, 234, 0.4);
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+}
+
+/* Payment Methods */
+.payment-method-btn {
+    position: relative;
+    overflow: hidden;
+    transition: all 0.3s ease;
+}
+
+.payment-method-btn::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.5);
+    transform: translate(-50%, -50%);
+    transition: width 0.3s, height 0.3s;
+}
+
+.payment-method-btn:hover::before {
+    width: 100px;
+    height: 100px;
+}
+
+.payment-method-btn:disabled {
+    cursor: not-allowed;
+    filter: grayscale(100%);
+}
+
+/* Features List */
+.subscription-features {
+    display: grid;
+    gap: 12px;
+}
+
+.subscription-feature {
+    display: flex;
+    align-items: start;
+    gap: 12px;
+}
+
+.subscription-feature-icon {
+    flex-shrink: 0;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #10B981;
+    color: white;
+    border-radius: 50%;
+    font-size: 14px;
+}
+
+/* Status Badges */
+.subscription-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.subscription-status.active {
+    background: #D1FAE5;
+    color: #065F46;
+}
+
+.subscription-status.expiring {
+    background: #FEF3C7;
+    color: #92400E;
+}
+
+.subscription-status.expired {
+    background: #FEE2E2;
+    color: #991B1B;
+}
+
+.dark .subscription-status.active {
+    background: #065F46;
+    color: #D1FAE5;
+}
+
+.dark .subscription-status.expiring {
+    background: #92400E;
+    color: #FEF3C7;
+}
+
+.dark .subscription-status.expired {
+    background: #991B1B;
+    color: #FEE2E2;
+}
+
+/* Subscription Banner */
+.subscription-banner {
+    background: linear-gradient(135deg, #667EEA 0%, #764BA2 100%);
+    border-radius: 16px;
+    padding: 24px;
+    color: white;
+    position: relative;
+    overflow: hidden;
+}
+
+.subscription-banner::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    right: -50%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+    animation: rotate 30s linear infinite;
+}
+
+@keyframes rotate {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+/* Mobile Responsiveness */
+@media (max-width: 640px) {
+    .plan-card {
+        margin-bottom: 16px;
+    }
+
+    .payment-method-btn {
+        padding: 12px 8px;
+        font-size: 12px;
+    }
+
+    .subscription-modal-content {
+        padding: 16px;
+    }
+}
