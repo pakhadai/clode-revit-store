@@ -951,7 +951,7 @@ class App {
                 <div class="text-6xl mb-4">🔒</div>
                 <h1 class="text-3xl font-bold mb-4 dark:text-white">${this.t('auth.authRequired')}</h1>
                 <p class="text-gray-600 dark:text-gray-400 mb-8">${this.t('auth.authRequiredDesc')}</p>
-                <button onclick="auth.authenticate()"
+                <button onclick="LoginModal.show()"
                         class="bg-blue-500 hover:bg-blue-600 text-white px-6 py-3 rounded-lg font-bold">
                     ${this.t('auth.loginWithTelegram')}
                 </button>

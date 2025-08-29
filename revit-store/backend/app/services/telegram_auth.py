@@ -82,6 +82,30 @@ class TelegramAuth:
             print(f"Помилка валідації Telegram даних: {e}")
             return False
 
+    def validate_widget_data(self, user_data: Dict) -> bool:
+        """
+        Перевіряє підпис даних від Telegram Login Widget.
+        """
+        try:
+            data_to_check = user_data.copy()
+            received_hash = data_to_check.pop("hash", None)
+            if not received_hash:
+                return False
+
+            data_check_list = [f"{key}={value}" for key, value in data_to_check.items()]
+            data_check_list.sort()
+            data_check_string = "\n".join(data_check_list)
+
+            secret_key = hashlib.sha256(self.bot_token.encode()).digest()
+            expected_hash = hmac.new(
+                secret_key, data_check_string.encode(), hashlib.sha256
+            ).hexdigest()
+
+            return hmac.compare_digest(received_hash, expected_hash)
+        except Exception as e:
+            print(f"Помилка валідації даних Telegram Widget: {e}")
+            return False
+
     def parse_user_data(self, init_data: str) -> Optional[Dict]:
         """
         Витягує дані користувача з initData

@@ -1,48 +1,28 @@
-// MODULAR ARCHITECTURE
 import { AuthService } from '../services/AuthService.js';
 
-// Create auth service instance
+// Створюємо єдиний екземпляр AuthService
 const authService = new AuthService();
 
-// Initialize on load
+// Ініціалізуємо його при завантаженні скрипта
 authService.init();
 
-// Create legacy-compatible wrapper
+// Створюємо глобальний об'єкт `auth` для сумісності та зручності
 const auth = {
-    // Properties
+    // Властивості
     get user() { return authService.user; },
-    set user(value) { authService.user = value; },
     get tg() { return authService.tg; },
 
-    // Methods
-    initTelegram: () => authService.telegramService.init(),
-    // --- ЗМІНЕНО ТУТ ---
-    // Тепер обгортка приймає initData і передає її далі
-    authenticate: (initData) => authService.authenticate(initData),
-    requireAuthentication: () => authService.requireAuthentication(),
-    getCurrentUser: () => authService.getCurrentUser(),
+    // Методи
+    getUser: () => authService.getUser(),
     isAuthenticated: () => authService.isAuthenticated(),
     logout: () => authService.logout(),
-    updateProfile: (data) => authService.updateProfile(data),
-
-    // User state
-    getBalance: () => authService.getBalance(),
-    getVipLevel: () => authService.getVipLevel(),
-    isCreator: () => authService.isCreator(),
-    isAdmin: () => authService.isAdmin(),
-
-    // Telegram methods
+    isTelegramWebApp: () => authService.isTelegramWebApp(),
+    
+    // Telegram-специфічні методи
     getTelegramUser: () => authService.getTelegramUser(),
     getTelegramTheme: () => authService.getTelegramTheme(),
-    showConfirm: (msg, cb) => authService.showConfirm(msg, cb),
-    showAlert: (msg) => authService.showAlert(msg),
-    openLink: (url) => authService.openLink(url),
-    hapticFeedback: (type, style) => authService.hapticFeedback(type, style),
-    showInviteFriend: () => authService.showInviteFriend(),
-    setMainButton: (text, cb, show) => authService.setMainButton(text, cb, show),
-    setBackButton: (cb, show) => authService.setBackButton(cb, show)
 };
 
-// Export for backward compatibility
+// Експортуємо для використання в інших модулях та робимо глобальним
 window.auth = auth;
 export default auth;

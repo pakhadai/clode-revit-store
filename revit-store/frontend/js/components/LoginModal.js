@@ -52,3 +52,5 @@ export class LoginModal {
         }
     }
 }
+
+window.LoginModal = LoginModal;

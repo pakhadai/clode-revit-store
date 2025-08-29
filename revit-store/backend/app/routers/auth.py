@@ -281,7 +281,7 @@ async def telegram_widget_login(
     # Конвертуємо Pydantic модель в словник для валідації
     user_data_dict = widget_user.model_dump()
 
-    if not telegram_auth.validate_init_data(user_data_dict):
+    if not telegram_auth.validate_widget_data(user_data_dict):
         raise HTTPException(
             status_code=401,
             detail="Невалідні дані від Telegram Widget."
