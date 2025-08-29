@@ -140,6 +140,126 @@
       "endsAt": "Знижка діє до"
     }
   },
+  "admin": {
+    "errors": {
+      "accessDenied": "Доступ тільки для адміністраторів",
+      "dashboardLoad": "Помилка завантаження дашборду",
+      "usersLoad": "Помилка завантаження користувачів",
+      "userUpdate": "Помилка оновлення користувача",
+      "userDelete": "Помилка видалення користувача",
+      "moderationLoad": "Помилка завантаження модерації",
+      "productApprove": "Помилка схвалення товару",
+      "productReject": "Помилка відхилення товару",
+      "revisionSend": "Помилка відправки на доопрацювання",
+      "applicationsLoad": "Помилка завантаження заявок",
+      "creatorApprove": "Помилка схвалення заявки",
+      "creatorReject": "Помилка відхилення заявки",
+      "productsLoad": "Помилка завантаження товарів",
+      "productCreate": "Помилка створення товару",
+      "productUpdate": "Помилка оновлення товару",
+      "productDelete": "Помилка видалення товару",
+      "productLoadById": "Не вдалося завантажити дані товару",
+      "promocodesLoad": "Помилка завантаження промокодів",
+      "promocodeCreate": "Помилка створення промокоду",
+      "promocodeDelete": "Помилка видалення промокоду",
+      "broadcastSend": "Помилка розсилки",
+      "subscriptionGrant": "Помилка видачі підписки",
+      "noDataToExport": "Немає даних для експорту"
+    },
+    "notifications": {
+      "userUpdated": "Користувача оновлено",
+      "userDeleted": "Користувача видалено",
+      "productApproved": "Товар схвалено",
+      "productRejected": "Товар відхилено",
+      "sentForRevision": "Відправлено на доопрацювання",
+      "creatorApproved": "Заявку схвалено",
+      "creatorRejected": "Заявку відхилено",
+      "productCreated": "Товар створено",
+      "productUpdated": "Товар оновлено",
+      "productDeleted": "Товар видалено",
+      "promocodeCreated": "Промокод створено",
+      "promocodeDeleted": "Промокод видалено",
+      "subscriptionGranted": "Підписку видано",
+      "broadcastSent": "Розсилку відправлено: {sent}/{total}"
+    },
+    "confirmations": {
+      "deleteUser": "УВАГА! Ця дія повністю видалить користувача та всі пов'язані дані без можливості відновлення. Продовжити?",
+      "toggleCreator": "Ви впевнені, що хочете змінити статус творця?",
+      "approveCreator": "Підтвердити заявку і надати статус творця?",
+      "deleteProduct": "Ви впевнені, що хочете видалити цей товар? Цю дію неможливо скасувати.",
+      "deletePromocode": "Видалити промокод?",
+      "sendBroadcast": "Відправити розсилку для обраної групи?"
+    },
+    "validations": {
+      "promocodeLength": "Код має бути не менше 3 символів",
+      "promocodeValue": "Вкажіть коректне значення знижки",
+      "promocodePercent": "Відсоток не може бути більше 100",
+      "invalidDays": "Невірна кількість днів",
+      "broadcastMessage": "Введіть повідомлення",
+      "promocode": {
+        "codeLength": "Код має бути не менше 3 символів",
+        "codeFormat": "Код може містити тільки літери, цифри, _ та -",
+        "value": "Вкажіть коректне значення знижки",
+        "percentLimit": "Відсоток не може бути більше 100",
+        "maxUses": "Кількість використань не може бути від'ємною"
+      }
+    },
+    "dashboard": {
+      "loading": "Завантаження дашборду...",
+      "users": "Користувачі",
+      "activeWeek": "Активні",
+      "revenue": "Дохід",
+      "orders": "Замовлень",
+      "products": "Товари",
+      "active": "Активні",
+      "subscriptions": "Підписки",
+      "pendingModeration": "Товари на модерації",
+      "awaitingReview": "товарів очікують перевірки",
+      "revenueWeek": "Дохід за останній тиждень",
+      "topProductsWeek": "Топ товари тижня",
+      "sales": "продажів",
+      "creators": "Творців",
+      "blocked": "Заблоковано",
+      "downloads": "Завантажень",
+      "totalOrders": "Замовлень"
+    },
+    "users": {
+      "user": "Користувач",
+      "balance": "Баланс",
+      "roles": "Ролі",
+      "status": "Статус",
+      "actions": "Дії",
+      "blocked": "Заблоковано",
+      "active": "Активний",
+      "toggleCreator": "Змінити статус творця",
+      "unblock": "Розблокувати",
+      "block": "Заблокувати",
+      "grantSubscription": "Видати підписку",
+      "delete": "Видалити з БД"
+    },
+    "statuses": {
+      "active": "Активний",
+      "paused": "Призупинено",
+      "rejected": "Відхилено",
+      "pending": "Модерація"
+    },
+    "dialogs": {
+      "grantSubscription": {
+        "prompt": "Виберіть план:\n1. monthly (30 днів)\n2. yearly (365 днів)\n3. Або введіть кількість днів"
+      }
+    },
+    "charts": {
+      "noData": "Немає даних"
+    },
+    "broadcast": {
+      "targets": {
+        "all": "Всі користувачі",
+        "users": "Тільки користувачі",
+        "creators": "Тільки творці",
+        "subscribers": "Тільки підписники"
+      }
+    }
+  },
   "cart": {
     "title": "Кошик",
     "empty": "Кошик порожній",

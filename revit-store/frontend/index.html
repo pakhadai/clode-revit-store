@@ -44,6 +44,7 @@
     <link rel="stylesheet" href="/css/wheel.css">
     <link rel="stylesheet" href="/css/subscriptions.css">
     <link rel="stylesheet" href="/css/bonuses.css">
+    <link rel="stylesheet" href="/css/admin.css">
     <style>
         /* Стилі залишаються без змін */
         .loader { border-top-color: #3B82F6; animation: spinner 1.5s linear infinite; }
@@ -100,15 +101,26 @@
     <!-- <script type="module" src="/js/modules/auth.legacy.js"></script> -->
 
     <!-- --- ЗАВАНТАЖУЄМО ТІЛЬКИ СУЧАСНУ МОДУЛЬНУ АРХІТЕКТУРУ --- -->
+
     <script type="module" src="/js/core/utils.js"></script>
     <script type="module" src="/js/core/api.js"></script>
     <script type="module" src="/js/modules/search.js"></script>
     <script type="module" src="/js/modules/collections.js"></script>
-    <script type="module" src="/js/modules/creator.js"></script>
-    <script type="module" src="/js/modules/admin.js"></script>
     <script type="module" src="/js/modules/onboarding.js"></script>
     <script type="module" src="/js/components/LoginModal.js"></script>
     <script type="module" src="/js/components/wheel-of-fortune.js"></script>
+    <script type="module" src="/js/modules/admin.js"></script>
+    <script type="module" src="/js/api/AdminAPI.js"></script>
+    <script type="module" src="/js/services/AdminDashboardService.js"></script>
+    <script type="module" src="/js/services/AdminUsersService.js"></script>
+    <script type="module" src="/js/services/AdminModerationService.js"></script>
+    <script type="module" src="/js/services/AdminProductsService.js"></script>
+    <script type="module" src="/js/services/AdminPromocodesService.js"></script>
+    <script type="module" src="/js/services/AdminBroadcastService.js"></script>
+    <script type="module" src="/js/store/AdminStore.js"></script>
+    <script type="module" src="/js/components/AdminDashboardComponent.js"></script>
+    <script type="module" src="/js/components/AdminUsersTable.js"></script>
+    <script type="module" src="/js/utils/adminHelpers.js"></script>
     <script type="module" src="/js/api/BonusesAPI.js"></script>
     <script type="module" src="/js/services/BonusesService.js"></script>
     <script type="module" src="/js/store/BonusesStore.js"></script>
