@@ -27,11 +27,13 @@ export class Application {
         this.applyTheme();
         await this.loadTranslations();
 
-        if (auth.tg && auth.tg.initData) {
-            await auth.authenticate();
+        // Ініціалізація auth вже відбулась в auth.js при імпорті
+        // Перевіряємо чи є користувач
+        const user = await auth.getUser();
+        if (user) {
+            console.log('User found:', user.first_name);
+            await bonuses.init();
         }
-
-        await bonuses.init();
 
         this.eventService.initNavigation();
         this.eventService.initEventHandlers();
