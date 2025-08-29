@@ -30,22 +30,41 @@ export class RenderService {
         if (view) {
             if (page === 'product' || page === 'collection-detail') {
                 const id = (typeof params === 'object' && params !== null) ? params.id : params;
-                console.log('RenderService passing to ProductView:', id, typeof id, 'from params:', params);
                 return await view.render(id);
             }
             return await view.render(params);
         }
 
         switch (page) {
+            // ❗️ ЗМІНА ЛОГІКИ: ДИНАМІЧНИЙ ІМПОРТ
+            // Тепер модуль 'creator.js' завантажується тільки тоді,
+            // коли користувач-творець переходить на цю сторінку.
             case 'creator':
-                return auth.isCreator() ? creator.createCreatorPage() : this.views.error.render404Page();
+                if (auth.isCreator()) {
+                    const { default: creator } = await import('../modules/creator.js');
+                    return creator.createCreatorPage();
+                } else {
+                    return this.views.error.render404Page();
+                }
+
+            // ❗️ ЗМІНА ЛОГІКИ: ДИНАМІЧНИЙ ІМПОРТ
+            // Тепер модуль 'admin.js' та всі пов'язані з ним сервіси/компоненти
+            // (які імпортуються всередині admin.js) будуть завантажені
+            // тільки для адміністратора при переході на цю сторінку.
             case 'admin':
-                return auth.isAdmin() ? admin.createAdminPage() : this.views.error.render404Page();
+                if (auth.isAdmin()) {
+                    const { default: admin } = await import('../modules/admin.js');
+                    return admin.createAdminPage();
+                } else {
+                    return this.views.error.render404Page();
+                }
+
             case 'orders':
             case 'referrals':
             case 'settings':
             case 'support':
             case 'faq':
+                // Ця логіка залишається без змін, оскільки ProfileView вже завантажений
                 return await this.views.profile.render({ defaultTab: page });
             default:
                 return this.views.error.render404Page();

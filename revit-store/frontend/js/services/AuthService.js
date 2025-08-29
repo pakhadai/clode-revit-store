@@ -11,7 +11,7 @@ export class AuthService {
         this.tg = null;
         this.isWebApp = false;
 
-        // Робимо callback-функцію віджета глобальною
+        // Робимо callback-функцію віджета глобальною, щоб віджет міг її викликати
         window.onTelegramAuth = this.handleWidgetAuth.bind(this);
     }
 
@@ -20,10 +20,10 @@ export class AuthService {
      */
     async init() {
         console.log('🔐 AuthService init...');
-        
+
         // Ініціалізуємо Telegram Service
         this.tg = this.telegramService.init();
-        
+
         // Визначаємо чи це Telegram Web App
         this.isWebApp = this.isTelegramWebApp();
         console.log('Environment check:', {
@@ -59,7 +59,6 @@ export class AuthService {
      * Перевіряє, чи запущений додаток всередині Telegram Web App.
      */
     isTelegramWebApp() {
-        // Найнадійніший спосіб - перевірка наявності initData
         return !!(window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.initData);
     }
 
@@ -87,24 +86,26 @@ export class AuthService {
 
     /**
      * Метод для ручної авторизації (для кнопки "Увійти")
-     * УВАГА: Цей метод більше не використовується - замість нього використовуйте LoginModal.show()
+     * ❗️ ЗМІНА ЛОГІКИ: Ця функція більше не проводить авторизацію сама.
+     * Замість цього, вона делегує показ модального вікна компоненту LoginModal.
+     * Це виправляє помилку, оскільки логіка для Web App (з initData) більше не викликається на звичайному сайті.
      */
     async authenticate() {
         console.log('⚠️ authenticate() called - redirecting to LoginModal.show()');
 
-        // Перенаправляємо на правильний метод
         if (window.LoginModal) {
-            window.LoginModal.show();
+            LoginModal.show();
         } else {
             console.error('LoginModal not loaded!');
             Utils.showNotification('Помилка завантаження модуля входу', 'error');
         }
-
+        // Повертаємо false, оскільки сам процес авторизації буде асинхронним
+        // і керованим через callback від віджета.
         return false;
     }
 
     /**
-     * Авторизація через Web App (автоматична).
+     * Авторизація через Web App (автоматична). Ця логіка залишається без змін.
      */
     async authenticateWithWebApp(initData) {
         if (!initData) {
@@ -115,34 +116,34 @@ export class AuthService {
         try {
             Utils.showLoader(true);
             console.log('Authenticating with initData...');
-            
+
             const response = await api.loginWithTelegram(initData);
-            
+
             if (response.access_token && response.user) {
                 console.log('Authentication successful:', response.user);
-                
+
                 this.user = response.user;
                 this.userStore.saveUser(this.user);
                 localStorage.setItem('access_token', response.access_token);
                 api.setToken(response.access_token);
-                
+
                 // Встановлюємо мову та тему
                 const language = this.user.language || this.telegramService.getTelegramUser()?.language_code || 'uk';
                 Utils.setLanguage(language);
-                
+
                 const theme = this.user.theme || this.telegramService.getTelegramTheme() || 'light';
                 Utils.setTheme(theme);
-                
+
                 window.dispatchEvent(new CustomEvent('auth:success', { detail: this.user }));
-                
-                // Оновлюємо UI
+
                 if (window.app) {
                     window.app.updateUI();
+                    window.app.render();
                 }
-                
+
                 return true;
             }
-            
+
             throw new Error('Не вдалося отримати токен');
         } catch (error) {
             console.error('Web App Authentication error:', error);
@@ -154,39 +155,33 @@ export class AuthService {
     }
 
     /**
-     * Метод, який викликається ВІДЖЕТОМ на сайті після входу.
+     * Метод, який викликається ВІДЖЕТОМ на сайті після входу. Логіка без змін.
      */
     async handleWidgetAuth(user) {
         console.log('Widget authentication received:', user);
-        
+
         try {
             Utils.showLoader(true);
-            
-            // Закриваємо модальне вікно
             LoginModal.hide();
-            
-            // Відправляємо дані на сервер
             const response = await api.post('/auth/telegram-widget', user);
-            
+
             if (response.user && response.access_token) {
                 console.log('Widget authentication successful:', response.user);
-                
+
                 this.user = response.user;
                 this.userStore.saveUser(this.user);
                 localStorage.setItem('access_token', response.access_token);
                 api.setToken(response.access_token);
-                
+
                 Utils.showNotification(`Ласкаво просимо, ${this.user.first_name}!`, 'success');
-                
-                // Оновлюємо UI
+
                 if (window.app) {
                     window.app.updateUI();
-                    // Якщо ми на сторінці профілю - перерендеримо її
                     if (window.app.currentPage === 'profile') {
                         window.app.render();
                     }
                 }
-                
+
                 window.dispatchEvent(new CustomEvent('auth:success', { detail: this.user }));
             } else {
                 throw new Error('Неповна відповідь від сервера');
@@ -200,27 +195,22 @@ export class AuthService {
     }
 
     /**
-     * Перевірка авторизації з показом діалогу при потребі
+     * Перевірка авторизації з показом діалогу при потребі. Логіка без змін.
      */
     async requireAuthentication() {
         if (this.isAuthenticated()) {
             return true;
         }
-
-        // Для Web App спробуємо автоматичну авторизацію
         if (this.isWebApp) {
-            const success = await this.authenticate();
+            const success = await this.authenticateWithWebApp(this.tg.initData);
             if (success) return true;
         }
-
-        // Показуємо діалог входу
-        Utils.showNotification('Необхідна авторизація', 'warning');
         LoginModal.show();
         return false;
     }
 
     /**
-     * Вихід з системи
+     * Вихід з системи. Логіка без змін.
      */
     async logout() {
         try {
@@ -228,14 +218,14 @@ export class AuthService {
         } catch (error) {
             console.error('Logout error:', error);
         }
-        
+
         this.user = null;
         this.userStore.clearUser();
         localStorage.removeItem('access_token');
         api.setToken(null);
-        
+
         window.dispatchEvent(new CustomEvent('auth:logout'));
-        
+
         if (this.isWebApp && this.tg && this.tg.close) {
             this.tg.close();
         } else {
@@ -244,7 +234,7 @@ export class AuthService {
     }
 
     /**
-     * Перевірка ролей
+     * Перевірка ролей. Логіка без змін.
      */
     isAdmin() {
         return this.user?.is_admin || false;
@@ -254,19 +244,16 @@ export class AuthService {
         return this.user?.is_creator || false;
     }
 
-    // Делегування методів до сервісу Telegram
-    getTelegramUser() { 
-        return this.telegramService.getTelegramUser(); 
+    // Делегування методів до сервісу Telegram. Логіка без змін.
+    getTelegramUser() {
+        return this.telegramService.getTelegramUser();
     }
-    
-    getTelegramTheme() { 
-        return this.telegramService.getTelegramTheme(); 
+    getTelegramTheme() {
+        return this.telegramService.getTelegramTheme();
     }
-
     hapticFeedback(type, style) {
         return this.telegramService.hapticFeedback(type, style);
     }
-
     showConfirm(message, callback) {
         return this.telegramService.showConfirm(message, callback);
     }

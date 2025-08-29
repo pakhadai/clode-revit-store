@@ -1,6 +1,7 @@
 // js/components/LoginModal.js
 export class LoginModal {
-    static botUsername = 'ohmyrevit_bot'; // ❗️ ВАЖЛИВО: замініть на точне ім'я вашого бота
+    // ❗️ ВАЖЛИВО: замініть на точне ім'я вашого бота
+    static botUsername = 'ohmyrevit_bot';
 
     static show() {
         console.log('LoginModal.show() called');
@@ -53,16 +54,13 @@ export class LoginModal {
             return;
         }
 
-        // Очищаємо контейнер
         container.innerHTML = '';
 
-        // Перевіряємо чи вже є скрипт
         const existingScript = document.getElementById('telegram-login-script');
         if (existingScript) {
             existingScript.remove();
         }
 
-        // Створюємо новий скрипт
         const script = document.createElement('script');
         script.id = 'telegram-login-script';
         script.async = true;
