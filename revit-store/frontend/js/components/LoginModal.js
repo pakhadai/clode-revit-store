@@ -1,12 +1,11 @@
 // js/components/LoginModal.js
 export class LoginModal {
-    // ❗️ ВАЖЛИВО: замініть на точне ім'я вашого бота
     static botUsername = 'ohmyrevit_bot';
+    static widgetLoadTimeout = null;
 
     static show() {
         console.log('LoginModal.show() called');
 
-        // Видаляємо попереднє модальне вікно, якщо воно є
         const existingModal = document.getElementById('login-modal');
         if (existingModal) {
             existingModal.remove();
@@ -24,7 +23,7 @@ export class LoginModal {
                 </p>
 
                 <div id="telegram-login-container" class="flex justify-center min-h-[50px] mb-4">
-                    <div class="text-gray-400">Завантаження...</div>
+                    <div class="text-gray-400">Завантаження віджета...</div>
                 </div>
 
                 <div class="mt-4 text-xs text-gray-500 dark:text-gray-400">
@@ -41,51 +40,69 @@ export class LoginModal {
 
         document.body.appendChild(modal);
 
-        // Завантажуємо віджет після додавання модального вікна
-        setTimeout(() => this.loadWidget(), 100);
+        // Запускаємо завантаження віджета з таймером
+        this.loadWidget();
     }
 
     static loadWidget() {
         console.log('Loading Telegram widget...');
-
         const container = document.getElementById('telegram-login-container');
         if (!container) {
             console.error('Container not found');
             return;
         }
 
-        container.innerHTML = '';
+        container.innerHTML = '<div class="text-gray-400">Завантаження віджета...</div>'; // Скидаємо контейнер
 
-        const existingScript = document.getElementById('telegram-login-script');
-        if (existingScript) {
-            existingScript.remove();
-        }
+        // Встановлюємо таймер, який спрацює, якщо віджет не завантажиться
+        this.widgetLoadTimeout = setTimeout(() => {
+            console.error('Telegram widget timed out.');
+            if (container) {
+                container.innerHTML = `
+                    <div class="text-red-500 text-sm p-3 bg-red-50 dark:bg-red-900/20 rounded-lg">
+                        <p class="font-bold">Помилка завантаження</p>
+                        <p class="mt-1">
+                            Схоже, ваш провайдер блокує сервіси Telegram.
+                            Будь ласка, **увімкніть VPN** та спробуйте оновити сторінку.
+                        </p>
+                    </div>
+                `;
+            }
+        }, 7000); // Чекаємо 7 секунд
 
         const script = document.createElement('script');
         script.id = 'telegram-login-script';
         script.async = true;
-        script.src = "https://telegram.org/js/telegram-widget.js?22";
+        // Повертаємо локальний шлях, це все ще правильна практика
+        script.src = "/js/vendor/telegram-widget.js";
         script.setAttribute('data-telegram-login', this.botUsername);
         script.setAttribute('data-size', 'large');
         script.setAttribute('data-onauth', 'onTelegramAuth(user)');
         script.setAttribute('data-request-access', 'write');
 
+        // Якщо скрипт завантажиться, він замінить "Завантаження..." на кнопку,
+        // і ми повинні скасувати наш таймер.
+        script.onload = () => {
+            console.log('Telegram widget script loaded successfully.');
+            clearTimeout(this.widgetLoadTimeout);
+        };
+
         script.onerror = () => {
-            console.error('Failed to load Telegram widget');
-            container.innerHTML = `
-                <div class="text-red-500 text-sm">
-                    Помилка завантаження віджета.<br>
-                    Спробуйте оновити сторінку.
-                </div>
-            `;
+            console.error('Failed to load Telegram widget script.');
+            clearTimeout(this.widgetLoadTimeout);
+             if (container) {
+                container.innerHTML = `
+                     <div class="text-red-500 text-sm">Помилка завантаження скрипту. Перевірте консоль.</div>
+                `;
+            }
         };
 
         container.appendChild(script);
-        console.log('Widget script added');
     }
 
     static hide() {
         console.log('LoginModal.hide() called');
+        clearTimeout(this.widgetLoadTimeout); // Очищуємо таймер при закритті
         const modal = document.getElementById('login-modal');
         if (modal) {
             modal.remove();

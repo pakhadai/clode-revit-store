@@ -1,12 +1,10 @@
-// LEGACY CODE MOVED TO js/app.legacy.js
-// NEW MODULAR ARCHITECTURE
-
+// js/app.js
 import { Application } from './core/Application.js';
 
-// Create and initialize application
+// Створюємо екземпляр додатку
 const app = new Application();
 
-// Make globally available for backward compatibility
+// Робимо його глобально доступним для зворотної сумісності та віджетів
 window.app = app;
 window.OhMyRevit = {
     app,
@@ -18,7 +16,7 @@ window.OhMyRevit = {
     version: '1.0.0'
 };
 
-// Start application
+// Запускаємо асинхронну ініціалізацію
 app.init();
 
 console.log('🎉 OhMyRevit Web App v1.0.0 (Modular)');

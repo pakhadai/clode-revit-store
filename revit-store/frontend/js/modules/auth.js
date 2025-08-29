@@ -4,12 +4,12 @@ import { AuthService } from '../services/AuthService.js';
 // Створюємо єдиний екземпляр AuthService
 const authService = new AuthService();
 
-// Ініціалізуємо його при завантаженні скрипта
-authService.init();
-
 // Створюємо глобальний об'єкт `auth` для сумісності та зручності
 const auth = {
-    // Властивості
+    // Додаємо метод init, який буде викликати init сервісу
+    init: () => authService.init(),
+
+    // Властивості (проксі до authService)
     get user() { return authService.user; },
     get tg() { return authService.tg; },
     get isWebApp() { return authService.isWebApp; },
