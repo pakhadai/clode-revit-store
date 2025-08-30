@@ -5,33 +5,44 @@ export class TelegramService {
     }
 
     init() {
-        if (window.Telegram && window.Telegram.WebApp) {
+        // Перевіряємо наявність Telegram Web App
+        if (typeof window.Telegram !== 'undefined' && window.Telegram.WebApp) {
             this.tg = window.Telegram.WebApp;
-
-            this.tg.expand();
-            this.tg.setHeaderColor('#1F2937');
-            this.tg.setBackgroundColor('#F3F4F6');
             this.tg.ready();
+            this.tg.expand();
 
-            if (this.tg.isVersionAtLeast('6.1')) {
-                this.tg.BackButton.onClick(() => {
-                    window.history.back();
-                });
-            }
+            // Отримуємо дані
+            this.initData = this.tg.initData || '';
+            this.initDataUnsafe = this.tg.initDataUnsafe || {};
 
-            console.log('Telegram Web App initialized');
-            console.log('Init Data:', this.tg.initData);
-            console.log('User:', this.tg.initDataUnsafe?.user);
-
+            console.log('✅ Telegram Web App ініціалізовано');
+            return true;
         } else {
-            console.warn('Telegram Web App не доступний');
+            console.warn('⚠️ Telegram Web App не доступний - працюємо в режимі веб-сайту');
 
-            if (window.location.hostname === 'localhost') {
-                this.setupMockData();
-            }
+            // Для веб-версії створюємо мок-об'єкт
+            this.tg = {
+                ready: () => {},
+                expand: () => {},
+                close: () => {},
+                MainButton: {
+                    show: () => {},
+                    hide: () => {},
+                    setText: () => {},
+                    onClick: () => {}
+                },
+                BackButton: {
+                    show: () => {},
+                    hide: () => {},
+                    onClick: () => {}
+                }
+            };
+
+            this.initData = '';
+            this.initDataUnsafe = {};
+
+            return false;
         }
-
-        return this.tg;
     }
 
     setupMockData() {

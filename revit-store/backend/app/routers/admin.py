@@ -17,7 +17,7 @@ from app.models.order import Order, PromoCode, OrderItem
 from app.models.subscription import Subscription
 from app.routers.auth import get_current_active_user
 from app.services.telegram_bot import bot_service
-from app.services.local_file_service import local_file_service as file_service
+from app.services.local_file_service import local_file_service
 
 # Створюємо роутер
 router = APIRouter(

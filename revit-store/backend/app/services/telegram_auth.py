@@ -50,7 +50,11 @@ class TelegramAuth:
         try:
             # --- ВИПРАВЛЕНО ТУТ ---
             # Отримуємо hash з параметрів
-            parsed_data = dict(item.split("=") for item in init_data.split("&"))
+            parsed_data = {}
+            for item in init_data.split("&"):
+                if "=" in item:
+                    key, value = item.split("=", 1)
+                    parsed_data[key] = value
             received_hash = parsed_data.pop("hash", None)
 
             if not received_hash:

@@ -31,53 +31,61 @@ export class ProfileView extends BaseView {
     }
 
     renderLoginPage() {
-        console.log('Rendering login page...');
+        const container = document.getElementById('app');
 
-        if (auth.isWebApp) {
-            return `
-                <div class="auth-required text-center py-16">
-                    <div class="text-6xl mb-4">⚠️</div>
-                    <h1 class="text-2xl font-bold mb-2 dark:text-white">Помилка авторизації</h1>
-                    <p class="text-gray-600 dark:text-gray-400 mb-8">
-                        Не вдалося отримати дані з Telegram.<br>
-                        Спробуйте перезапустити додаток.
-                    </p>
-                    <button onclick="location.reload()"
-                            class="bg-blue-500 hover:bg-blue-600 text-white px-6 py-3 rounded-lg font-bold">
-                        Оновити сторінку
-                    </button>
+        // Перевіряємо чи це Telegram Web App
+        const isTelegramApp = window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.initData;
+
+        if (isTelegramApp) {
+            // Автоматична авторизація через Telegram
+            container.innerHTML = `
+                <div class="flex items-center justify-center min-h-screen">
+                    <div class="text-center">
+                        <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto"></div>
+                        <p class="mt-4">Авторизація через Telegram...</p>
+                    </div>
                 </div>
             `;
-        }
 
-        // ❗️ ЗМІНА ЛОГІКИ: Кнопка тепер викликає LoginModal.show() напряму.
-        // Це правильний спосіб ініціювати вхід через віджет на звичайному сайті.
-        return `
-            <div class="auth-required text-center py-16">
-                <div class="text-6xl mb-4">👤</div>
-                <h1 class="text-2xl font-bold mb-2 dark:text-white">Особистий кабінет</h1>
-                <p class="text-gray-600 dark:text-gray-400 mb-8">
-                    Увійдіть, щоб переглянути ваші замовлення, завантаження та налаштування.
-                </p>
-                <button onclick="LoginModal.show()"
-                        class="bg-blue-500 hover:bg-blue-600 text-white px-6 py-3 rounded-lg font-bold inline-flex items-center gap-2">
-                    <svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
-                        <path d="M9.78 18.65l.28-4.23 7.68-6.92c.34-.31-.07-.46-.52-.19L7.74 13.3 3.64 12c-.88-.25-.89-.86.2-1.3l15.97-6.16c.73-.33 1.43.18 1.15 1.3l-2.72 12.81c-.19.91-.74 1.13-1.5.71L12.6 16.3l-1.99 1.93c-.23.23-.42.42-.83.42z"/>
-                    </svg>
-                    Увійти через Telegram
-                </button>
+            // Спробувати авторизуватися
+            auth.authenticate().then(() => {
+                window.app.navigateTo('profile');
+            });
+        } else {
+            // Показуємо кнопку для входу через браузер
+            container.innerHTML = `
+                <div class="flex items-center justify-center min-h-screen p-4">
+                    <div class="bg-white rounded-2xl shadow-xl p-8 max-w-md w-full">
+                        <h2 class="text-2xl font-bold text-center mb-6">Вхід в OhMyRevit</h2>
 
-                <div class="mt-8 text-sm text-gray-500 dark:text-gray-400">
-                    <p>Після входу ви зможете:</p>
-                    <ul class="mt-2 space-y-1">
-                        <li>📥 Завантажувати куплені архіви</li>
-                        <li>📚 Створювати колекції</li>
-                        <li>🎁 Отримувати щоденні бонуси</li>
-                        <li>⭐ Оформити підписку</li>
-                    </ul>
+                        <div class="space-y-4">
+                            <!-- Telegram Login Widget -->
+                            <div id="telegram-login-widget" class="flex justify-center"></div>
+
+                            <!-- Або кнопка для відкриття в Telegram -->
+                            <div class="text-center">
+                                <p class="text-gray-500 mb-4">або</p>
+                                <a href="https://t.me/ohmyrevit_bot?start=webapp"
+                                   class="inline-block bg-blue-500 text-white px-6 py-3 rounded-lg hover:bg-blue-600">
+                                    Відкрити в Telegram
+                                </a>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-            </div>
-        `;
+            `;
+
+            // Додаємо Telegram Login Widget
+            const script = document.createElement('script');
+            script.src = 'https://telegram.org/js/telegram-widget.js?22';
+            script.setAttribute('data-telegram-login', 'ohmyrevit_bot');
+            script.setAttribute('data-size', 'large');
+            script.setAttribute('data-radius', '8');
+            script.setAttribute('data-onauth', 'onTelegramAuth(user)');
+            script.setAttribute('data-request-access', 'write');
+            script.async = true;
+            document.getElementById('telegram-login-widget').appendChild(script);
+        }
     }
 
     renderProfilePage(user) {

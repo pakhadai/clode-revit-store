@@ -3,6 +3,7 @@ FROM python:3.11-slim
 # Встановлюємо робочу директорію
 WORKDIR /app
 
+RUN mkdir -p /app/media/archives /app/media/previews /app/media/avatars
 # Встановлюємо системні залежності
 RUN apt-get update && apt-get install -y \
     gcc \

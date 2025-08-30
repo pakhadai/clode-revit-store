@@ -50,7 +50,8 @@ export class Application {
     }
 
     async loadTranslations() {
-        const lang = Utils.getCurrentLanguage();
+        const lang = Utils.getTelegramLanguage() || Utils.getCurrentLanguage();
+        Utils.setLanguage(lang);
         try {
             const response = await fetch(`/assets/locales/${lang}.json`);
             if (response.ok) {
@@ -74,7 +75,8 @@ export class Application {
     }
 
     applyTheme() {
-        const theme = Utils.getCurrentTheme();
+        const theme = Utils.getTelegramTheme() || Utils.getCurrentTheme();
+        Utils.setTheme(theme);
         if (theme === 'dark') {
             document.documentElement.classList.add('dark');
         } else {

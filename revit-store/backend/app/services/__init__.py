@@ -4,7 +4,7 @@
 
 from .telegram_auth import TelegramAuth
 from .payment_service import PaymentService
-from .s3_service import S3Service
+from .local_file_service import local_file_service
 from .bonus_service import BonusService
 from .telegram_bot import TelegramBotService
 #from .notification_service import NotificationService
@@ -13,7 +13,7 @@ from .telegram_bot import TelegramBotService
 __all__ = [
     "TelegramAuth",
     "PaymentService",
-    "S3Service",
+    "local_file_service",
     "BonusService",
     "TelegramBotService"
     #"NotificationService"

@@ -15,7 +15,7 @@ load_dotenv()
 
 # Імпортуємо роутери
 from app.routers import auth, products, bonuses, orders, subscriptions, referrals, creators, admin, collections
-
+from app.services.local_file_service import local_file_service
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):

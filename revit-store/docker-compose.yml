@@ -46,10 +46,6 @@ services:
     volumes:
       - ./backend:/app
       - revit_media:/app/media
-    # --- ВИПРАВЛЕНО ТУТ ---
-    # Порт 8000 більше не потрібен зовні, Nginx буде спілкуватися з ним всередині Docker
-    # ports:
-    #   - "8000:8000"
     depends_on:
       postgres:
         condition: service_healthy

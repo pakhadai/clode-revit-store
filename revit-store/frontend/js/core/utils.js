@@ -49,6 +49,25 @@ const Utils = {
         };
     },
 
+    // Автоматичне визначення мови з Telegram
+    getTelegramLanguage() {
+        if (window.Telegram && window.Telegram.WebApp) {
+            const tgLang = window.Telegram.WebApp.initDataUnsafe?.user?.language_code;
+            if (tgLang && ['uk', 'ru', 'en'].includes(tgLang)) {
+                return tgLang;
+            }
+        }
+        return 'en';
+    },
+
+    // Автоматичне визначення теми з Telegram
+    getTelegramTheme() {
+        if (window.Telegram && window.Telegram.WebApp) {
+            return window.Telegram.WebApp.colorScheme || 'light';
+        }
+        return 'light';
+    },
+
     /**
      * Показати повідомлення
      */

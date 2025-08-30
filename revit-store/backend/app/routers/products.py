@@ -13,8 +13,7 @@ from app.database import get_db
 from app.models.product import Product
 from app.models.user import User
 from app.models.collection import Collection
-# --- ЗМІНЕНО ТУТ ---
-# Імпортуємо нові функції для опціональної та обов'язкової авторизації
+from app.services.local_file_service import local_file_service
 from app.routers.auth import get_optional_current_user, get_current_active_user
 from app.services.telegram_bot import bot_service
 

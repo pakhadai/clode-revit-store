@@ -114,7 +114,7 @@ async function networkFirst(request) {
   try {
     const response = await fetch(request);
     // --- ВИПРАВЛЕННЯ: Кешуємо тільки успішні GET-запити ---
-    if (request.method === 'GET' && response.ok) {
+    if (request.method === 'GET' && response && response.ok) {
       const responseClone = response.clone();
       const cache = await caches.open(CACHE_NAME);
       cache.put(request, responseClone); // Цей рядок більше не буде викликати помилку для POST

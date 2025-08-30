@@ -75,6 +75,10 @@ async def get_optional_current_user(
 
     return user
 
+    # Оновлюємо час останнього входу
+    user.last_login = datetime.utcnow()
+    db.commit()
+
 
 async def get_current_active_user(
     current_user: User = Depends(get_optional_current_user)
@@ -268,6 +272,50 @@ async def telegram_login(
             "photo_url": user.photo_url
         }
     }
+
+
+@router.post("/widget-login")
+async def widget_login(
+        user_data: Dict = Body(...),
+        db: Session = Depends(get_db)
+):
+    """
+    Авторизація через Telegram Login Widget (для веб-версії)
+    """
+    # Перевіряємо підпис від Telegram
+    if not telegram_auth.validate_widget_data(user_data):
+        raise HTTPException(status_code=401, detail="Invalid authentication data")
+
+    # Отримуємо або створюємо користувача
+    telegram_id = user_data.get("id")
+    user = db.query(User).filter(User.telegram_id == telegram_id).first()
+
+    if not user:
+        user = User(
+            telegram_id=telegram_id,
+            username=user_data.get("username"),
+            first_name=user_data.get("first_name"),
+            last_name=user_data.get("last_name"),
+            photo_url=user_data.get("photo_url"),
+            referral_code=generate_referral_code()
+        )
+        db.add(user)
+        db.commit()
+
+    # Створюємо токен
+    access_token = create_access_token(data={"sub": str(telegram_id)})
+
+    return {
+        "access_token": access_token,
+        "token_type": "bearer",
+        "user": {
+            "id": user.id,
+            "telegram_id": user.telegram_id,
+            "username": user.username,
+            "first_name": user.first_name
+        }
+    }
+
 
 @router.post("/telegram-widget", response_model=Dict)
 async def telegram_widget_login(
