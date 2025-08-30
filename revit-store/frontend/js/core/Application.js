@@ -3,14 +3,13 @@ import { RenderService } from '../services/RenderService.js';
 import { EventService } from '../services/EventService.js';
 import { NotificationService } from '../services/NotificationService.js';
 import { ModalService } from '../services/ModalService.js';
-import auth from '../modules/auth.js'; // Імпортуємо auth
 
 export class Application {
     constructor() {
         this.currentPage = 'home';
         this.translations = {};
         this.selectedSubscriptionPlan = null;
-        this.currentPageParams = {};
+        this.currentPageParams = {}; // Ініціалізуємо параметри
 
         // Services
         this.renderService = new RenderService(this);
@@ -23,23 +22,17 @@ export class Application {
     }
 
     async init() {
-        console.log('🚀 Application.init() started...');
+        console.log('🚀 Ініціалізація OhMyRevit...');
 
-        // 1. ЧЕКАЄМО ЗАВЕРШЕННЯ АВТЕНТИФІКАЦІЇ
-        console.log('Waiting for auth service to initialize...');
-        await auth.init();
-        console.log('✅ Auth service initialized.');
-
-        // 2. ТЕПЕР ПРОДОВЖУЄМО З НАЛАШТУВАННЯМ ДОДАТКУ
         this.applyTheme();
         await this.loadTranslations();
 
+        // Ініціалізація auth вже відбулась в auth.js при імпорті
+        // Перевіряємо чи є користувач
         const user = await auth.getUser();
         if (user) {
-            console.log('User found after auth:', user.first_name);
-            if (window.bonuses && typeof bonuses.init === 'function') {
-                 await bonuses.init();
-            }
+            console.log('User found:', user.first_name);
+            await bonuses.init();
         }
 
         this.eventService.initNavigation();
@@ -48,7 +41,7 @@ export class Application {
 
         const urlParams = Utils.getUrlParams();
         const page = urlParams.page || 'home';
-        delete urlParams.page;
+        delete urlParams.page; // Видаляємо page, щоб залишились тільки інші параметри
 
         this.navigateTo(page, true, urlParams);
         cart.updateCartBadge();

@@ -8,6 +8,8 @@ import { CollectionsView } from '../views/CollectionsView.js';
 import { CollectionDetailView } from '../views/CollectionDetailView.js';
 import { DownloadsView } from '../views/DownloadsView.js';
 import { ErrorView } from '../views/ErrorView.js';
+// Імпортуємо auth напряму, щоб мати доступ до перевірки ролей
+import auth from '../modules/auth.js';
 
 export class RenderService {
     constructor(app) {
@@ -36,9 +38,6 @@ export class RenderService {
         }
 
         switch (page) {
-            // ❗️ ЗМІНА ЛОГІКИ: ДИНАМІЧНИЙ ІМПОРТ
-            // Тепер модуль 'creator.js' завантажується тільки тоді,
-            // коли користувач-творець переходить на цю сторінку.
             case 'creator':
                 if (auth.isCreator()) {
                     const { default: creator } = await import('../modules/creator.js');
@@ -46,18 +45,16 @@ export class RenderService {
                 } else {
                     return this.views.error.render404Page();
                 }
-
-            // ❗️ ЗМІНА ЛОГІКИ: ДИНАМІЧНИЙ ІМПОРТ
-            // Тепер модуль 'admin.js' та всі пов'язані з ним сервіси/компоненти
-            // (які імпортуються всередині admin.js) будуть завантажені
-            // тільки для адміністратора при переході на цю сторінку.
             case 'admin':
                 if (auth.isAdmin()) {
                     const { default: admin } = await import('../modules/admin.js');
-                    return admin.createAdminPage();
-                } else {
-                    return this.views.error.render404Page();
+
+                    if (typeof admin.checkAccess === 'function' && await admin.checkAccess()) {
+                        return admin.createAdminPage();
+                    }
                 }
+                return this.views.error.render404Page();
+
 
             case 'orders':
             case 'referrals':
